@@ -1,0 +1,4 @@
+interface:
+  display_name: "Feature Boundary Planner"
+  short_description: "Map feature impact and clarify product boundaries"
+  default_prompt: "Use $feature-boundary-planner to map this change across capabilities and UI surfaces, then clarify and prune the product boundaries."

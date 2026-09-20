@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dep Refs"
+  short_description: "Trace TypeScript exports before refactors"
+  default_prompt: "Use $dep-refs to find references for a TypeScript export before changing or deleting it."

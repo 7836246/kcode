@@ -1,0 +1,67 @@
+version: 1
+
+# 存量模块先标记为 legacy；新模块或完成迁移的模块设置 managed: true。
+modules:
+  - id: rpc
+    roots: [packages/rpc/src]
+    managed: false
+  - id: shared
+    roots: [packages/shared/src]
+    managed: false
+  - id: provider
+    roots: [packages/provider/src]
+    managed: false
+  - id: provider-node
+    roots: [packages/provider-node/src]
+    managed: false
+  - id: services
+    roots: [packages/services/src]
+    managed: false
+  - id: session
+    roots: [packages/services/src/session]
+    managed: false
+    requires: [shared]
+    publicEntrypoints: [packages/services/src/session/contract.ts]
+    owner: conversation
+  - id: storage
+    roots: [packages/services/src/storage]
+    managed: true
+    requires: [shared, rpc, services]
+    publicEntrypoints: [packages/services/src/storage/contract.ts]
+    layers: { domain: domain, app: app, adapters: adapters }
+    layerOrder: [domain, app, adapters]
+    owner: desktop-settings
+  - id: client
+    roots: [packages/client/src]
+    managed: false
+  - id: server
+    roots: [packages/server/src]
+    managed: false
+  - id: zcode-server-cli
+    roots: [packages/zcode-server-cli/src]
+    managed: false
+  - id: ui
+    roots: [packages/ui/src]
+    managed: false
+  - id: web
+    roots: [packages/web/src]
+    managed: false
+  - id: desktop
+    roots: [packages/desktop/src]
+    managed: false
+  - id: formal-proof
+    roots: [packages/formal-proof/src]
+    managed: false
+  - id: zcode-cli
+    roots: [apps/zcode-cli]
+    managed: false
+
+global:
+  maxFileLines: 400
+  maxContractLines: 300
+  maxPublicMethods: 12
+  forbidCycles: true
+  forbidDeepImports: true
+  managedOnly: true
+
+exceptions: []
