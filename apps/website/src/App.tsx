@@ -16,6 +16,7 @@ import {
   resolveChangelog,
   resolveReleaseDownloads,
 } from "./release.js";
+import type { DownloadTargetId } from "./releaseTypes.js";
 import { docsPath, parseSitePath } from "./siteRoute.js";
 import { applyTheme, persistTheme, readStoredTheme, resolveTheme, THEME_STORAGE_KEY, type SiteTheme } from "./theme.js";
 
@@ -42,9 +43,8 @@ export function App() {
   const tag = latestReleaseTag(releases);
   const downloads = useMemo(() => resolveReleaseDownloads(tag), [tag]);
   const changelog = useMemo(() => resolveChangelog(releases), [releases]);
-  const primaryTarget = useMemo(
-    () => detectDownloadTarget(navigator.userAgent, navigator.platform),
-    [],
+  const [primaryTarget, setPrimaryTarget] = useState<DownloadTargetId>(() =>
+    detectDownloadTarget(navigator.userAgent, navigator.platform),
   );
   const primaryHref = downloads.assets[primaryTarget] ?? downloads.latestPage;
   const primaryLabel =
@@ -92,6 +92,32 @@ export function App() {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    const uaData = (
+      navigator as Navigator & {
+        userAgentData?: {
+          getHighEntropyValues?: (hints: string[]) => Promise<{ architecture?: string }>;
+        };
+      }
+    ).userAgentData;
+    if (!uaData?.getHighEntropyValues) return;
+    let cancelled = false;
+    void uaData
+      .getHighEntropyValues(["architecture"])
+      .then((values) => {
+        if (cancelled || !values.architecture) return;
+        setPrimaryTarget(
+          detectDownloadTarget(navigator.userAgent, navigator.platform, {
+            architecture: values.architecture,
+          }),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);

@@ -15,8 +15,12 @@ export function resolveReleaseDownloads(tag: string | null): ReleaseDownloads {
   return resolveReleaseDownloadsRaw(tag) as ReleaseDownloads;
 }
 
-export function detectDownloadTarget(userAgent: string, platform?: string): DownloadTargetId {
-  return detectDownloadTargetRaw(userAgent, platform) as DownloadTargetId;
+export function detectDownloadTarget(
+  userAgent: string,
+  platform?: string,
+  hints?: { architecture?: string },
+): DownloadTargetId {
+  return detectDownloadTargetRaw(userAgent, platform, hints) as DownloadTargetId;
 }
 
 export function linuxFormatUrl(

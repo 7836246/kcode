@@ -7,6 +7,21 @@
   <a href="README.md">简体中文</a> | English
 </p>
 
+<p align="center">
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/LINUX-DO-ffb000?style=for-the-badge&labelColor=24292f" alt="LINUX DO" /></a>
+</p>
+<p align="center">
+  <a href="https://kcode.wiki"><img src="https://img.shields.io/badge/Website-kcode.wiki-111111" alt="Website" /></a>
+  <a href="https://github.com/7836246/kcode/releases/latest"><img src="https://img.shields.io/github/v/release/7836246/kcode?label=Release" alt="Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-green" alt="License" /></a>
+  <a href="https://github.com/7836246/kcode/stargazers"><img src="https://img.shields.io/github/stars/7836246/kcode" alt="Stars" /></a>
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white" alt="macOS" />
+  <img src="https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white" alt="Windows" />
+  <img src="https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black" alt="Linux" />
+</p>
+
 <div align="center">
   <img src="public/screenshots/kcode-hero.png" alt="KCode" width="920" />
 </div>

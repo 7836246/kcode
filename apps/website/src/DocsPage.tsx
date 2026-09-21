@@ -16,6 +16,8 @@ export function DocsPage(options: {
   const known = DOC_GROUPS.flatMap((group) => group.slugs).includes(slug as DocSlug);
   const page = known ? getDocPage(slug, locale) : null;
   const neighbors = known ? neighborSlugs(slug as DocSlug) : { prev: null, next: null };
+  const prevSlug = neighbors.prev;
+  const nextSlug = neighbors.next;
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-7xl gap-10 px-4 py-6 sm:px-6 lg:px-10">
@@ -55,32 +57,28 @@ export function DocsPage(options: {
             {page.blocks.map((block, index) => (
               <DocBlockView block={block} key={`${block.type}-${index}`} />
             ))}
-            <nav className="mt-14 flex justify-between gap-4 border-t border-border pt-6 text-sm">
-              {neighbors.prev ? (
-                <a
-                  className="text-muted-foreground transition hover:text-foreground"
-                  href={docsPath(neighbors.prev)}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onNavigate(docsPath(neighbors.prev!));
-                  }}
-                >
-                  ← {labels[neighbors.prev]}
-                </a>
+            <nav className="mt-32 grid gap-3 border-t border-border pt-20 sm:grid-cols-2">
+              {prevSlug ? (
+                <PagerLink
+                  align="start"
+                  description={getDocPage(prevSlug, locale)?.lead ?? ""}
+                  href={docsPath(prevSlug)}
+                  label={copy.docsPrev}
+                  title={labels[prevSlug]}
+                  onNavigate={onNavigate}
+                />
               ) : (
-                <span />
+                <span className="hidden sm:block" />
               )}
-              {neighbors.next ? (
-                <a
-                  className="text-muted-foreground transition hover:text-foreground"
-                  href={docsPath(neighbors.next)}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    onNavigate(docsPath(neighbors.next!));
-                  }}
-                >
-                  {labels[neighbors.next]} →
-                </a>
+              {nextSlug ? (
+                <PagerLink
+                  align="end"
+                  description={getDocPage(nextSlug, locale)?.lead ?? ""}
+                  href={docsPath(nextSlug)}
+                  label={copy.docsNext}
+                  title={labels[nextSlug]}
+                  onNavigate={onNavigate}
+                />
               ) : null}
             </nav>
           </>
@@ -95,9 +93,40 @@ export function DocsPage(options: {
   );
 }
 
+function PagerLink(options: {
+  href: string;
+  label: string;
+  title: string;
+  description: string;
+  align: "start" | "end";
+  onNavigate: (href: string) => void;
+}) {
+  const { href, label, title, description, align, onNavigate } = options;
+  return (
+    <a
+      className={
+        align === "end"
+          ? "flex min-h-28 flex-col items-end justify-center gap-1 rounded-xl border border-border bg-muted/50 px-5 py-4 text-right transition hover:border-foreground/20 hover:bg-muted"
+          : "flex min-h-28 flex-col items-start justify-center gap-1 rounded-xl border border-border bg-muted/50 px-5 py-4 text-left transition hover:border-foreground/20 hover:bg-muted"
+      }
+      href={href}
+      onClick={(event) => {
+        event.preventDefault();
+        onNavigate(href);
+      }}
+    >
+      <span className="text-xs font-medium text-muted-foreground">
+        {align === "end" ? `${label} →` : `← ${label}`}
+      </span>
+      <span className="text-base font-semibold text-foreground">{title}</span>
+      <span className="line-clamp-2 text-sm leading-6 text-muted-foreground">{description}</span>
+    </a>
+  );
+}
+
 function DocBlockView({ block }: { block: import("./docs/pages.js").DocBlock }) {
   if (block.type === "h2") {
-    return <h2 className="mt-10 text-2xl font-semibold text-foreground">{block.text}</h2>;
+    return <h2 className="mt-12 text-2xl font-semibold text-foreground">{block.text}</h2>;
   }
   if (block.type === "p") {
     return <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">{block.text}</p>;

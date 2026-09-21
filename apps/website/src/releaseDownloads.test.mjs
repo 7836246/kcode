@@ -27,9 +27,19 @@ test("没有 tag 时全部退回 latest 页面", () => {
 });
 
 test("按 UA 选择主下载目标", () => {
-  assert.equal(detectDownloadTarget("Macintosh; Intel Mac OS X", "MacIntel"), "mac-x64");
+  // Apple Silicon 浏览器仍写 Intel Mac OS X，不能据此判 x64。
+  assert.equal(detectDownloadTarget("Macintosh; Intel Mac OS X", "MacIntel"), "mac-arm64");
   assert.equal(detectDownloadTarget("Macintosh; ARM Mac OS X", "MacIntel"), "mac-arm64");
+  assert.equal(
+    detectDownloadTarget("Macintosh; Intel Mac OS X", "MacIntel", { architecture: "x86" }),
+    "mac-x64",
+  );
+  assert.equal(
+    detectDownloadTarget("Macintosh; Intel Mac OS X", "MacIntel", { architecture: "arm" }),
+    "mac-arm64",
+  );
   assert.equal(detectDownloadTarget("Windows NT 10.0; Win64; x64", "Win32"), "win-x64");
+  assert.equal(detectDownloadTarget("Windows NT 10.0; ARM64", "Win32"), "win-arm64");
   assert.equal(detectDownloadTarget("Linux aarch64", "Linux"), "linux-arm64");
 });
 

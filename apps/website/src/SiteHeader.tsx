@@ -3,7 +3,7 @@ import type { WebsiteLocale, websiteCopy } from "./content.js";
 import { DOC_GROUPS } from "./docs/nav.js";
 import { docNavCopy } from "./docs/pages.js";
 import { KMark } from "./KMark.js";
-import { GlobeGlyph, MenuGlyph, MoonGlyph, SunGlyph } from "./platformIcons.js";
+import { GitHubGlyph, GlobeGlyph, MenuGlyph, MoonGlyph, SunGlyph } from "./platformIcons.js";
 import { docsPath } from "./siteRoute.js";
 import type { SiteTheme } from "./theme.js";
 
@@ -43,14 +43,23 @@ export function SiteHeader(options: {
             <div className="flex flex-1 justify-center">
               <Brand copy={copy} onNavigate={onNavigate} />
             </div>
-            <ThemeButton copy={copy} theme={theme} onToggleTheme={onToggleTheme} compact />
+            <div className="flex items-center gap-2">
+              <SourceLink label={copy.navSource} />
+              <ThemeButton copy={copy} theme={theme} onToggleTheme={onToggleTheme} compact />
+            </div>
           </div>
           {menuOpen ? (
             <div className="mt-3 flex flex-col gap-2 pb-2 text-sm text-muted-foreground" id="mobile-nav">
               <HeaderLink href="/docs" label={copy.navDocs} active={onDocs} onNavigate={onNavigate} onDone={onToggleMenu} />
               <HeaderLink href="/changelog" label={copy.navChangelog} active={changelogActive} onNavigate={onNavigate} onDone={onToggleMenu} />
               <HeaderLink href="/#all-downloads" label={copy.navDownload} onNavigate={onNavigate} onDone={onToggleMenu} />
-              <a className="transition hover:text-foreground" href={GITHUB_URL} rel="noreferrer" target="_blank">
+              <a
+                className="inline-flex items-center gap-2 transition hover:text-foreground"
+                href={GITHUB_URL}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <GitHubGlyph className="size-4" />
                 {copy.navSource}
               </a>
               <button className="text-left transition hover:text-foreground" type="button" onClick={onToggleLocale}>
@@ -79,11 +88,9 @@ export function SiteHeader(options: {
             <HeaderLink href="/docs" label={copy.navDocs} active={onDocs} onNavigate={onNavigate} />
             <HeaderLink href="/changelog" label={copy.navChangelog} active={changelogActive} onNavigate={onNavigate} />
             <HeaderLink href="/#all-downloads" label={copy.navDownload} onNavigate={onNavigate} />
-            <a className="transition hover:text-foreground" href={GITHUB_URL} rel="noreferrer" target="_blank">
-              {copy.navSource}
-            </a>
           </div>
           <div className="flex shrink-0 items-center justify-center gap-3 text-sm md:justify-end">
+            <SourceLink label={copy.navSource} />
             <ThemeButton copy={copy} theme={theme} onToggleTheme={onToggleTheme} />
             <button
               type="button"
@@ -138,6 +145,22 @@ function HeaderLink(options: {
       }}
     >
       {label}
+    </a>
+  );
+}
+
+function SourceLink(options: { label: string }) {
+  const { label } = options;
+  return (
+    <a
+      aria-label={label}
+      className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-muted text-foreground transition hover:bg-muted/80"
+      href={GITHUB_URL}
+      rel="noreferrer"
+      target="_blank"
+      title={label}
+    >
+      <GitHubGlyph className="size-4" />
     </a>
   );
 }

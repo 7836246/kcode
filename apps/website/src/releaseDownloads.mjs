@@ -36,16 +36,26 @@ export function resolveReleaseDownloads(tag) {
   };
 }
 
-export function detectDownloadTarget(userAgent, platform = "") {
+export function detectDownloadTarget(userAgent, platform = "", hints = {}) {
   const ua = userAgent.toLowerCase();
   const plat = platform.toLowerCase();
+  const architecture = String(hints.architecture ?? "").toLowerCase();
   const isMac = plat.includes("mac") || ua.includes("mac os");
   const isWin = plat.includes("win") || ua.includes("windows");
   const isLinux = (plat.includes("linux") || ua.includes("linux")) && !ua.includes("android");
-  const isArm = ua.includes("arm") || ua.includes("aarch64");
+  // Mac 的 UA 几乎都写 Intel Mac OS X，Apple Silicon 也一样，不能当 x64 证据。
+  const isArm =
+    architecture.startsWith("arm") ||
+    architecture === "aarch64" ||
+    ua.includes("aarch64") ||
+    ua.includes("arm64") ||
+    /\barm\b/.test(ua);
+  const isX86 = architecture === "x86" || architecture.startsWith("x86");
 
   if (isMac) {
-    return ua.includes("intel") ? "mac-x64" : "mac-arm64";
+    if (isArm) return "mac-arm64";
+    if (isX86) return "mac-x64";
+    return "mac-arm64";
   }
   if (isWin) {
     return isArm ? "win-arm64" : "win-x64";
