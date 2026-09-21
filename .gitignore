@@ -69,3 +69,10 @@ packages/desktop/.e2e-artifacts/
 packages/desktop/.e2e-cache/
 packages/desktop/.e2e-network-capture/
 .kcode-runtime/
+
+# desktop 源码只有 .ts。tsc -b tsconfig.main.json 会把跨 rootDir 的 import
+#（例如 schedulerProtocol、armsRumShared）就地吐出 js/d.ts，正式产物在 out/。
+packages/desktop/src/**/*.js
+packages/desktop/src/**/*.js.map
+packages/desktop/src/**/*.d.ts
+packages/desktop/src/**/*.d.ts.map
