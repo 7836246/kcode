@@ -13,7 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { collectRuntimeModuleClosureEntries } from "./runtime-dependency-closure.mjs";
 import { resolveDesktopProductIdentity } from "./desktop-product-identity.mjs";
-import { ELECTRON_UPDATE_MANIFEST_BY_OS } from "./github-release-feed.mjs";
+import { resolveElectronUpdateManifestName } from "./github-release-feed.mjs";
 import {
   findDesktopNativePackageViolations,
   parseAsarListWithPackState,
@@ -414,7 +414,7 @@ function findBuiltArtifact(os, arch) {
 }
 
 function verifyGeneratedUpdateManifest(os, arch) {
-  const manifestName = ELECTRON_UPDATE_MANIFEST_BY_OS[os];
+  const manifestName = resolveElectronUpdateManifestName(os, arch);
   if (!manifestName) {
     throw new Error(`未配置 ${os} 的 electron-updater manifest 文件名`);
   }

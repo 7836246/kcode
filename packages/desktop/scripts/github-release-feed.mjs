@@ -7,6 +7,17 @@ export const ELECTRON_UPDATE_MANIFEST_BY_OS = Object.freeze({
   linux: "latest-linux.yml",
 });
 
+export function resolveElectronUpdateManifestName(os, arch) {
+  if (os === "linux" && arch && arch !== "x64") {
+    // electron-builder / electron-updater 只给非 x64 的 Linux 加 arch 后缀。
+    // arm64 客户端读 latest-linux-arm64.yml，不能用 latest-linux.yml 冒充。
+    const suffix = arch === "armv7l" ? "arm" : arch;
+    return `latest-linux-${suffix}.yml`;
+  }
+
+  return ELECTRON_UPDATE_MANIFEST_BY_OS[os];
+}
+
 export function parseReleaseTag(tag) {
   const trimmed = typeof tag === "string" ? tag.trim() : "";
   if (!/^v\d/.test(trimmed)) {

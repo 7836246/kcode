@@ -4,7 +4,12 @@ import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } fro
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const UPDATE_MANIFEST_NAMES = new Set(["latest.yml", "latest-mac.yml", "latest-linux.yml"]);
+const UPDATE_MANIFEST_NAMES = new Set([
+  "latest.yml",
+  "latest-mac.yml",
+  "latest-linux.yml",
+  "latest-linux-arm64.yml",
+]);
 
 function unquoteYamlScalar(value) {
   const trimmed = value.trim();

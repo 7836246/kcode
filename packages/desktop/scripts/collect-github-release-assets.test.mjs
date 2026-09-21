@@ -48,6 +48,33 @@ test("版本不一致的 manifest 不能合并", () => {
   );
 });
 
+test("Linux arm64 清单单独保留，不并进 latest-linux.yml", async () => {
+  const root = join(tmpdir(), `kcode-release-linux-manifest-${Date.now()}`);
+  const linuxX64 = join(root, "in", "kcode-linux-x64");
+  const linuxArm = join(root, "in", "kcode-linux-arm64");
+  const out = join(root, "out");
+  await mkdir(linuxX64, { recursive: true });
+  await mkdir(linuxArm, { recursive: true });
+  await writeFile(
+    join(linuxX64, "latest-linux.yml"),
+    "version: 0.0.2\npath: KCode-0.0.2-linux-x86_64.AppImage\nfiles:\n  - url: KCode-0.0.2-linux-x86_64.AppImage\n    sha512: x64\n",
+  );
+  await writeFile(
+    join(linuxArm, "latest-linux-arm64.yml"),
+    "version: 0.0.2\npath: KCode-0.0.2-linux-arm64.AppImage\nfiles:\n  - url: KCode-0.0.2-linux-arm64.AppImage\n    sha512: arm\n",
+  );
+
+  const result = collectGitHubReleaseAssets(join(root, "in"), out);
+  assert.equal(result.merged.includes("latest-linux.yml"), true);
+  assert.equal(result.merged.includes("latest-linux-arm64.yml"), true);
+  const x64 = parseElectronUpdateManifest(await readFile(join(out, "latest-linux.yml"), "utf8"));
+  const arm = parseElectronUpdateManifest(await readFile(join(out, "latest-linux-arm64.yml"), "utf8"));
+  assert.equal(x64.files.length, 1);
+  assert.equal(x64.files[0].url, "KCode-0.0.2-linux-x86_64.AppImage");
+  assert.equal(arm.files.length, 1);
+  assert.equal(arm.files[0].url, "KCode-0.0.2-linux-arm64.AppImage");
+});
+
 test("收集分目录产物并写出合并后的 latest.yml", async () => {
   const root = join(tmpdir(), `kcode-release-assets-${Date.now()}`);
   const winX64 = join(root, "in", "kcode-win-x64");

@@ -27,6 +27,7 @@ electron-updater checkForUpdates / downloadUpdate
 - `KCode Preview` 身份仍禁用自动更新；本规则只约束正式 `KCode` 包
 - GitHub pre-release 约定：tag 含 `-`（如 `v0.0.2-preview.1`）时 Release 标为 prerelease
 - 开发态 `dev-app-update.yml` 指向同一 GitHub 仓库，真实安装包 URL 仍由 GitHub Release 资产提供
+- Linux 更新清单文件名跟 electron-updater 一致：x64 读 `latest-linux.yml`，arm64 读 `latest-linux-arm64.yml`
 
 ## 所有者
 
