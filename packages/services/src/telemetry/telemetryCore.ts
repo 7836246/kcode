@@ -10,7 +10,6 @@ import {
   sanitizeTelemetryEventDetail,
   type TelemetryEventPayload,
   type TelemetryRendererContext,
-  type OAuthLoginAttribution,
 } from "@kcode/shared";
 import {
   ensureDeviceMid,
@@ -48,7 +47,7 @@ interface TelemetryCoreDependencies {
   fetchImpl?: typeof fetch;
   loadUserId?: () => Promise<string>;
   loadAuthorization?: (userId: string) => Promise<string | null>;
-  loadMarketingParams?: () => Promise<OAuthLoginAttribution | null>;
+  loadMarketingParams?: () => Promise<Record<string, unknown> | null>;
   randomUUID?: () => string;
   now?: () => number;
   appVersion?: string;
@@ -368,7 +367,7 @@ export function createTelemetryCore(dependencies: TelemetryCoreDependencies = {}
     if (!KCODE_TELEMETRY_ENABLED || !KCODE_TELEMETRY_REPORT_ENDPOINT) {
       return;
     }
-    let marketingParams: OAuthLoginAttribution | null = null;
+    let marketingParams: Record<string, unknown> | null = null;
     try {
       marketingParams = await loadMarketingParams();
     } catch {

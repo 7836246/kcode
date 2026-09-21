@@ -11,4 +11,5 @@ export * from "./owned-order.js";
 export * from "./resolver.js";
 export * from "./registry.js";
 export * from "./registry-service.js";
+export * from "./retiredOfficialProviders.js";
 export * from "./sources.js";

@@ -1,90 +1,44 @@
-import { loadBootstrapModule } from "./bootstrap-loader.js";
 import { loadCliDotenv } from "./env.js";
 import type { RunDependencies } from "./cli-types.js";
-import type {
-  CommandCenterApiKeyOptions,
-  CommandCenterBigmodelLoginOptions,
-  CommandCenterLoginOptions,
-} from "./command-center/types.js";
 
-export async function loginForTui(
-  deps: RunDependencies,
-  options?: CommandCenterLoginOptions,
-) {
+const OFFICIAL_LOGIN_UNSUPPORTED =
+  "Official Z.ai / BigModel login is no longer supported. Configure a generic API-key provider instead.";
+
+function loadDotenvOrThrow(deps: RunDependencies): void {
   const env = deps.env ?? process.env;
   const workingDirectory = (deps.cwd ?? process.cwd)();
   const dotenvResult = (deps.loadDotenv ?? loadCliDotenv)({
     cwd: workingDirectory,
     env,
   });
-
   if (dotenvResult.error) {
     throw new Error(`Failed to load environment file: ${dotenvResult.path}`, {
       cause: dotenvResult.error,
     });
   }
+}
 
-  const login = deps.loginKCodeCli ?? (await loadBootstrapModule()).loginKCodeCli;
-  return await login({
-    abortSignal: options?.abortSignal,
-    env,
-    onAuthorizeUrl: options?.onAuthorizeUrl,
-  });
+export async function loginForTui(_deps: RunDependencies, _options?: unknown): Promise<never> {
+  throw new Error(OFFICIAL_LOGIN_UNSUPPORTED);
 }
 
 export async function loginBigmodelForTui(
-  deps: RunDependencies,
-  options?: CommandCenterBigmodelLoginOptions,
-) {
-  const env = deps.env ?? process.env;
-  const workingDirectory = (deps.cwd ?? process.cwd)();
-  const dotenvResult = (deps.loadDotenv ?? loadCliDotenv)({
-    cwd: workingDirectory,
-    env,
-  });
-
-  if (dotenvResult.error) {
-    throw new Error(`Failed to load environment file: ${dotenvResult.path}`, {
-      cause: dotenvResult.error,
-    });
-  }
-
-  const login =
-    deps.loginBigmodelCodingPlan ?? (await loadBootstrapModule()).loginBigmodelCodingPlan;
-  return await login({
-    abortSignal: options?.abortSignal,
-    env,
-    onAuthorizeUrl: options?.onAuthorizeUrl,
-  });
+  _deps: RunDependencies,
+  _options?: unknown,
+): Promise<never> {
+  throw new Error(OFFICIAL_LOGIN_UNSUPPORTED);
 }
 
 export async function configureApiKeyForTui(
-  deps: RunDependencies,
-  options: CommandCenterApiKeyOptions,
-) {
-  const configure =
-    deps.configureCodingPlanApiKey ?? (await loadBootstrapModule()).configureCodingPlanApiKey;
-  return await configure({
-    apiKey: options.apiKey,
-    env: deps.env ?? process.env,
-    providerId: options.providerId,
-  });
+  _deps: RunDependencies,
+  _options: unknown,
+): Promise<never> {
+  throw new Error(OFFICIAL_LOGIN_UNSUPPORTED);
 }
 
 export async function logoutForTui(deps: RunDependencies) {
-  const env = deps.env ?? process.env;
-  const workingDirectory = (deps.cwd ?? process.cwd)();
-  const dotenvResult = (deps.loadDotenv ?? loadCliDotenv)({
-    cwd: workingDirectory,
-    env,
-  });
-
-  if (dotenvResult.error) {
-    throw new Error(`Failed to load environment file: ${dotenvResult.path}`, {
-      cause: dotenvResult.error,
-    });
-  }
-
+  loadDotenvOrThrow(deps);
+  const { loadBootstrapModule } = await import("./bootstrap-loader.js");
   const logout = deps.logoutKCodeCli ?? (await loadBootstrapModule()).logoutKCodeCli;
-  return await logout({ env });
+  return await logout({ env: deps.env ?? process.env });
 }

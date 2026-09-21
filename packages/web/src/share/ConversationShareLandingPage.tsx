@@ -9,25 +9,16 @@ import {
   type MouseEvent,
 } from "react";
 import { ArrowUpRightIcon, MoonIcon, SunIcon } from "lucide-react";
-import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@kcode/shared";
 import type { ConversationSharePreview } from "@kcode/shared";
 import { ConversationShareReadonlyTimeline } from "@kcode/ui/conversation-share-readonly";
-import { renderOAuthProviderIcon } from "@kcode/ui/oauth-provider-icon";
 import { applyTheme, resolveTheme, type Theme } from "@kcode/ui/useTheme";
 import "./conversationShareLandingPage.css";
-import type { WebOAuthProviderId } from "../auth/browserOAuthCredentialRepo.js";
 import {
   buildShareImportDeepLink,
   type ConversationSharePreviewClientError,
   type ConversationSharePreviewErrorKind,
 } from "./conversationSharePreviewClient.js";
 import { resolveShareHeaderView, type ShareHeaderView } from "./shareHeaderLayout.js";
-
-/** 登录入口的展示顺序，与桌面端登录卡片一致（z.ai 在上）。 */
-const SHARE_LOGIN_PROVIDERS: readonly WebOAuthProviderId[] = [
-  ZAI_PROVIDER_ID,
-  BIGMODEL_PROVIDER_ID,
-];
 
 type ConversationShareLandingLocale = "zh-CN" | "en-US";
 type ConversationShareLandingState =
@@ -58,9 +49,6 @@ interface Copy {
   loginTitle: string;
   loginDescription: string;
   login: string;
-  /** 每个 provider 的登录按钮文案与区域徽标，对齐桌面端 login.oauth.* 口径。 */
-  loginWith: Record<WebOAuthProviderId, string>;
-  loginRegion: Record<WebOAuthProviderId, string>;
   expiredTitle: string;
   expiredDescription: string;
   notFoundTitle: string;
@@ -95,20 +83,14 @@ const COPY: Record<ConversationShareLandingLocale, Copy> = {
     brand: "KCode 会话分享",
     loading: "正在加载分享内容",
     loadingDescription: "请稍候，我们正在验证分享链接。",
-    loginTitle: "登录后查看分享",
-    loginDescription: "请登录后确认你是否有权限查看这个分享。",
+    loginTitle: "无法在网页中登录查看",
+    loginDescription: "KCode 不再提供网页官方账号登录。请在桌面端打开此分享，或使用公开链接。",
     login: "登录",
-    loginWith: {
-      zai: "连接 Z.ai 继续使用",
-      bigmodel: "连接 BigModel 继续使用",
-    },
-    loginRegion: { zai: "全球", bigmodel: "中国" },
     expiredTitle: "分享已过期",
     expiredDescription: "这个分享链接已经过期，请让分享者重新生成链接。",
     notFoundTitle: "找不到分享内容",
-    notFoundDescription: "链接可能无效、分享已被移除，或当前登录账号无法访问。",
-    notFoundAccountHint:
-      "Z.ai 与 BigModel 的账号数据不互通。请检查是否选错了登录平台或使用了其他账号。",
+    notFoundDescription: "链接可能无效、分享已被移除，或当前访问者无法查看。",
+    notFoundAccountHint: "如果这是私有分享，请让分享者重新生成链接，或在 KCode 客户端中打开。",
     backToHome: "回到首页",
     networkTitle: "暂时无法加载分享",
     networkDescription: "请检查网络后重试。",
@@ -132,21 +114,17 @@ const COPY: Record<ConversationShareLandingLocale, Copy> = {
     brand: "KCode Conversation Share",
     loading: "Loading shared conversation",
     loadingDescription: "Please wait while we verify this share link.",
-    loginTitle: "Sign in to view this share",
-    loginDescription: "Sign in to check whether you can view this shared conversation.",
+    loginTitle: "Sign-in is not available in the browser",
+    loginDescription:
+      "KCode no longer offers official account sign-in on the web. Open this share in the desktop app, or use a public link.",
     login: "Sign in",
-    loginWith: {
-      zai: "Connect to Z.ai",
-      bigmodel: "Connect to BigModel",
-    },
-    loginRegion: { zai: "Global", bigmodel: "CN" },
     expiredTitle: "Share expired",
     expiredDescription: "This share link has expired. Ask the author to create a new one.",
     notFoundTitle: "Share not found",
     notFoundDescription:
-      "The link may be invalid, the share may have been removed, or your current account may not have access.",
+      "The link may be invalid, the share may have been removed, or this visitor may not have access.",
     notFoundAccountHint:
-      "Z.ai and BigModel do not share account data. Check whether you selected the wrong sign-in platform or used a different account.",
+      "If this is a private share, ask the author to create a new link or open it in the KCode app.",
     backToHome: "Back to home",
     networkTitle: "Unable to load share",
     networkDescription: "Check your network connection and try again.",
@@ -582,12 +560,10 @@ export function ConversationShareLandingPage({
 export function ConversationShareLandingStatus({
   state,
   locale,
-  onLogin,
   onRetry,
 }: {
   state: Exclude<ConversationShareLandingState, { kind: "ready" }>;
   locale?: ConversationShareLandingLocale;
-  onLogin?: (provider: WebOAuthProviderId) => void;
   onRetry?: () => void;
 }) {
   const copy = COPY[localeOf(locale)];
@@ -637,31 +613,7 @@ export function ConversationShareLandingStatus({
             {copy.notFoundAccountHint}
           </p>
         ) : null}
-        {/*
-          两个 provider 竖排全宽，对齐桌面端登录卡片（图标 + 文案 + 区域徽标）。
-          必须两个都给：private 分享的 owner 身份是 provider 特定的，页面无法预先知道
-          这份分享属于哪一边——猜错就等于把用户挡在自己的分享外面。
-        */}
-        {showLogin && onLogin ? (
-          <div className="mt-5 space-y-2">
-            {SHARE_LOGIN_PROVIDERS.map((provider) => (
-              <button
-                key={provider}
-                type="button"
-                data-share-login-provider={provider}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-ui-base text-primary-foreground"
-                onClick={() => onLogin(provider)}
-              >
-                {renderOAuthProviderIcon(provider, "size-4")}
-                <span className="min-w-0 truncate">{copy.loginWith[provider]}</span>
-                <span className="ml-1 inline-flex h-5 shrink-0 items-center rounded-full border border-primary-foreground/30 px-2 text-ui-xs font-medium leading-none text-primary-foreground/60">
-                  {copy.loginRegion[provider]}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : null}
-        {canRetry || isNotFound ? (
+        {canRetry || isNotFound || showLogin ? (
           <div className="mt-5 flex flex-wrap gap-2">
             {canRetry ? (
               <button
@@ -672,7 +624,7 @@ export function ConversationShareLandingStatus({
                 {copy.retry}
               </button>
             ) : null}
-            {isNotFound ? (
+            {isNotFound || showLogin ? (
               <a
                 className="rounded-md bg-primary px-4 py-2 text-ui-base text-primary-foreground"
                 href={KCODE_DOWNLOAD_URL}
@@ -691,7 +643,6 @@ export function ConversationShareLandingLoader({
   shareCode,
   client,
   getAccessToken,
-  onLogin,
   onLogout,
   locale,
   theme,
@@ -701,7 +652,6 @@ export function ConversationShareLandingLoader({
     getPreview: (shareCode: string, accessToken?: string) => Promise<ConversationSharePreview>;
   };
   getAccessToken?: () => string | null;
-  onLogin?: (provider: WebOAuthProviderId) => void;
   onLogout?: () => void;
   locale?: ConversationShareLandingLocale;
   theme?: Theme;
@@ -766,7 +716,6 @@ export function ConversationShareLandingLoader({
     <ConversationShareLandingStatus
       state={state}
       locale={locale}
-      onLogin={onLogin}
       onRetry={() => void load()}
     />
   );

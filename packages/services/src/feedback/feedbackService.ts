@@ -12,18 +12,14 @@ import { Emitter } from "@kcode/rpc";
 import { arch, platform, release, type as osType } from "node:os";
 
 import type { ICredentialService } from "../credential/credential.js";
-import type { IOAuthService } from "../oauth/oauth.js";
 import type { FeedbackUploadProgress, IFeedbackService } from "./feedback.js";
 import { FeedbackHttpClient, FeedbackUploadCanceledError } from "./feedbackHttpClient.js";
 import { cleanupLogArchive, prepareCompactLogArchive } from "./compactLogArchive.js";
 import { getFeedbackAttachmentDir } from "../paths.js";
 import { FeedbackLocalTicketStore } from "#src/feedback/feedbackLocalTicketStore.js";
 
-const KCODE_JWT_TOKEN_KEY = "kcodejwttoken";
-
 export interface CreateFeedbackServiceOptions {
   credentialService: ICredentialService;
-  oauthService: IOAuthService;
   apiClient: ApiClient;
   getDeviceMid?: () => string | undefined;
   apiBaseUrl?: string;
@@ -73,14 +69,6 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
     return deviceMid;
   }
 
-  async function getZcodeJwtToken(): Promise<string | undefined> {
-    return (await options.credentialService.load(KCODE_JWT_TOKEN_KEY))?.trim() || undefined;
-  }
-
-  async function hasZcodeJwtToken(): Promise<boolean> {
-    return Boolean(await getZcodeJwtToken());
-  }
-
   const httpClient = new FeedbackHttpClient({
     baseUrl: apiBaseUrl,
     apiClient: options.apiClient,
@@ -91,10 +79,6 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
       // 不单独生成 fb_ 身份，否则同一台机器在不同系统里会被拆成两个设备。
       if (deviceMid) {
         headers["X-Device-Mid"] = deviceMid;
-      }
-      const jwtToken = await getZcodeJwtToken();
-      if (jwtToken) {
-        headers.Authorization = `Bearer ${jwtToken}`;
       }
       return headers;
     },
@@ -138,9 +122,7 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
             signal: controller.signal,
           },
         );
-        if (!(await hasZcodeJwtToken())) {
-          await localTicketStore.upsert(requireHostDeviceMid(), ticket);
-        }
+        await localTicketStore.upsert(requireHostDeviceMid(), ticket);
         return ticket;
       } finally {
         if (operationId && activeCreateControllers.get(operationId) === controller) {
@@ -154,9 +136,6 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
       activeCreateControllers.get(key)?.abort();
     },
     list: async (query) => {
-      if (await hasZcodeJwtToken()) {
-        return httpClient.list(query);
-      }
       const items = await localTicketStore.list(requireHostDeviceMid(), query);
       return { items, total: items.length };
     },

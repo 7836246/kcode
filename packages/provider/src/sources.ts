@@ -1,10 +1,4 @@
-import {
-  ProviderConfig,
-  ProviderConfigMap,
-  ProviderTemplateMap,
-  ZhipuAccountAccessConfig,
-  type ModelConfigRules,
-} from "./config/index.js";
+import { ProviderConfigMap, ProviderTemplateMap, type ModelConfigRules } from "./config/index.js";
 import type { AccountProviderStates } from "./account-provider-state.js";
 
 export interface ProviderSource<TSnapshot> {
@@ -31,25 +25,11 @@ export interface AccountProviderConfigSnapshot {
   readonly states?: AccountProviderStates;
 }
 
-/** 首次 Account 事实尚未到达时，基于当前 Built-in 生成可发布的 fail-closed Overlay。 */
+/** 官方账号 overlay 已下线；空投影对齐 Built-in revision，不再合成 zhipu-account。 */
 export function createFailClosedAccountProviderConfigSnapshot(
   config: ProviderConfigSnapshot,
 ): AccountProviderConfigSnapshot {
-  const unentitledProviders = new ProviderConfigMap(
-    config.kcodeBuiltinProviders.entries().flatMap(([providerId, provider]) =>
-      provider.access?.type === "zhipu-account"
-        ? ([
-            [
-              providerId,
-              new ProviderConfig({
-                access: new ZhipuAccountAccessConfig({ entitled: false }),
-              }),
-            ],
-          ] as const)
-        : [],
-    ),
-  );
-  return createAccountProviderConfigSnapshot(config.kcodeBuiltinRevision, unentitledProviders);
+  return createAccountProviderConfigSnapshot(config.kcodeBuiltinRevision, ProviderConfigMap.empty());
 }
 
 export function createAccountProviderConfigSnapshot(

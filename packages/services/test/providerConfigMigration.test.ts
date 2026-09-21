@@ -121,6 +121,83 @@ test("startup preserves an existing personal config and never consults the legac
   }
 });
 
+test("leftover official zhipu-account and official template ids are skipped without crashing", async () => {
+  const fixture = await setup();
+  const leftover = JSON.stringify({
+    schemaVersion: 1,
+    config: {
+      providerConfigRules: {
+        providerRules: [
+          {
+            providerId: "leftover-zhipu-account",
+            providerName: "Leftover Zhipu",
+            config: {
+              group: "standard-personal",
+              access: {
+                type: "zhipu-account",
+                accountType: "zai",
+                mode: "individual-coding-plan",
+                entitled: true,
+              },
+              api: {
+                type: "openai-chat-completions",
+                baseUrl: "https://api.z.ai/api/coding/paas/v4",
+              },
+            },
+          },
+          {
+            providerId: "leftover-official-template",
+            templateId: "zai-api",
+            providerName: "Leftover Official Template",
+            config: {
+              group: "standard-personal",
+              access: { type: "api-key", apiKey: "leftover-key" },
+              api: {
+                type: "openai-chat-completions",
+                baseUrl: "https://api.z.ai/api/coding/paas/v4",
+              },
+            },
+          },
+          {
+            providerId: "account:zai-individual-coding-plan",
+            config: { group: "standard-personal" },
+          },
+          {
+            providerId: "keep-custom",
+            providerName: "Keep Custom",
+            config: {
+              group: "standard-personal",
+              access: { type: "api-key", apiKey: "keep-key" },
+              api: {
+                type: "openai-chat-completions",
+                baseUrl: "https://api.example.com/v1",
+              },
+            },
+          },
+        ],
+      },
+      modelConfigRules: { providerModelRules: [], manualProviderModelRules: [] },
+    },
+  });
+  try {
+    await writeFile(fixture.personalPath, leftover);
+    await fixture.runtime.start();
+    const config = await fixture.runtime.configService.read();
+    assert.deepEqual(fixture.recoveries, []);
+    assert.equal(config.personalProviders.has("leftover-zhipu-account"), false);
+    assert.equal(config.personalProviders.has("leftover-official-template"), false);
+    assert.equal(config.personalProviders.has("account:zai-individual-coding-plan"), false);
+    assert.equal(config.kcodeBuiltinProviders.has("zai-api"), false);
+    assert.equal(config.kcodeBuiltinProviderTemplates.has("zai-api"), false);
+    const keep = config.personalProviders.getRule("keep-custom");
+    assert.ok(keep);
+    assert.equal(keep.config.access?.toJSON().apiKey, "keep-key");
+    assert.equal(await readFile(fixture.personalPath, "utf8"), leftover);
+  } finally {
+    await fixture.dispose();
+  }
+});
+
 test("invalid legacy config is preserved and does not commit an empty personal config", async () => {
   const fixture = await setup();
   try {

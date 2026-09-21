@@ -1,25 +1,13 @@
-import {
-  isBuiltinModelProviderId,
-  isKCodeAgentProvider,
-  resolveModelProviderFamilySpecByProviderId,
-  kcodeProviderAccountAccessSchema,
-  type KCodeProviderAccountAccess,
-  type KCodeProvider,
-} from "@kcode/shared";
+import { isKCodeAgentProvider, type KCodeProvider } from "@kcode/shared";
 import type { ModelSelectionView } from "@kcode/services";
 import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
 import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/kcodeCustomModelValue.js";
 import { shouldShowModelVisionBadge } from "@/lib/modelVisionBadge.js";
+import { isLeftoverOfficialAccountProvider } from "@/lib/leftoverOfficialAccountProvider.js";
 
 export interface ModelProviderGroupLabelOptions {
   apiKeyLabel?: string;
   apiKeyBadgeLabel?: string;
-  codingPlanLabel?: string;
-  codingPlanBadgeLabel?: string;
-  startPlanLabel?: string;
-  startPlanBadgeLabel?: string;
-  teamPlanBadgeLabel?: string;
-  teamPlanFallbackLabel?: string;
 }
 
 function supportsRegistryApiFormat(
@@ -27,34 +15,31 @@ function supportsRegistryApiFormat(
   apiFormat: string | null | undefined,
 ): boolean {
   if (!apiFormat) return false;
-  // 仅剩 glm（KCode Agent）provider；三方 CLI 的 api format 差异已随 provider 下线。
   return isKCodeAgentProvider(selectedProvider);
 }
 
 export function buildRegistryModelSelectGroups(
   selectedProvider: KCodeProvider,
   view: ModelSelectionView,
-  labels: ModelProviderGroupLabelOptions = {},
+  _labels: ModelProviderGroupLabelOptions = {},
 ): ModelSelectGroup[] {
   return view.providers.flatMap((provider) => {
-    if (isBuiltinModelProviderId(provider.providerId)) {
+    if (
+      isLeftoverOfficialAccountProvider({
+        providerId: provider.providerId,
+        accessType: provider.config.access?.type,
+      })
+    ) {
       return [];
     }
     if (!supportsRegistryApiFormat(selectedProvider, provider.config.api?.type)) {
       return [];
     }
 
-    const accountAccess = kcodeProviderAccountAccessSchema.safeParse(provider.config.access);
-    const accountPresentation = accountAccess.success
-      ? getRegistryAccountProviderGroupPresentation(provider.providerId, accountAccess.data, labels)
-      : null;
-
     return [
       {
         key: `registry-provider:${provider.providerId}`,
-        label: accountPresentation?.label || provider.providerName?.trim() || provider.providerId,
-        ...(accountPresentation?.labelBadge ? { labelBadge: accountPresentation.labelBadge } : {}),
-        ...(accountPresentation ? { directItems: true } : {}),
+        label: provider.providerName?.trim() || provider.providerId,
         items: provider.models.map(({ modelId, config }) => ({
           key: `registry-provider:${provider.providerId}:${modelId}`,
           value: encodeCustomModelValue(provider.providerId, modelId),
@@ -70,22 +55,6 @@ export function buildRegistryModelSelectGroups(
       },
     ];
   });
-}
-
-function getRegistryAccountProviderGroupPresentation(
-  providerId: string,
-  access: KCodeProviderAccountAccess,
-  labels: ModelProviderGroupLabelOptions,
-): Pick<ModelSelectGroup, "label" | "labelBadge"> {
-  const familySpec = resolveModelProviderFamilySpecByProviderId(providerId);
-  const label = familySpec?.label ?? providerId;
-  if (access.mode === "start-plan") {
-    return { label: "Start Plan", labelBadge: labels.startPlanBadgeLabel ?? "Free" };
-  }
-  if (access.mode === "team-coding-plan") {
-    return { label, labelBadge: labels.teamPlanBadgeLabel ?? "Team" };
-  }
-  return { label, labelBadge: labels.codingPlanBadgeLabel ?? "Individual" };
 }
 
 export function resolveModelDisplayName(

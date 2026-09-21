@@ -30,7 +30,7 @@ const OAUTH_CREDENTIAL_KEYS = new Set<string>(PROVIDER_PROVISIONING_OAUTH_CREDEN
 export interface ProviderProvisioningTargetOptions {
   readonly providerRuntime: ProviderRuntime;
   readonly personalRepository: PersonalProviderConfigRepository;
-  readonly accountProviderSource: AccountProviderService;
+  readonly accountProviderSource?: AccountProviderService;
   readonly credentialService: ICredentialService;
   readonly settingService: ISettingService;
   readonly personalConfigFilePath: string;
@@ -107,7 +107,7 @@ export function createProviderProvisioningTarget(
             return personalUpdate;
           });
 
-          await options.accountProviderSource.refresh("provider-provisioning");
+          await options.accountProviderSource?.refresh("provider-provisioning");
           const snapshot =
             await options.providerRuntime.registryService.refresh("provider-provisioning");
           if (
@@ -265,7 +265,7 @@ async function rollback(
     return new Error(errors.map(formatError).join("；"));
   }
   try {
-    await options.accountProviderSource.refresh("provider-provisioning-rollback");
+    await options.accountProviderSource?.refresh("provider-provisioning-rollback");
     await options.providerRuntime.registryService.refresh("provider-provisioning-rollback");
   } catch (error) {
     return error instanceof Error ? error : new Error(String(error));
@@ -299,6 +299,19 @@ function sameAccountSettings(
   return JSON.stringify(toProvisioningAccountSettings(current)) === JSON.stringify(expected);
 }
 
+function isLeftoverOfficialProvisioningCredential(entry: {
+  scope: ProviderProvisioningEnvelope["credentials"][number]["scope"];
+  key: string;
+}): boolean {
+  return (
+    entry.scope === "oauth-session" ||
+    entry.scope === "account-provider" ||
+    entry.key.startsWith("oauth:") ||
+    entry.key === "kcodejwttoken" ||
+    isProviderProvisioningAccountCredentialKey(entry.key)
+  );
+}
+
 function validateCredentialEntries(envelope: ProviderProvisioningEnvelope): void {
   const seen = new Set<string>();
   for (const entry of envelope.credentials) {
@@ -307,7 +320,10 @@ function validateCredentialEntries(envelope: ProviderProvisioningEnvelope): void
     const allowed =
       (entry.scope === "oauth-session" && OAUTH_CREDENTIAL_KEYS.has(entry.key)) ||
       (entry.scope === "account-provider" && isProviderProvisioningAccountCredentialKey(entry.key));
-    if (!allowed) throw new Error(`不允许同步的 Credential key: ${entry.key}`);
+    if (allowed) continue;
+    // 残留官方账号凭据不再同步，也不能让旧信封整份失败。
+    if (isLeftoverOfficialProvisioningCredential(entry)) continue;
+    throw new Error(`不允许同步的 Credential key: ${entry.key}`);
   }
 }
 

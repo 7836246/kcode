@@ -1,4 +1,3 @@
-import { BUILTIN_PROVIDER_TEMPLATE_IDS } from "@kcode/shared";
 import {
   ApiKeyAccessConfig,
   ModelConfig,
@@ -43,27 +42,7 @@ export function importLegacyPersonalProviderConfig(
   for (const legacy of input.legacyProviders) {
     const providerId = legacy.id.trim();
     if (!providerId) continue;
-    // 已发布 config.json 也把 builtin:* 标成 custom；保留身份必须先于 source。
-    // 只有按量 API 的 Key 是用户输入，模板关联使用当前身份；旧文件仅为回滚保留，不持续双写。
-    const apiTemplateId =
-      providerId === "builtin:bigmodel"
-        ? BUILTIN_PROVIDER_TEMPLATE_IDS.bigmodel
-        : providerId === "builtin:zai"
-          ? BUILTIN_PROVIDER_TEMPLATE_IDS.zai
-          : undefined;
-    if (apiTemplateId) {
-      const apiKey = legacy.apiKey.trim();
-      if (apiKey)
-        providers = providers.setRule({
-          providerId: apiTemplateId,
-          templateId: apiTemplateId,
-          config: new ProviderConfig({
-            group: "standard-personal",
-            access: new ApiKeyAccessConfig({ apiKey }),
-          }),
-        });
-      continue;
-    }
+    // 官方内置 / 账号供应商已下线；残留 ID 不得再映射成可用模板。
     if (providerId.startsWith("builtin:") || providerId.startsWith("account:")) continue;
     // Built-in 整体由当前 KCode Built-in Config 与 Account Overlay 重建；models-dev 已
     // 退役，workspace 也不是全局 Personal 输入。只允许旧自定义 Provider 进入新文件。

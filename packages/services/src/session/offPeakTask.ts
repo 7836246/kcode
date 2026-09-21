@@ -6,8 +6,16 @@ import type {
   KCodeOffPeakTaskCreateParams,
   ModelSelection,
 } from "@kcode/shared";
+import type { ModelSelectionView } from "@kcode/provider";
 import { ServiceChannels } from "@kcode/shared";
 import { createServiceDescriptor } from "../descriptors.js";
+
+/** 闲时灰度快照。官方套餐下线后只作本地关闭门；不再向 Z.ai 取号。 */
+export interface OffPeakClientConfig {
+  readonly enabled: boolean;
+  readonly modelSelectionView: ModelSelectionView;
+  readonly codingPlanActive?: boolean;
+}
 
 // 闲时任务管理服务通道（与 automation 服务面互不复用）。
 // renderer 经 ProxyChannel 直连（codingPlanSubscription 同款范式）；

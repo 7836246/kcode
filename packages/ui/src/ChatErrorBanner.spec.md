@@ -12,7 +12,7 @@ KCode 只通过配置供应商和模型使用，不再提供编程套餐购买�
 
 额度横幅、侧栏、设置套餐卡和输入框用量入口也不再打开购买/升级弹窗。
 
-运行时 entitlement / OAuth 协议可保留，产品不再挂载 `CodingPlanUpgradeDialog`。
+官方 entitlement / OAuth / 套餐协议已从运行时移除，产品不再挂载购买或升级页。
 
 ## 所有者
 

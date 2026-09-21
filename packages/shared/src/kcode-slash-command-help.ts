@@ -19,19 +19,17 @@ export const BUILTIN_KCODE_SLASH_COMMAND_HELP_ENTRIES: readonly BuiltinKCodeSlas
     },
     {
       details: [
-        "Opens a Coding Plan setup picker when called without arguments.",
-        "Z.ai and BigModel browser login poll for authorization, then securely save credentials and refresh available models.",
-        "Manual API key variants accept the API key as an argument.",
+        "Official Z.ai / BigModel login is no longer supported.",
+        "Configure a generic API-key provider instead.",
       ],
       name: "login",
-      summary: "Set up a Coding Plan provider.",
-      usage:
-        "/login [zai-coding-plan|bigmodel-coding-plan|zai-coding-plan-api-key <api-key>|bigmodel-coding-plan-api-key <api-key>]",
+      summary: "Official account login is no longer supported.",
+      usage: "/login",
     },
     {
-      details: ["Deletes Z.ai OAuth credentials from the shared KCode credential store."],
+      details: ["Clears leftover official account credentials from the shared KCode credential store."],
       name: "logout",
-      summary: "Remove the shared Z.ai login credentials.",
+      summary: "Clear leftover official account credentials.",
       usage: "/logout",
     },
     {

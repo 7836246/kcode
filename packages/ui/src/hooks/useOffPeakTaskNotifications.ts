@@ -19,7 +19,7 @@ function notifiableStatus(status: KCodeOffPeakTaskStatus): "completed" | "failed
 }
 
 export function useOffPeakTaskNotifications(params: {
-  offPeakTaskService: IOffPeakTaskService;
+  offPeakTaskService?: IOffPeakTaskService;
   platform: Pick<IPlatformService, "showTaskNotification"> | null | undefined;
   enabled: boolean;
   formatMessage: IntlInstance["formatMessage"];
@@ -29,7 +29,7 @@ export function useOffPeakTaskNotifications(params: {
   const seenStatusRef = useRef(new Map<string, KCodeOffPeakTaskStatus>());
 
   useEffect(() => {
-    if (!enabled || !platform) return;
+    if (!enabled || !platform || !offPeakTaskService) return;
     let disposed = false;
 
     const tick = async () => {

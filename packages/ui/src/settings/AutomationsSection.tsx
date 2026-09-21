@@ -1,10 +1,8 @@
-import { useCodingPlanEntryGate } from "@/settings/CodingPlanEntryButton.js";
 /* eslint-disable max-lines -- 定时任务主视图集中维护列表、创建/编辑整页路由与启停/删除操作，集中更利于交互一致。 */
 import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ComponentType,
   type SVGProps,
@@ -57,7 +55,6 @@ import {
   type AutomationRunNowResult,
 } from "@/store/automationManagementStore.js";
 import {
-  isCurrentOffPeakCodingPlanSupported,
   resolveOffPeakCreateErrorMessageId,
   useOffPeakTaskStore,
   type OffPeakCreateDraft,
@@ -526,7 +523,6 @@ export function AutomationsSection({
   const providerSettingsRead = useProviderSettingsView();
   const providerSettingsView =
     providerSettingsRead.state.status === "ready" ? providerSettingsRead.state.view : null;
-  const { status: entryStatus, label: entryLabel, retry: retryEntry } = useCodingPlanEntryGate();
   const { settings: sharedSettings, update: updateSharedSettings } = useSettings();
   useOffPeakEligibility(sharedSettings, providerSettingsView?.revision);
 
@@ -550,7 +546,6 @@ export function AutomationsSection({
   const offPeakTasks = useOffPeakTaskStore((state) => state.tasks);
   const offPeakStoreLoading = useOffPeakTaskStore((state) => state.loading);
   const offPeakGrayConfig = useOffPeakTaskStore((state) => state.grayConfig);
-  const offPeakCodingPlanSupport = useOffPeakTaskStore((state) => state.codingPlanSupport);
   const offPeakTakeNumberAvailability = useOffPeakTaskStore(
     (state) => state.takeNumberAvailability,
   );
@@ -559,9 +554,6 @@ export function AutomationsSection({
   );
   const offPeakOperationId = useOffPeakTaskStore((state) => state.operationId);
   const offPeakRefresh = useOffPeakTaskStore((state) => state.refresh);
-  const offPeakRefreshCodingPlanSupport = useOffPeakTaskStore(
-    (state) => state.refreshCodingPlanSupport,
-  );
   const offPeakRefreshTakeNumberAvailability = useOffPeakTaskStore(
     (state) => state.refreshTakeNumberAvailability,
   );
@@ -618,13 +610,6 @@ export function AutomationsSection({
   // 灰度中途翻转：只藏创建入口；有非终态存量仍展示并跑到终态。
   const offPeakGrayEnabled = offPeakGrayConfig?.enabled === true;
   const offPeakCreationEnabled = offPeakGrayEnabled && !currentWorkspaceIsRemote;
-  // 扫描全部 provider 会把未选中的 Coding Plan 当成当前执行凭证。
-  // mock 演示字段仍可覆盖；真实路径只接受与当前 family/selectedKey 一致的脱敏 resolver 快照。
-  const offPeakNoPlan =
-    offPeakGrayConfig?.codingPlanActive === false ||
-    (offPeakGrayConfig?.codingPlanActive === undefined &&
-      !offPeakStoreLoading &&
-      !isCurrentOffPeakCodingPlanSupported(offPeakCodingPlanSupport, sharedSettings));
   const offPeakVisible =
     !currentWorkspaceIsRemote && (offPeakGrayEnabled || offPeakTasks.length > 0);
   const hasAnyTasks = automations.length > 0 || offPeakTasks.length > 0;
@@ -654,31 +639,27 @@ export function AutomationsSection({
       availabilityStatus: offPeakTakeNumberAvailabilityStatus,
       canTakeNumber: offPeakTakeNumberAvailability?.canTakeNumber,
       grayEnabled: offPeakGrayEnabled,
-      noPlan: offPeakNoPlan,
     });
     const tooltip =
-      reason === "plan"
-        ? intl.formatMessage({ id: "offPeak.create.codingPlanOnly" })
-        : reason === "unavailable"
-          ? intl.formatMessage({ id: "offPeak.create.availabilityUnavailable" })
-          : reason === "quota" && offPeakTakeNumberAvailability?.nextTakeAt !== undefined
-            ? intl.formatMessage(
-                { id: "offPeak.create.limitReachedAt" },
-                {
-                  time: formatOffPeakRemainingWait(
-                    offPeakTakeNumberAvailability.nextTakeAt,
-                    now,
-                    intl,
-                  ),
-                },
-              )
-            : undefined;
+      reason === "unavailable"
+        ? intl.formatMessage({ id: "offPeak.create.availabilityUnavailable" })
+        : reason === "quota" && offPeakTakeNumberAvailability?.nextTakeAt !== undefined
+          ? intl.formatMessage(
+              { id: "offPeak.create.limitReachedAt" },
+              {
+                time: formatOffPeakRemainingWait(
+                  offPeakTakeNumberAvailability.nextTakeAt,
+                  now,
+                  intl,
+                ),
+              },
+            )
+          : undefined;
     return { reason, tooltip };
   }, [
     intl,
     now,
     offPeakGrayEnabled,
-    offPeakNoPlan,
     offPeakTakeNumberAvailability,
     offPeakTakeNumberAvailabilityStatus,
   ]);
@@ -766,7 +747,9 @@ export function AutomationsSection({
     const delay = Math.max(0, nextTakeAt - Date.now()) + 100;
     const timer = setTimeout(() => {
       setNow(Date.now());
-      void offPeakRefreshTakeNumberAvailability(offPeakTaskService);
+      if (offPeakTaskService) {
+        void offPeakRefreshTakeNumberAvailability(offPeakTaskService);
+      }
     }, delay);
     return () => clearTimeout(timer);
   }, [offPeakRefreshTakeNumberAvailability, offPeakTaskService, offPeakTakeNumberAvailability]);
@@ -788,7 +771,9 @@ export function AutomationsSection({
   useEffect(() => {
     if (view.mode !== "list" || offPeakTasks.length === 0) return;
     const timer = setInterval(() => {
-      void offPeakRefresh(offPeakTaskService);
+      if (offPeakTaskService) {
+        void offPeakRefresh(offPeakTaskService);
+      }
     }, 10_000);
     return () => clearInterval(timer);
   }, [view.mode, offPeakTasks.length, offPeakRefresh, offPeakTaskService]);
@@ -798,21 +783,13 @@ export function AutomationsSection({
     try {
       await Promise.all([
         refresh(kcodeAgentService),
-        offPeakRefresh(offPeakTaskService),
-        ...(offPeakGrayEnabled ? [offPeakRefreshCodingPlanSupport(offPeakTaskService)] : []),
+        ...(offPeakTaskService ? [offPeakRefresh(offPeakTaskService)] : []),
       ]);
       setNow(Date.now());
     } finally {
       setRefreshing(false);
     }
-  }, [
-    offPeakGrayEnabled,
-    offPeakRefresh,
-    offPeakRefreshCodingPlanSupport,
-    offPeakTaskService,
-    refresh,
-    kcodeAgentService,
-  ]);
+  }, [offPeakRefresh, offPeakTaskService, refresh, kcodeAgentService]);
 
   // New task 页模板卡跳转过来：消费预填草稿 → 切 idle tab + 打开创建表单预填。
   useEffect(() => {
@@ -833,18 +810,6 @@ export function AutomationsSection({
     );
   }, [currentWorkspaceIsRemote]);
 
-  const showCodingPlanRequiredToast = useCallback(() => {
-    toast(entryLabel ?? intl.formatMessage({ id: "offPeak.create.codingPlanToast" }), {
-      durationMs: 8000,
-      position: "top-center",
-      variant: "info",
-      actionLabel: entryStatus === "error" ? entryLabel : undefined,
-      onAction: entryStatus === "error" ? retryEntry : undefined,
-      dismissible: true,
-      dismissLabel: intl.formatMessage({ id: "common.close" }),
-    });
-  }, [intl, entryStatus, entryLabel, retryEntry]);
-
   const showAutomationCreateLimitToast = useCallback(() => {
     toast(
       intl.formatMessage(
@@ -864,6 +829,7 @@ export function AutomationsSection({
   useEffect(() => {
     if (!isOffPeakDetailNavigationId(openAutomationId)) return;
     let disposed = false;
+    if (!offPeakTaskService) return;
     void offPeakRefresh(offPeakTaskService).finally(() => {
       if (disposed) return;
       // review：refresh 不 reject，失败只写 store.error；把它随就绪信号一起带出。
@@ -1215,7 +1181,7 @@ export function AutomationsSection({
         ),
         confirmLabel: intl.formatMessage({ id: "offPeak.action.cancel" }),
       });
-      if (!confirmed) return;
+      if (!confirmed || !offPeakTaskService) return;
       await offPeakCancel(task.offPeakTaskId, offPeakTaskService);
       const message = useOffPeakTaskStore.getState().error;
       if (message) toast(message);
@@ -1230,7 +1196,7 @@ export function AutomationsSection({
         description: intl.formatMessage({ id: "offPeak.delete.description" }),
         confirmLabel: intl.formatMessage({ id: "offPeak.delete.confirm" }),
       });
-      if (!confirmed) return;
+      if (!confirmed || !offPeakTaskService) return;
       await offPeakDelete(task.offPeakTaskId, offPeakTaskService);
       const message = useOffPeakTaskStore.getState().error;
       if (message) toast(message);
@@ -1245,6 +1211,7 @@ export function AutomationsSection({
 
   const handleOffPeakDeleteHistory = useCallback(
     async (task: KCodeOffPeakTask) => {
+      if (!offPeakTaskService) return;
       await offPeakDeleteHistory(task.offPeakTaskId, offPeakTaskService);
       const message = useOffPeakTaskStore.getState().error;
       if (message) toast(message);
@@ -1264,9 +1231,7 @@ export function AutomationsSection({
             })
           : null;
       if (current.mode !== "offpeak-edit" && offPeakCreateGrey.reason !== null) {
-        if (offPeakCreateGrey.reason === "plan") {
-          showCodingPlanRequiredToast();
-        } else if (offPeakCreateGrey.reason === "unavailable") {
+        if (offPeakCreateGrey.reason === "unavailable") {
           toast(intl.formatMessage({ id: "offPeak.error.unavailable" }));
         } else {
           toast(offPeakCreateGrey.tooltip ?? intl.formatMessage({ id: "offPeak.error.quota" }));
@@ -1282,6 +1247,7 @@ export function AutomationsSection({
         }
         return false;
       }
+      if (!offPeakTaskService) return false;
       if (current.mode === "offpeak-edit") {
         const updated = await offPeakUpdate(
           current.task.offPeakTaskId,
@@ -1321,7 +1287,6 @@ export function AutomationsSection({
       offPeakTaskService,
       offPeakUpdate,
       platform,
-      showCodingPlanRequiredToast,
       view,
     ],
   );
@@ -1362,8 +1327,14 @@ export function AutomationsSection({
           onOpenSession={onOpenSession}
           onDelete={(task) => void handleOffPeakDelete(task)}
           onDeleteHistory={(task) => void handleOffPeakDeleteHistory(task)}
-          onPause={(task) => void offPeakPause(task.offPeakTaskId, offPeakTaskService)}
-          onContinue={(task) => void offPeakContinue(task.offPeakTaskId, offPeakTaskService)}
+          onPause={(task) => {
+            if (!offPeakTaskService) return;
+            void offPeakPause(task.offPeakTaskId, offPeakTaskService);
+          }}
+          onContinue={(task) => {
+            if (!offPeakTaskService) return;
+            void offPeakContinue(task.offPeakTaskId, offPeakTaskService);
+          }}
           showToast={toast}
         />
       </>
@@ -1582,10 +1553,14 @@ export function AutomationsSection({
                       tasks={visibleOffPeakTasks}
                       busyOperationId={offPeakOperationId}
                       onOpen={handleOffPeakOpen}
-                      onPause={(task) => void offPeakPause(task.offPeakTaskId, offPeakTaskService)}
-                      onContinue={(task) =>
-                        void offPeakContinue(task.offPeakTaskId, offPeakTaskService)
-                      }
+                      onPause={(task) => {
+                        if (!offPeakTaskService) return;
+                        void offPeakPause(task.offPeakTaskId, offPeakTaskService);
+                      }}
+                      onContinue={(task) => {
+                        if (!offPeakTaskService) return;
+                        void offPeakContinue(task.offPeakTaskId, offPeakTaskService);
+                      }}
                       onCancel={(task) => void handleOffPeakCancel(task)}
                       onDelete={(task) => void handleOffPeakDelete(task)}
                       onOpenSession={handleOffPeakOpenSession}
@@ -1867,15 +1842,10 @@ export function AutomationsSection({
               ) : (
                 <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                   {automationTemplates.offPeak.map((template) => {
-                    const planLocked = offPeakCreateGrey.reason === "plan";
                     const card = (
                       <button
                         type="button"
                         onClick={() => {
-                          if (planLocked) {
-                            showCodingPlanRequiredToast();
-                            return;
-                          }
                           const materializedDraft = materializeOffPeakTemplateDraft(
                             template,
                             locale,

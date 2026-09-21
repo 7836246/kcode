@@ -53,7 +53,7 @@ export function OccupationOnboarding({
   const shortcutBindings = useEffectiveShortcutBindings();
   const requested = useKCodeStore((state) => state.newUserOnboardingOpen);
   const setRequested = useKCodeStore((state) => state.setNewUserOnboardingOpen);
-  // 登录态变化（useRootOAuthEffects 登录成功后 setUser）时按 userId 重新判定是否触发引导。
+  // 用户身份变化时按 userId 重新判定是否触发引导。
   const userId = useKCodeStore((state) => state.user?.id) ?? null;
   const { intl } = useKCodeIntl();
   const t = (key: string) => intl.formatMessage({ id: `occupationOnboarding.${key}` });

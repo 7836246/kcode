@@ -21,6 +21,10 @@ import {
 } from "./config/index.js";
 import { resolveOwnedOrder } from "./owned-order.js";
 import type { AccountProviderStates } from "./account-provider-state.js";
+import {
+  isRetiredOfficialProvider,
+  omitRetiredOfficialProviders,
+} from "./retiredOfficialProviders.js";
 
 export type RegistryZhipuAccountAccessConfig = ZhipuAccountAccessConfig &
   z.infer<typeof completeZhipuAccountAccessDataSchema>;
@@ -181,13 +185,10 @@ export interface ProviderConfigResolution {
 
 export class ProviderConfigResolver {
   resolve(input: ProviderConfigResolverInput): ProviderConfigResolution {
-    const accountProviders = new ProviderConfigMap(
-      input.accountProviders
-        .entries()
-        .filter(([providerId]) => input.kcodeBuiltinProviders.has(providerId))
-        .map(([providerId, config]) => [providerId, config.withoutGroup()] as const),
-    );
-    const concreteBuiltinProviders = input.kcodeBuiltinProviders.overlay(accountProviders);
+    // 官方账号 overlay 已下线；残留 zhipu-account / 官方模板不得进入可用 Registry。
+    const kcodeBuiltinProviders = omitRetiredOfficialProviders(input.kcodeBuiltinProviders);
+    const personalProvidersInput = omitRetiredOfficialProviders(input.personalProviders);
+    const concreteBuiltinProviders = kcodeBuiltinProviders;
     const providerTemplates = input.kcodeBuiltinProviderTemplates;
     const effectiveBuiltinProviders = concreteBuiltinProviders.mapConfigs((concrete, _id, rule) => {
       const template = rule.templateId
@@ -195,7 +196,7 @@ export class ProviderConfigResolver {
         : undefined;
       return template ? template.overlay(concrete) : concrete;
     });
-    const personalProviders = input.personalProviders.mapConfigs((config, providerId) =>
+    const personalProviders = personalProvidersInput.mapConfigs((config, providerId) =>
       effectiveBuiltinProviders.has(providerId) ? config.withoutGroup() : config,
     );
     const templatePersonalProviders = personalProviders.mapConfigs((personal, providerId, rule) => {
@@ -214,11 +215,15 @@ export class ProviderConfigResolver {
     const resolvedProviders: ResolvedProvider[] = [];
     const registryProviders: Provider[] = [];
 
-    for (const providerId of resolveProviderOrder(input, effectiveProviders)) {
+    for (const providerId of resolveProviderOrder(
+      { ...input, kcodeBuiltinProviders, personalProviders: personalProvidersInput },
+      effectiveProviders,
+    )) {
       const rule = effectiveProviders.getRule(providerId)!;
+      if (isRetiredOfficialProvider(rule)) continue;
       const { config, providerName } = rule;
-      // 账号不再支持总禁用；旧覆盖值不能让无开关的账号永久失效，其他资格仍正常校验。
-      const enabled = config.access?.type === "zhipu-account" || (rule.enabled ?? true);
+      // 残留官方账号不得启用；普通供应商仍按规则开关。
+      const enabled = config.access?.type === "zhipu-account" ? false : (rule.enabled ?? true);
       const providerPath = ["providers", providerId];
       const registryProviderResult = createRegistryProviderConfig(config, providerPath);
       const providerIssues: ConfigValidationIssue[] = registryProviderResult.ok
@@ -356,21 +361,12 @@ function resolveProviderOrder(
   input: ProviderConfigResolverInput,
   effectiveProviders: ProviderConfigMap,
 ): readonly ProviderId[] {
-  const sourceIds = effectiveProviders.keys();
-  const familyIds = sourceIds.filter((providerId) => {
-    const group = effectiveProviders.get(providerId)?.group;
-    return group === "zai-family" || group === "bigmodel-family";
-  });
-  const familySet = new Set(familyIds);
   const builtinIds = input.kcodeBuiltinProviders
     .keys()
-    .filter((providerId) => !familySet.has(providerId));
+    .filter((providerId) => effectiveProviders.has(providerId));
   const builtinSet = new Set(builtinIds);
   const personalIds = input.personalProviders
     .keys()
-    .filter((providerId) => !builtinSet.has(providerId) && !familySet.has(providerId));
-  return [
-    ...familyIds,
-    ...resolveOwnedOrder(builtinIds, personalIds, input.personalProviderOrder ?? []),
-  ];
+    .filter((providerId) => !builtinSet.has(providerId) && effectiveProviders.has(providerId));
+  return [...resolveOwnedOrder(builtinIds, personalIds, input.personalProviderOrder ?? [])];
 }

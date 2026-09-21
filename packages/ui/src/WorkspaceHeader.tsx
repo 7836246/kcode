@@ -5,8 +5,8 @@ import type {
   EditorInfo,
   GitRepositorySummary,
   RemoteTarget,
-  UserInfo,
 } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 import { useState } from "react";
 import { TID_WORKSPACE_HEADER } from "@kcode/shared";
 import type { ConversationDropTargetController } from "@/v4/composer/conversationDropTarget.js";

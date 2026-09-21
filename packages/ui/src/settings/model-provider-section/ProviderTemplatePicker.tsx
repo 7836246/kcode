@@ -3,7 +3,6 @@ import { ArrowLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { resolveProviderTemplateName } from "@kcode/provider";
 import type { ReactNode } from "react";
 import {
-  isOfficialZhipuProviderTemplateId,
   TID_MODEL_PROVIDER_TEMPLATE_BACK_BUTTON,
   TID_MODEL_PROVIDER_TEMPLATE_ITEM,
   TID_MODEL_PROVIDER_TEMPLATE_PICKER,
@@ -38,9 +37,7 @@ export function ProviderTemplatePicker({
   const groups = [
     {
       id: "other" as const,
-      templates: templates.filter(
-        (template) => !isOfficialZhipuProviderTemplateId(template.templateId),
-      ),
+      templates,
     },
   ];
   const createWithFeedback = async (create: () => Promise<void>) => {

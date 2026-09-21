@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- 模型供应商 schema、迁移和运行时投影 helper 需要共享同一套类型边界，暂时集中在单文件避免契约分散。 */
 export const BUILTIN_PROVIDER_TEMPLATE_IDS = {
   zai: "zai-api",
   bigmodel: "bigmodel-api",
@@ -16,6 +15,7 @@ export function isOfficialZhipuProviderTemplateId(templateId: string): boolean {
   return (OFFICIAL_ZHIPU_PROVIDER_TEMPLATE_IDS as readonly string[]).includes(templateId);
 }
 
+/** 残留官方账号 provider id，供历史迁移 / telemetry 编译；不再作为登录入口。 */
 export const BUILTIN_MODEL_PROVIDER_IDS = {
   zaiIndividualCodingPlan: "account:zai-individual-coding-plan",
   zaiTeamCodingPlan: "account:zai-team-coding-plan",

@@ -24,14 +24,7 @@ import {
   formatSlashCommandHelp,
   parseSlashCommand,
 } from "./slash-commands.js";
-import {
-  buildLoginSelection,
-  emitLoginAuthorizeMessage,
-  formatLoginResult,
-  formatProviderSetupResult,
-  loginSetupResponse,
-  parseApiKeyLoginArgs,
-} from "./login-flow.js";
+import { loginSetupResponse, officialLoginUnsupportedMessage } from "./login-flow.js";
 import { loginRequiredResponse } from "../tui-login-state.js";
 import type { CommandCenterDeps } from "./types.js";
 
@@ -83,98 +76,10 @@ export function createCommandCenter(deps: CommandCenterDeps): TuiSubmitPrompt {
       }
 
       if (command.name === "login") {
-        if (command.args.length === 0) {
-          return {
-            loginRequired: await isLoginRequired(deps),
-            mode: deps.getMode?.(),
-            response: loginSetupResponse(deps.getLocale?.()),
-            selection: buildLoginSelection(deps.getLocale?.()),
-          };
-        }
-        if (command.args === "zai-coding-plan") {
-          if (!deps.login) {
-            return {
-              mode: deps.getMode?.(),
-              response: "Z.AI Coding Plan login is not available in this client.",
-            };
-          }
-
-          return {
-            loginRequired: false,
-            mode: deps.getMode?.(),
-            response: formatLoginResult(
-              await deps.login({
-                abortSignal: options.abortSignal,
-                onAuthorizeUrl: async (data) => {
-                  await emitLoginAuthorizeMessage(
-                    options,
-                    data.authorize_url,
-                    "Z.AI",
-                    await deps.getApp(),
-                  );
-                },
-              }),
-            ),
-          };
-        }
-        if (command.args === "bigmodel-coding-plan") {
-          if (!deps.loginBigmodel) {
-            return {
-              mode: deps.getMode?.(),
-              response: "BigModel Coding Plan login is not available in this client.",
-            };
-          }
-
-          return {
-            loginRequired: false,
-            mode: deps.getMode?.(),
-            response: formatProviderSetupResult(
-              await deps.loginBigmodel({
-                abortSignal: options.abortSignal,
-                onAuthorizeUrl: async (data) => {
-                  await emitLoginAuthorizeMessage(
-                    options,
-                    data.authorize_url,
-                    "BigModel",
-                    await deps.getApp(),
-                  );
-                },
-              }),
-            ),
-          };
-        }
-
-        const apiKeyCommand = parseApiKeyLoginArgs(command.args);
-        if (apiKeyCommand) {
-          if (!deps.configureApiKey) {
-            return {
-              mode: deps.getMode?.(),
-              response: "Manual API key setup is not available in this client.",
-            };
-          }
-          if (!apiKeyCommand.apiKey) {
-            return {
-              loginRequired: await isLoginRequired(deps),
-              mode: deps.getMode?.(),
-              response: `Usage: /login ${apiKeyCommand.kind} <api-key>`,
-            };
-          }
-          return {
-            loginRequired: false,
-            mode: deps.getMode?.(),
-            response: formatProviderSetupResult(
-              await deps.configureApiKey({
-                apiKey: apiKeyCommand.apiKey,
-                providerId: apiKeyCommand.providerId,
-              }),
-            ),
-          };
-        }
-
         return {
+          loginRequired: await isLoginRequired(deps),
           mode: deps.getMode?.(),
-          response:
-            "Usage: /login [zai-coding-plan|bigmodel-coding-plan|zai-coding-plan-api-key <api-key>|bigmodel-coding-plan-api-key <api-key>]",
+          response: loginSetupResponse(deps.getLocale?.()) || officialLoginUnsupportedMessage(),
         };
       }
 
@@ -195,7 +100,7 @@ export function createCommandCenter(deps: CommandCenterDeps): TuiSubmitPrompt {
         const result = await deps.logout();
         return {
           mode: deps.getMode?.(),
-          response: `Logged out from Coding Plan accounts. Credentials: ${result.credentialsPath}`,
+          response: `Cleared leftover official account credentials: ${result.credentialsPath}`,
         };
       }
 

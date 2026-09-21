@@ -1,43 +1,44 @@
-import { mapKCodeEnvToArmsRumEnv, KCODE_ARMS_RUM_ENDPOINT, KCODE_VERSION } from "@kcode/shared";
+import { mapKCodeEnvToArmsRumEnv, KCODE_ARMS_RUM_ENDPOINT, KCODE_VERSION, } from "@kcode/shared";
 /** 主进程 init 的 browserCollectors，经 autoInject 注入到 renderer 的 RumSDK.init(collectors) */
 export const ARMS_BROWSER_COLLECTORS = {
-  perf: true,
-  webvitals: true,
-  exception: true,
-  whiteScreen: true,
-  api: true,
-  staticResource: true,
-  // 开启 click 采集用户行为；桌面端交互密集，上报量与噪音会上升，需关注 ARMS 用量
-  click: true,
-  longTask: true,
+    perf: true,
+    webvitals: true,
+    exception: true,
+    whiteScreen: true,
+    api: true,
+    staticResource: true,
+    // 开启 click 采集用户行为；桌面端交互密集，上报量与噪音会上升，需关注 ARMS 用量
+    click: true,
+    longTask: true,
 };
 /** ARMS 页面名解析：file:// 与 dev-server 统一规则，主进程 parseViewName 与 renderer 共用 */
 export function parseArmsViewName(url) {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol === "file:") {
-      const fileName = parsed.pathname.split("/").pop() ?? "index.html";
-      return fileName.replace(/\.html$/i, "") || "index";
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol === "file:") {
+            const fileName = parsed.pathname.split("/").pop() ?? "index.html";
+            return fileName.replace(/\.html$/i, "") || "index";
+        }
+        const path = parsed.pathname || "/";
+        return path.length > 120 ? `${path.slice(0, 120)}…` : path;
     }
-    const path = parsed.pathname || "/";
-    return path.length > 120 ? `${path.slice(0, 120)}…` : path;
-  } catch {
-    return url.length > 120 ? `${url.slice(0, 120)}…` : url;
-  }
+    catch {
+        return url.length > 120 ? `${url.slice(0, 120)}…` : url;
+    }
 }
 /** Renderer Browser SDK init 配置（与主进程 endpoint/env/version 对齐） */
 export function buildArmsBrowserInitConfig(runtimeEnv) {
-  return {
-    enable: true,
-    version: KCODE_VERSION,
-    endpoint: KCODE_ARMS_RUM_ENDPOINT,
-    env: mapKCodeEnvToArmsRumEnv(runtimeEnv),
-    sessionConfig: {
-      sampleRate: 1,
-    },
-    spaMode: false,
-    parseViewName: parseArmsViewName,
-    collectors: { ...ARMS_BROWSER_COLLECTORS },
-  };
+    return {
+        enable: true,
+        version: KCODE_VERSION,
+        endpoint: KCODE_ARMS_RUM_ENDPOINT,
+        env: mapKCodeEnvToArmsRumEnv(runtimeEnv),
+        sessionConfig: {
+            sampleRate: 1,
+        },
+        spaMode: false,
+        parseViewName: parseArmsViewName,
+        collectors: { ...ARMS_BROWSER_COLLECTORS },
+    };
 }
 //# sourceMappingURL=armsRumShared.js.map

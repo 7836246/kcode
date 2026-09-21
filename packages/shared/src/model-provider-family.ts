@@ -1,7 +1,12 @@
-import { BIGMODEL_PROVIDER_ID, type OAuthProviderId, ZAI_PROVIDER_ID } from "./oauth.js";
 import { BUILTIN_MODEL_PROVIDER_IDS, type BuiltinModelProviderId } from "./model-provider-types.js";
-import { KCODE_ENV } from "./env.js";
-import { buildBigModelCodingPlanTeamManageUrl } from "./kcodeEndpoint.js";
+
+/** 残留家族标识，供 telemetry / 旧筛选函数编译；不是官方 OAuth client id。 */
+export const ZAI_PROVIDER_ID = "zai" as const;
+export const BIGMODEL_PROVIDER_ID = "bigmodel" as const;
+export type OAuthProviderId =
+  | typeof ZAI_PROVIDER_ID
+  | typeof BIGMODEL_PROVIDER_ID
+  | (string & { readonly __oauthProviderBrand?: never });
 
 export type ModelProviderFamilyId = "zai" | "bigmodel";
 export type ProviderFamilyDomain = ModelProviderFamilyId;
@@ -42,7 +47,7 @@ export const MODEL_PROVIDER_FAMILY_SPECS = [
     startPlanProviderId: BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,
     individualCodingPlanProviderId: BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan,
     teamCodingPlanProviderId: BUILTIN_MODEL_PROVIDER_IDS.bigmodelTeamCodingPlan,
-    teamCodingPlanManageUrl: buildBigModelCodingPlanTeamManageUrl({ KCODE_ENV }),
+    teamCodingPlanManageUrl: "https://bigmodel.cn/coding-plan/team/plans",
   },
 ] as const satisfies readonly ModelProviderFamilySpec[];
 

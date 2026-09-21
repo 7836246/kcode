@@ -1,8 +1,7 @@
 import type { TelemetryRendererContext } from "@kcode/shared";
 
 interface StartupCoordinatorLike {
-  onRendererReady(input: { hasPendingOAuthCallback: boolean; rendererId: number }): boolean;
-  onOAuthCallbackHandled(input: { rendererId: number }): boolean;
+  onRendererReady(input: { rendererId: number }): boolean;
 }
 
 interface TelemetryCoreLike {
@@ -103,14 +102,8 @@ export function createAppTelemetryRuntime({
       }
     },
 
-    onRendererReady(input: { hasPendingOAuthCallback: boolean; rendererId: number }): void {
+    onRendererReady(input: { rendererId: number }): void {
       if (appLaunchCoordinator.onRendererReady(input)) {
-        markStartupTelemetryPending(input.rendererId);
-      }
-    },
-
-    onOAuthCallbackHandled(input: { rendererId: number }): void {
-      if (appLaunchCoordinator.onOAuthCallbackHandled(input)) {
         markStartupTelemetryPending(input.rendererId);
       }
     },

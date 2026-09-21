@@ -17,7 +17,7 @@ import type {
   ProviderSource,
 } from "@kcode/provider";
 import { completeNewModelSelection } from "@kcode/provider";
-import type { OffPeakClientConfig } from "#src/coding-plan-subscription/codingPlanSubscription.js";
+import type { OffPeakClientConfig } from "#src/session/offPeakTask.js";
 import {
   KCODE_SESSION_RUNTIME_PREFERENCES_REQUEST_TIMEOUT_MS,
   formatLogPrefix,

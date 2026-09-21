@@ -1,18 +1,11 @@
 import { create } from "zustand";
-import {
-  normalizeProviderFamilyDomain,
-  type AppSettings,
-  type OffPeakCodingPlanSupport,
-  type OffPeakTaskCreateResult,
-  type OffPeakTakeNumberAvailability,
-  type KCodeOffPeakTask,
-  type ModelSelection,
-} from "@kcode/shared";
 import type {
-  ICodingPlanSubscriptionService,
-  IOffPeakTaskService,
-  OffPeakClientConfig,
-} from "@kcode/services";
+  OffPeakTaskCreateResult,
+  OffPeakTakeNumberAvailability,
+  KCodeOffPeakTask,
+  ModelSelection,
+} from "@kcode/shared";
+import type { IOffPeakTaskService, OffPeakClientConfig } from "@kcode/services";
 import { logger } from "@/logger.js";
 
 // 闲时任务管理 store（与 automationManagementStore 独立）：走 IOffPeakTaskService RPC。
@@ -53,11 +46,9 @@ interface OffPeakTaskState {
   loading: boolean;
   error: string | null;
   operationId: string | null;
-  /** 灰度配置：null=未加载。未命中/关闭时入口整体不渲染。 */
+  /** 官方套餐灰度已下线：null 表示创建入口 fail-closed，存量任务仍可列出。 */
   grayConfig: OffPeakClientConfig | null;
-  /** 当前 selected provider/connection 的脱敏凭证支持快照；不含 JWT/API Key。 */
-  codingPlanSupport: OffPeakCodingPlanSupport | null;
-  /** 服务端取号额度即时快照；null=尚无成功响应。 */
+  /** 服务端取号额度即时快照；官方取号下线后保持空。 */
   takeNumberAvailability: OffPeakTakeNumberAvailability | null;
   /** loading/idle/error 均禁入，避免把依赖异常误当成可创建。 */
   takeNumberAvailabilityStatus: OffPeakTakeNumberAvailabilityStatus;
@@ -65,12 +56,8 @@ interface OffPeakTaskState {
   newTaskBannerDismissed: boolean;
   /** 模板卡→创建表单的预填草稿（跨视图导航一次性携带）。 */
   pendingCreateDraft: OffPeakCreateDraft | null;
-  initialize(deps: {
-    offPeakTaskService: IOffPeakTaskService;
-    codingPlanSubscriptionService: ICodingPlanSubscriptionService;
-  }): Promise<void>;
+  initialize(deps: { offPeakTaskService: IOffPeakTaskService }): Promise<void>;
   refresh(service: IOffPeakTaskService): Promise<void>;
-  refreshCodingPlanSupport(service: IOffPeakTaskService, freshnessKey?: string): Promise<void>;
   refreshTakeNumberAvailability(service: IOffPeakTaskService): Promise<void>;
   createTask(
     input: CreateOffPeakTaskInput,
@@ -94,27 +81,6 @@ interface OffPeakTaskState {
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-/** support 必须仍对应 renderer 当前选择；切换连接后的旧 true 快照不能短暂放开创建。 */
-export function isCurrentOffPeakCodingPlanSupported(
-  support: OffPeakCodingPlanSupport | null,
-  settings:
-    | Pick<AppSettings, "providerFamilyConnectionSelections" | "providerFamilyDomain">
-    | null
-    | undefined,
-): boolean {
-  if (!support?.supported || !settings) return false;
-  const providerFamily = normalizeProviderFamilyDomain(settings.providerFamilyDomain);
-  if (!providerFamily || providerFamily !== support.providerFamily) return false;
-  const selection = settings.providerFamilyConnectionSelections?.[providerFamily];
-  if (selection?.kind === "individual-coding-plan") {
-    return support.kind === `${providerFamily}-personal`;
-  }
-  if (selection?.kind === "team-coding-plan") {
-    return support.kind === `${providerFamily}-team`;
-  }
-  return false;
 }
 
 /** 服务端 3103（取号超限）只按结构化分类识别，不再解析跨 RPC 的错误文本。 */
@@ -146,11 +112,6 @@ export function resolveOffPeakCreateErrorMessageId(
 }
 
 let initializeInFlight: Promise<void> | null = null;
-let initializationReady: Promise<void> = Promise.resolve();
-let eligibilityInFlight: Promise<void> | null = null;
-let eligibilityGeneration = 0;
-let pendingEligibilityService: IOffPeakTaskService | null = null;
-let lastEligibilityTrigger: { service: IOffPeakTaskService; key: string } | null = null;
 
 export const useOffPeakTaskStore = create<OffPeakTaskState>((set, get) => ({
   tasks: [],
@@ -158,34 +119,27 @@ export const useOffPeakTaskStore = create<OffPeakTaskState>((set, get) => ({
   error: null,
   operationId: null,
   grayConfig: null,
-  codingPlanSupport: null,
   takeNumberAvailability: null,
   takeNumberAvailabilityStatus: "idle",
   newTaskBannerDismissed: false,
   pendingCreateDraft: null,
 
-  async initialize({ offPeakTaskService, codingPlanSubscriptionService }) {
-    // Bug 原因：New Task 与 Automations 在页面切换时可能短暂重叠挂载，两个 initialize
-    // 会并发请求同一个 Team Plan availability，后到的全局 429 可能覆盖先到的成功结果。
-    // Store 级 single-flight 保证所有入口共用一次完整准入检查。
+  async initialize({ offPeakTaskService }) {
     if (initializeInFlight) return initializeInFlight;
     set({ loading: true, error: null });
-    // 初始化和后续通知共用资格检查；灰度先就绪，资格与额度不能由两条异步链分别写入。
-    initializationReady = Promise.all([
-      codingPlanSubscriptionService
-        .getOffPeakClientConfig({ forceRefresh: true })
-        .catch((error) => {
-          logger.warn("[off-peak] gray config load failed", toErrorMessage(error));
-          return null;
-        }),
-      offPeakTaskService.list().catch((error) => {
+    const run = (async () => {
+      const tasks = await offPeakTaskService.list().catch((error) => {
         logger.warn("[off-peak] list failed", toErrorMessage(error));
         return [] as KCodeOffPeakTask[];
-      }),
-    ]).then(([grayConfig, tasks]) => {
-      set({ grayConfig, tasks });
-    });
-    const run = get().refreshCodingPlanSupport(offPeakTaskService);
+      });
+      // 官方套餐灰度已下线：不再读取 Coding Plan 配置，创建入口保持关闭。
+      set({
+        grayConfig: null,
+        tasks,
+        takeNumberAvailability: null,
+        takeNumberAvailabilityStatus: "idle",
+      });
+    })();
     initializeInFlight = run;
     try {
       await run;
@@ -206,70 +160,11 @@ export const useOffPeakTaskStore = create<OffPeakTaskState>((set, get) => ({
     }
   },
 
-  refreshCodingPlanSupport(service, freshnessKey) {
-    // 两个入口收到同一 Registry/连接通知只检查一次；手动刷新无 key，始终重查。
-    if (
-      freshnessKey !== undefined &&
-      lastEligibilityTrigger?.service === service &&
-      lastEligibilityTrigger.key === freshnessKey
-    ) {
-      return eligibilityInFlight ?? Promise.resolve();
-    }
-    lastEligibilityTrigger = freshnessKey === undefined ? null : { service, key: freshnessKey };
-    eligibilityGeneration += 1;
-    pendingEligibilityService = service;
+  async refreshTakeNumberAvailability() {
     set({
-      codingPlanSupport: null,
       takeNumberAvailability: null,
-      takeNumberAvailabilityStatus: "loading",
+      takeNumberAvailabilityStatus: "idle",
     });
-    if (eligibilityInFlight) return eligibilityInFlight;
-    // 旧代码的 support/availability 独立请求会乱序覆盖。串行 drain 合并在途变化，
-    // 旧成功、旧失败均丢弃；只有一代完整资格与额度能够一起发布。
-    eligibilityInFlight = Promise.resolve().then(async () => {
-      try {
-        while (pendingEligibilityService) {
-          const currentService = pendingEligibilityService;
-          const generation = eligibilityGeneration;
-          pendingEligibilityService = null;
-          await initializationReady;
-          if (generation !== eligibilityGeneration) continue;
-          try {
-            const codingPlanSupport = await currentService.getCodingPlanSupport();
-            if (generation !== eligibilityGeneration) continue;
-            const grayConfig = get().grayConfig;
-            const shouldReadAvailability =
-              grayConfig?.enabled &&
-              (grayConfig.codingPlanActive === true || codingPlanSupport.supported === true);
-            const takeNumberAvailability = shouldReadAvailability
-              ? await currentService.getTakeNumberAvailability()
-              : null;
-            if (generation !== eligibilityGeneration) continue;
-            set({
-              codingPlanSupport,
-              takeNumberAvailability,
-              takeNumberAvailabilityStatus: shouldReadAvailability ? "ready" : "idle",
-            });
-          } catch (error) {
-            if (generation !== eligibilityGeneration) continue;
-            set({
-              codingPlanSupport: null,
-              takeNumberAvailability: null,
-              takeNumberAvailabilityStatus: "error",
-            });
-            logger.warn("[off-peak] eligibility refresh failed", toErrorMessage(error));
-          }
-        }
-      } finally {
-        // 在 drain 同一微任务中释放，避免 finally 排队期间新请求挂到已结束的检查上。
-        eligibilityInFlight = null;
-      }
-    });
-    return eligibilityInFlight;
-  },
-
-  refreshTakeNumberAvailability(service) {
-    return get().refreshCodingPlanSupport(service);
   },
 
   async createTask(input, service) {

@@ -18,7 +18,7 @@
 Compared with the public [ZCode](https://github.com/zai-org/ZCode) source, KCode mainly changes the following:
 
 - Product name, icons, commands, and environment variables are unified as KCode
-- Zhipu / Z.ai login, plan, and upgrade surfaces are removed; you configure providers yourself
+- Zhipu / Z.ai login, OAuth, plan, and upgrade implementations are removed; you configure providers yourself
 - The official plugin catalog is bundled in-repo and no longer fetched from the Z.ai CDN
 - Plugin Creator is bundled; Settings can enable and edit a custom system role
 - Approval and Plan follow this repo's product rules

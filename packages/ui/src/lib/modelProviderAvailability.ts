@@ -1,5 +1,5 @@
-import { isBuiltinModelProviderId } from "@kcode/shared";
 import type { ModelSelectionView } from "@kcode/services";
+import { isLeftoverOfficialAccountProvider } from "@/lib/leftoverOfficialAccountProvider.js";
 
 interface ProviderAvailabilityState {
   readonly source: "registry";
@@ -12,7 +12,11 @@ export function resolveProviderAvailabilityState(params: {
   modelSelectionView: ModelSelectionView | null;
 }): ProviderAvailabilityState {
   const providers = (params.modelSelectionView?.providers ?? []).filter(
-    (provider) => !isBuiltinModelProviderId(provider.providerId),
+    (provider) =>
+      !isLeftoverOfficialAccountProvider({
+        providerId: provider.providerId,
+        accessType: provider.config.access?.type,
+      }),
   );
   return {
     source: "registry",

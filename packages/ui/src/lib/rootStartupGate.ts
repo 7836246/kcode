@@ -16,7 +16,6 @@ interface FallbackWorkspaceCreateState {
 }
 
 interface ProviderStartupSyncState {
-  providerFamilyDomainMigrationComplete: boolean;
   modelSelectionViewHydrated: boolean;
 }
 
@@ -55,5 +54,5 @@ export function shouldOpenFallbackWorkspaceAfterCreate(
 }
 
 export function isProviderStartupSyncPending(state: ProviderStartupSyncState): boolean {
-  return !state.providerFamilyDomainMigrationComplete || !state.modelSelectionViewHydrated;
+  return !state.modelSelectionViewHydrated;
 }

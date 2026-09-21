@@ -21,7 +21,7 @@ export type SettingsSectionId =
   | "automations"
   | "shortcuts";
 
-type SettingsUsageTabTarget = "app" | "codingPlan";
+type SettingsUsageTabTarget = "app";
 type SettingsPluginTabTarget = "plugins" | "mcps" | "skills" | "commands";
 type SettingsPluginNavigationOrigin = "plugin-store";
 
@@ -182,12 +182,6 @@ export function setPendingSettingsSection(section: SettingsSectionId): void {
 export function setPendingSettingsUsageIntent(): void {
   // 使用统计入口只负责打开 Usage 分区，不强行覆盖用户要看的具体统计 tab。
   setPendingSettingsSectionIntent("usage");
-}
-
-export function setPendingSettingsUsageCodingPlanIntent(): void {
-  // 剩余额度详情入口需要直达 Coding Plan 使用统计；
-  // 头像菜单入口则只打开 Usage 分区，避免覆盖用户上次查看的统计 tab。
-  setPendingSettingsSectionIntent("usage", { usageTab: "codingPlan" });
 }
 
 export function setPendingSettingsPluginIntent(
@@ -384,7 +378,7 @@ export function consumePendingSettingsUsageTab(): SettingsUsageTabTarget | undef
     if (raw !== null) {
       window.sessionStorage.removeItem(SETTINGS_USAGE_TAB_INTENT_KEY);
     }
-    return raw === "app" || raw === "codingPlan" ? raw : undefined;
+    return raw === "app" ? raw : undefined;
   } catch {
     // 忽略浏览器存储异常，不影响主流程。
     return undefined;
@@ -415,23 +409,13 @@ export function consumePendingSettingsModelProviderTarget():
 
 export function shouldFallbackSettingsUsageTabToApp({
   activeTab,
-  checkingCodingPlanTab,
-  loadingModelProviders,
-  showCodingPlanTab,
 }: {
   activeTab: SettingsUsageTabTarget;
-  checkingCodingPlanTab: boolean;
-  loadingModelProviders: boolean;
-  showCodingPlanTab: boolean;
+  checkingCodingPlanTab?: boolean;
+  loadingModelProviders?: boolean;
+  showCodingPlanTab?: boolean;
 }): boolean {
-  // Coding Plan 跳转意图可能先于 provider/entitlement 数据完成加载。
-  // 只有确认不再 loading 且仍没有有效套餐时才回退到 App Usage，避免“更多”点击后被首帧误改回默认 tab。
-  return (
-    activeTab === "codingPlan" &&
-    !showCodingPlanTab &&
-    !loadingModelProviders &&
-    !checkingCodingPlanTab
-  );
+  return activeTab !== "app";
 }
 
 export function addPendingSettingsSectionListener(

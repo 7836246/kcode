@@ -46,8 +46,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { Locale, RemoteTarget, UserInfo, KCodeTaskMeta } from "@kcode/shared";
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@kcode/shared";
+import type { Locale, RemoteTarget, KCodeTaskMeta } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 import {
   TID_CONVERSATION_NEW_TASK,
   TID_CONVERSATION_SECTION,

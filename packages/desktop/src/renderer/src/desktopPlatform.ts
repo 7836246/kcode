@@ -51,9 +51,6 @@ export function createDesktopPlatform(options: {
     startCuaHelperPermissionDrag: window.kcode.startCuaHelperPermissionDrag
       ? () => window.kcode.startCuaHelperPermissionDrag?.()
       : undefined,
-    registerOAuthState: (payload) => window.kcode.registerOAuthState(payload),
-    onOAuthCallback: (callback) => window.kcode.onOAuthCallback(callback),
-    onPaymentCallback: (callback) => window.kcode.onPaymentCallback(callback),
     onShareImport: (callback) => window.kcode.onShareImport?.(callback) ?? (() => {}),
     notifyRendererReady: () => window.kcode.notifyRendererReady(),
     reportTelemetryEvent: (payload) => window.kcode.reportTelemetryEvent(payload),

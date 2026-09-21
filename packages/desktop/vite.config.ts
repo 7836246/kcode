@@ -159,8 +159,6 @@ export default defineConfig(({ mode }) => {
     env: kcodeEnv,
     envBaseOrigin: env.KCODE_BASE_URL ?? env.KCODE_ENDPOINT_ORIGIN,
   });
-  const codingPlanWebviewOrigin =
-    env.VITE_CODING_PLAN_WEBVIEW_ORIGIN ?? process.env.VITE_CODING_PLAN_WEBVIEW_ORIGIN ?? "";
   const plugins = [
     ...(e2eCoverageEnabled ? [createE2EUIRendererCoveragePlugin(repoRoot)] : []),
     pdfJsCMapsPlugin(),
@@ -198,7 +196,6 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_KCODE_BASE_URL": JSON.stringify(kcodeEndpointOrigin),
       // 兼容旧 renderer 读取名；新代码统一读 VITE_KCODE_BASE_URL。
       "import.meta.env.VITE_KCODE_ENDPOINT_ORIGIN": JSON.stringify(kcodeEndpointOrigin),
-      "import.meta.env.VITE_CODING_PLAN_WEBVIEW_ORIGIN": JSON.stringify(codingPlanWebviewOrigin),
       "import.meta.env.VITE_REWARDS_WEBVIEW_ORIGIN": JSON.stringify(
         env.VITE_REWARDS_WEBVIEW_ORIGIN ?? process.env.VITE_REWARDS_WEBVIEW_ORIGIN ?? "",
       ),

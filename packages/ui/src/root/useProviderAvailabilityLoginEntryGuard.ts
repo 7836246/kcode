@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { UserInfo } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 import type { ModelSelectionView } from "@kcode/services";
 import { resolveProviderAvailabilityState } from "@/lib/modelProviderAvailability.js";
 import { logger } from "@/logger.js";
@@ -13,9 +13,6 @@ interface ProviderAvailabilityLoginEntryGuardResult {
 export function useProviderAvailabilityLoginEntryGuard({
   enabled = true,
   user,
-  isRestoringOAuthSession,
-  providerFamilyDomain,
-  providerFamilyDomainMigrated,
   modelSelectionView,
   modelSelectionError,
   refreshProviderState,
@@ -24,9 +21,6 @@ export function useProviderAvailabilityLoginEntryGuard({
 }: {
   enabled?: boolean;
   user: UserInfo | null;
-  isRestoringOAuthSession: boolean;
-  providerFamilyDomain: string | null | undefined;
-  providerFamilyDomainMigrated?: boolean;
   modelSelectionView: ModelSelectionView | null;
   modelSelectionError?: Error;
   refreshProviderState: () => Promise<void>;
@@ -56,19 +50,14 @@ export function useProviderAvailabilityLoginEntryGuard({
         : modelSelectionView;
       const availability = resolveProviderAvailabilityState({ modelSelectionView: refreshedView });
       const { hasUsableProvider, providerCount } = availability;
-      const setupCompleted = Boolean(providerFamilyDomain) || Boolean(providerFamilyDomainMigrated);
-      const shouldOpenLoginEntry = !setupCompleted && !hasUsableProvider;
+      const shouldOpenLoginEntry = !hasUsableProvider;
 
-      // 未登录且没有可用模型配置时必须引导用户连接账号或填写 API Key。
-      // 启动检查、API Key 设置回流等入口统一走这里，避免各处复制判断后语义分叉。
       logger.info("[Root] provider 可用性登录入口守卫完成检查", {
         reason: options.reason,
         source: availability.source,
         providerCount,
         hasUsableProvider,
         hasUser: Boolean(user),
-        hasProviderFamilyDomain: Boolean(providerFamilyDomain),
-        providerFamilyDomainMigrated: Boolean(providerFamilyDomainMigrated),
         shouldOpenLoginEntry,
       });
       setLoginEntryOpen(shouldOpenLoginEntry);
@@ -78,16 +67,7 @@ export function useProviderAvailabilityLoginEntryGuard({
         shouldOpenLoginEntry,
       } satisfies ProviderAvailabilityLoginEntryGuardResult;
     },
-    [
-      enabled,
-      modelSelectionView,
-      providerFamilyDomain,
-      providerFamilyDomainMigrated,
-      refreshProviderState,
-      readModelSelectionView,
-      setLoginEntryOpen,
-      user,
-    ],
+    [enabled, modelSelectionView, refreshProviderState, readModelSelectionView, setLoginEntryOpen, user],
   );
 
   useEffect(() => {
@@ -98,18 +78,13 @@ export function useProviderAvailabilityLoginEntryGuard({
     }
 
     if (modelSelectionError) {
-      // 首次读取失败不能伪装成“没有 Provider”，也不能让启动门禁永久停在 loading。
       logger.error("[Root] provider 可用性读取失败，结束启动门禁等待", modelSelectionError);
       startupCheckCompletedRef.current = true;
       setStartupCheckCompleted(true);
       return;
     }
 
-    if (
-      startupCheckCompletedRef.current ||
-      isRestoringOAuthSession ||
-      !providerAvailabilityHydrated
-    ) {
+    if (startupCheckCompletedRef.current || !providerAvailabilityHydrated) {
       return;
     }
 
@@ -119,13 +94,7 @@ export function useProviderAvailabilityLoginEntryGuard({
     }).finally(() => {
       setStartupCheckCompleted(true);
     });
-  }, [
-    enabled,
-    isRestoringOAuthSession,
-    modelSelectionError,
-    providerAvailabilityHydrated,
-    syncLoginEntryWithProviderAvailability,
-  ]);
+  }, [enabled, modelSelectionError, providerAvailabilityHydrated, syncLoginEntryWithProviderAvailability]);
 
   return {
     startupCheckCompleted,

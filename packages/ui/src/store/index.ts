@@ -6,22 +6,8 @@
  */
 import { create } from "zustand";
 import type { IBroadcastService, BroadcastMessage } from "@kcode/services";
-import type { OAuthProviderId, UserInfo } from "@kcode/shared";
-import type { CodingPlanResetType } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 import type { CodePreviewSettings } from "@/lib/codePreviewSettings.js";
-import type {
-  CodingPlanQuotaResetUiEntries,
-  CodingPlanQuotaResetUiEntry,
-} from "@/lib/codingPlanQuotaResetUi.js";
-import {
-  applyCodingPlanQuotaResetAutoPlayedBroadcast,
-  createCodingPlanQuotaResetStoreActions,
-  parseCodingPlanQuotaResetAutoPlayedBroadcastMessage,
-  type CodingPlanQuotaResetAutomaticObservations,
-  type CodingPlanQuotaResetAutoPlayReservation,
-  type CodingPlanQuotaResetAutoPlayReservationAttempt,
-  type CodingPlanQuotaResetAutoPlayedSlot,
-} from "@/store/codingPlanQuotaResetState.js";
 import { DEFAULT_CODE_PREVIEW_SETTINGS } from "@/lib/codePreviewSettings.js";
 import { readSafeLocalStorage, writeSafeLocalStorage } from "@/lib/browserEnvironment.js";
 import {
@@ -62,7 +48,6 @@ export type LoginEntryAttemptStatus =
 
 export interface LoginEntryAttempt {
   id: number;
-  providerId?: OAuthProviderId;
   purpose?: LoginEntryPurpose;
   status: LoginEntryAttemptStatus;
 }
@@ -138,66 +123,20 @@ export interface KCodeState {
   authSessionSeq: number;
   setUser: (user: UserInfo | null) => void;
 
-  /** 启动阶段是否仍在恢复 OAuth 登录态 */
-  isRestoringOAuthSession: boolean;
-  setIsRestoringOAuthSession: (restoring: boolean) => void;
-
-  /** OAuth 回调错误（Root 层写入，统一登录入口读取） */
-  oauthError: string | null;
-  setOAuthError: (error: string | null) => void;
-  oauthPollingActive: boolean;
-  setOAuthPollingActive: (active: boolean) => void;
-  oauthSuccessSeq: number;
-  lastOAuthSuccessProvider: OAuthProviderId | null;
-  markOAuthSuccess: (provider?: OAuthProviderId) => void;
   apiKeyLoginSuccessSeq: number;
   lastApiKeyLoginModel: string | null;
   markApiKeyLoginSuccess: (preferredModel?: string | null) => void;
-  /** 请求打开统一登录入口，可携带需要自动发起登录/连接的 provider */
   loginEntryRequest: {
     id: number;
-    providerId?: OAuthProviderId;
     purpose?: LoginEntryPurpose;
   } | null;
-  /** 当前统一登录尝试；购买等后续动作通过 id 只续接自己发起的 OAuth。 */
   loginEntryAttempt: LoginEntryAttempt | null;
-  requestLoginEntry: (providerId?: OAuthProviderId, purpose?: LoginEntryPurpose) => number;
+  requestLoginEntry: (purpose?: LoginEntryPurpose) => number;
   clearLoginEntryRequest: (requestId?: number) => void;
   markLoginEntryAttemptStatus: (
     requestId: number,
     status: Exclude<LoginEntryAttemptStatus, "requested">,
   ) => void;
-
-  /** Coding Plan 额度重置 UI 状态；entry/观察记录只在当前窗口内共享，不持久化。 */
-  codingPlanQuotaResetUiBySource: Record<string, CodingPlanQuotaResetUiEntries>;
-  /** 自动/运营完成首次被观察时所属的鉴权会话，用于区分同会话后挂载和重新登录。 */
-  codingPlanQuotaResetAutomaticObservationsBySource: Record<
-    string,
-    CodingPlanQuotaResetAutomaticObservations
-  >;
-  /** 自动完成提示"多窗口只播一次"的已播 used_at 记录；窗口内存态，可被广播合并。 */
-  codingPlanQuotaResetAutoPlayedBySource: Record<string, CodingPlanQuotaResetAutoPlayedSlot>;
-  /** 写入服务端 status / 手动 use 对账后的状态；entry 为 null 表示清空该类型。 */
-  setCodingPlanQuotaResetUiEntry: (
-    sourceKey: string,
-    resetType: CodingPlanResetType,
-    entry: CodingPlanQuotaResetUiEntry | null,
-    authSessionSeq: number,
-  ) => void;
-  /** Composer 展示前申请临时 reservation；此阶段不写 played。 */
-  reserveCodingPlanQuotaResetAutoPlay: (
-    sourceKey: string,
-    resetType: CodingPlanResetType,
-    completedAt: number,
-  ) => Promise<CodingPlanQuotaResetAutoPlayReservationAttempt>;
-  /** 组件仍有效且即将展示时提交 reservation、played 与广播。 */
-  commitCodingPlanQuotaResetAutoPlay: (
-    reservation: CodingPlanQuotaResetAutoPlayReservation,
-  ) => boolean;
-  /** 组件失效时释放尚未 commit 的 reservation。 */
-  releaseCodingPlanQuotaResetAutoPlay: (
-    reservation: CodingPlanQuotaResetAutoPlayReservation,
-  ) => Promise<void>;
 
   /** 手动请求打开 onboarding 弹窗 */
   newUserOnboardingOpen: boolean;
@@ -227,12 +166,7 @@ const STATE_CHANNEL_PREFIX = "state:";
  *
  * @param broadcastService - 广播服务。Desktop 走 RPC，Web 可传 no-op 实现
  */
-export function createKCodeStore(
-  broadcastService: IBroadcastService,
-  options: {
-    initialIsRestoringOAuthSession?: boolean;
-  } = {},
-) {
+export function createKCodeStore(broadcastService: IBroadcastService) {
   /** 标记：正在应用来自广播的更新，此时不再重复广播（防止循环） */
   let applyingBroadcast = false;
   let loginEntryRequestSeq = 0;
@@ -320,20 +254,6 @@ export function createKCodeStore(
           state.user === null && user !== null ? state.authSessionSeq + 1 : state.authSessionSeq,
       })),
 
-    isRestoringOAuthSession: options.initialIsRestoringOAuthSession ?? false,
-    setIsRestoringOAuthSession: (restoring: boolean) => set({ isRestoringOAuthSession: restoring }),
-
-    oauthError: null,
-    setOAuthError: (error: string | null) => set({ oauthError: error }),
-    oauthPollingActive: false,
-    setOAuthPollingActive: (active: boolean) => set({ oauthPollingActive: active }),
-    oauthSuccessSeq: 0,
-    lastOAuthSuccessProvider: null,
-    markOAuthSuccess: (provider?: OAuthProviderId) =>
-      set((state) => ({
-        oauthSuccessSeq: state.oauthSuccessSeq + 1,
-        lastOAuthSuccessProvider: provider ?? state.lastOAuthSuccessProvider,
-      })),
     apiKeyLoginSuccessSeq: 0,
     lastApiKeyLoginModel: null,
     markApiKeyLoginSuccess: (preferredModel?: string | null) =>
@@ -343,18 +263,16 @@ export function createKCodeStore(
       })),
     loginEntryRequest: null,
     loginEntryAttempt: null,
-    requestLoginEntry: (providerId?: OAuthProviderId, purpose?: LoginEntryPurpose) => {
+    requestLoginEntry: (purpose?: LoginEntryPurpose) => {
       const id = ++loginEntryRequestSeq;
       const attempt: LoginEntryAttempt = {
         id,
-        providerId,
         purpose,
         status: "requested",
       };
       set({
         loginEntryRequest: {
           id,
-          providerId,
           purpose,
         },
         loginEntryAttempt: attempt,
@@ -380,15 +298,6 @@ export function createKCodeStore(
           },
         };
       }),
-
-    codingPlanQuotaResetUiBySource: {},
-    codingPlanQuotaResetAutomaticObservationsBySource: {},
-    codingPlanQuotaResetAutoPlayedBySource: {},
-    ...createCodingPlanQuotaResetStoreActions({
-      broadcastService,
-      readState: get,
-      writeState: (updater) => set((state) => updater(state)),
-    }),
 
     newUserOnboardingOpen: false,
     setNewUserOnboardingOpen: (open) => set({ newUserOnboardingOpen: open }),
@@ -454,14 +363,6 @@ export function createKCodeStore(
 
   // 监听来自其他窗口的广播
   broadcastService.onMessage((msg: BroadcastMessage) => {
-    // 自动完成"多窗口只播一次"。其他窗口广播已播 used_at 后，本窗口合并
-    // played 记录并收起正在播放的同 used_at 提示；本地回声已在解析阶段被忽略。
-    const autoPlayed = parseCodingPlanQuotaResetAutoPlayedBroadcastMessage(msg);
-    if (autoPlayed) {
-      useStore.setState((state) => applyCodingPlanQuotaResetAutoPlayedBroadcast(state, autoPlayed));
-      return;
-    }
-
     if (!msg.channel.startsWith(STATE_CHANNEL_PREFIX)) return;
 
     const field = msg.channel.slice(STATE_CHANNEL_PREFIX.length) as BroadcastField;

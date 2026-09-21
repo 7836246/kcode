@@ -1,8 +1,6 @@
 /* eslint-disable max-lines -- Off-Peak 凭证解析、支持矩阵与 Request Auth 共用同一组契约，拆散会让双凭证/Team 身份边界更难追踪。 */
 /* Host 派发时按当前票据构造逐请求鉴权材料；Provider/Model 静态事实由 Built-in Config 提供。 */
 import {
-  BUILTIN_MODEL_PROVIDER_IDS,
-  resolveOffPeakProviderId,
   buildRuntimeKCodeApiUrl,
   type OffPeakCodingPlanKind,
   type OffPeakCodingPlanSupport,
@@ -11,7 +9,6 @@ import {
 } from "@kcode/shared";
 import { isOffPeakMockEnabled, startOffPeakMockGateway } from "./offPeakMockGateway.js";
 import type { ServiceLogger } from "../logger/serviceLogger.js";
-import { AccountRequestCredentialUnavailableError } from "../model-provider/accountProviderRequestAuthService.js";
 import type { IAccountRequestAuthService } from "../model-provider/accountRequestAuthService.js";
 
 /** 仅用于确定性配置错误；host 据类型输出 permanent，禁止依赖错误文本分流。 */
@@ -56,9 +53,6 @@ export class OffPeakModelUnavailableError extends OffPeakPermanentDispatchError 
   }
 }
 
-const KCODE_JWT_TOKEN_KEY = "kcodejwttoken";
-const ACTIVE_OAUTH_PROVIDER_KEY = "oauth:active_provider";
-
 export interface OffPeakCredentialSnapshot {
   jwt: string;
   codingPlanApiKey: string;
@@ -83,46 +77,6 @@ interface OffPeakCredentialResolverDeps {
   env?: NodeJS.ProcessEnv;
 }
 
-type SelectedOffPeakCodingPlan = Pick<
-  OffPeakCredentialSnapshot,
-  "kind" | "providerFamily" | "providerId" | "organizationId" | "projectId"
->;
-
-function resolveSelectedOffPeakCodingPlan(
-  provider: Awaited<ReturnType<OffPeakCredentialResolverDeps["resolveAccountProvider"]>>,
-): SelectedOffPeakCodingPlan {
-  if (!provider) {
-    throw new OffPeakCodingPlanUnavailableError("connection_unavailable");
-  }
-  const { access, providerId } = provider;
-  if (access.planKind === "start-plan") {
-    throw new OffPeakCodingPlanUnavailableError("start_plan_not_supported");
-  }
-  if (access.planKind === "individual-coding-plan") {
-    return {
-      kind: access.family === "zai" ? "zai-personal" : "bigmodel-personal",
-      providerFamily: access.family,
-      providerId,
-    };
-  }
-  if (access.planKind !== "team-coding-plan") {
-    throw new OffPeakCodingPlanUnavailableError("connection_unavailable");
-  }
-  return {
-    kind: access.family === "zai" ? "zai-team" : "bigmodel-team",
-    providerFamily: access.family,
-    providerId,
-    organizationId: access.organizationId,
-    projectId: access.projectId,
-  };
-}
-
-function createOffPeakSelectionFingerprint(
-  provider: Awaited<ReturnType<OffPeakCredentialResolverDeps["resolveAccountProvider"]>>,
-): string {
-  return JSON.stringify(provider ?? null);
-}
-
 /**
  * 解析当前 selected connection 的 Off-Peak 双凭证。
  *
@@ -132,87 +86,11 @@ function createOffPeakSelectionFingerprint(
  * Team key 继续复用 Account Request Auth 的 org/project resolver，失败时绝不回退个人 key。
  */
 export async function resolveOffPeakCredentials(
-  deps: OffPeakCredentialResolverDeps,
-  options: { allowMockCredentials?: boolean } = {},
+  _deps: OffPeakCredentialResolverDeps,
+  _options: { allowMockCredentials?: boolean } = {},
 ): Promise<OffPeakCredentialSnapshot> {
-  const env = deps.env ?? process.env;
-  if (options.allowMockCredentials !== false && env["KCODE_OFFPEAK_MOCK"] === "1") {
-    if (env["KCODE_OFFPEAK_MOCK_NO_PLAN"] === "1") {
-      throw new OffPeakCodingPlanUnavailableError("connection_unavailable");
-    }
-    // mock 网关不校验凭证；使用确定性 metadata 让 UI 和 ticket/runtime 仍共享同一 support 形状。
-    return {
-      jwt: "offpeak-mock-jwt",
-      codingPlanApiKey: "offpeak-mock-key",
-      kind: "bigmodel-personal",
-      providerFamily: "bigmodel",
-      providerId: BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan,
-    };
-  }
-
-  // settings 可能在账号 Provider 解析期间切换。前后指纹不一致时重读一次，禁止拼接两代凭证。
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const provider = await deps.resolveAccountProvider();
-    const selection = resolveSelectedOffPeakCodingPlan(provider);
-    const activeProvider =
-      (await deps.credentialService.load(ACTIVE_OAUTH_PROVIDER_KEY))?.trim() ?? "";
-    if (activeProvider !== selection.providerFamily) {
-      // kcode JWT 是当前 App 登录身份的全局镜像；只校验 selectedKey 会把
-      // ZAI JWT 与 BigModel key（或反向）拼到同一请求，服务端只能在取号时才拒绝。
-      throw new OffPeakCodingPlanUnavailableError("provider_identity_mismatch");
-    }
-    const jwt = (await deps.credentialService.load(KCODE_JWT_TOKEN_KEY))?.trim() ?? "";
-    if (!jwt) {
-      throw new OffPeakCredentialsUnavailableError("jwt");
-    }
-    const [latestProvider, latestActiveProvider] = await Promise.all([
-      deps.resolveAccountProvider(),
-      deps.credentialService.load(ACTIVE_OAUTH_PROVIDER_KEY),
-    ]);
-    if (
-      createOffPeakSelectionFingerprint(provider) !==
-        createOffPeakSelectionFingerprint(latestProvider) ||
-      activeProvider !== latestActiveProvider?.trim()
-    ) {
-      continue;
-    }
-
-    if (
-      !provider ||
-      provider.access.family !== selection.providerFamily ||
-      (selection.kind.endsWith("-team")
-        ? provider.access.planKind !== "team-coding-plan"
-        : provider.access.planKind !== "individual-coding-plan")
-    ) {
-      throw new OffPeakCodingPlanUnavailableError("connection_unavailable");
-    }
-    let codingPlanApiKey = "";
-    try {
-      const auth = await deps.accountRequestAuthService.resolveCurrent({
-        providerId: selection.providerId,
-        modelId: resolveOffPeakProviderId(selection.providerFamily),
-        accountAccess: provider.access,
-        reason: "off-peak",
-      });
-      codingPlanApiKey = auth.apiKey?.trim() ?? "";
-    } catch (error) {
-      if (error instanceof AccountRequestCredentialUnavailableError) {
-        throw new OffPeakCredentialsUnavailableError("codingPlanApiKey");
-      }
-      throw error;
-    }
-    if (!codingPlanApiKey) {
-      throw new OffPeakCredentialsUnavailableError("codingPlanApiKey");
-    }
-    return {
-      ...selection,
-      jwt,
-      codingPlanApiKey,
-      ...(provider.baseURL ? { providerBaseURL: provider.baseURL } : {}),
-    };
-  }
-
-  throw new OffPeakCodingPlanUnavailableError("selection_changed");
+  // 官方闲时取号已下线；不读取 oauth 残留，也不向 Z.ai / BigModel 发请求。
+  throw new OffPeakCodingPlanUnavailableError("connection_unavailable");
 }
 
 /**

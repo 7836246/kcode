@@ -3,28 +3,16 @@ import type { AppSettings } from "@kcode/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { useOffPeakTaskStore } from "@/store/offPeakTaskStore.js";
 
-/** 两个闲时入口共享初始化/连接/Registry 通知边界，不在组件中另存资格。 */
+/** 闲时入口只拉存量任务列表；官方套餐资格检查已下线。 */
 export function useOffPeakEligibility(
-  settings: AppSettings | null | undefined,
-  registryRevision: number | undefined,
+  _settings: AppSettings | null | undefined,
+  _registryRevision: number | undefined,
 ): void {
-  const { offPeakTaskService, codingPlanSubscriptionService } = useServices();
+  const { offPeakTaskService } = useServices();
   const initialize = useOffPeakTaskStore((state) => state.initialize);
-  const refresh = useOffPeakTaskStore((state) => state.refreshCodingPlanSupport);
-  const family = settings?.providerFamilyDomain;
-  const connection = family ? settings?.providerFamilyConnectionSelections?.[family] : undefined;
-  const freshnessKey = settings
-    ? JSON.stringify([registryRevision, family, connection])
-    : undefined;
 
   useEffect(() => {
-    void initialize({ offPeakTaskService, codingPlanSubscriptionService });
-  }, [initialize, offPeakTaskService, codingPlanSubscriptionService]);
-
-  useEffect(() => {
-    if (freshnessKey === undefined) return;
-    // Settings 变化只是失效信号；ProviderSettings View revision 来自 Registry 已完成发布。
-    // 即使选择没变，账号稍后就绪也会重查；相同 key 的双入口通知由 Store 去重。
-    void refresh(offPeakTaskService, freshnessKey);
-  }, [freshnessKey, offPeakTaskService, refresh]);
+    if (!offPeakTaskService) return;
+    void initialize({ offPeakTaskService });
+  }, [initialize, offPeakTaskService]);
 }

@@ -1,5 +1,4 @@
 /* eslint-disable max-lines -- 定时任务编辑整页集中维护 Settings/History 两个 tab、cron builder、项目/模型选择器与运行历史，集中更利于交互一致。 */
-import { useStartPlanRecommendation } from "@/hooks/useStartPlanRecommendation.js";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { completeNewModelSelection } from "@kcode/provider";
 import {
@@ -1491,24 +1490,6 @@ export function AutomationEditView({
         apiKeyBadgeLabel: intl.formatMessage({
           id: "settings.modelProvider.connectionMode.apiKeyBadge",
         }),
-        codingPlanLabel: intl.formatMessage({
-          id: "settings.modelProvider.connectionMode.codingPlan",
-        }),
-        codingPlanBadgeLabel: intl.formatMessage({
-          id: "settings.modelProvider.connectionMode.codingPlanBadge",
-        }),
-        startPlanLabel: intl.formatMessage({
-          id: "settings.modelProvider.connectionMode.startPlan",
-        }),
-        startPlanBadgeLabel: intl.formatMessage({
-          id: "settings.modelProvider.connectionMode.startPlanBadge",
-        }),
-        teamPlanBadgeLabel: intl.formatMessage({
-          id: "settings.modelProvider.connectionMode.teamPlanBadge",
-        }),
-        teamPlanFallbackLabel: intl.formatMessage({
-          id: "settings.modelProvider.connectionMode.teamPlan",
-        }),
       },
       registrySelectionView: modelSelectionView,
     });
@@ -1767,7 +1748,6 @@ export function AutomationEditView({
   // 字段才能触发未保存提示，否则仅打开已有任务再返回也会被误判为修改。
   const hasUnsavedChanges = Boolean(editing) && changedFields.length > 0;
 
-  const recommendStartPlan = useStartPlanRecommendation(modelSelectionView);
   const submitAutomation = useCallback(
     async (options: { validationSource: "save" | "run-now"; returnToList?: boolean }) => {
       if (saving) return false;
@@ -1799,11 +1779,6 @@ export function AutomationEditView({
           : null;
       // 只禁用按钮无法覆盖快捷键或异步回调；提交边界也必须拒绝无有效项目的新建。
       if (!target) return false;
-      if (input.modelSelection && (!editing || changedFields.includes("model"))) {
-        const chosen = await recommendStartPlan(input.modelSelection);
-        if (!chosen) return false;
-        input.modelSelection = chosen;
-      }
       const trace = startUserAction({
         featureId: "automation.lifecycle",
         action: editing ? "update" : "create",
@@ -1828,7 +1803,6 @@ export function AutomationEditView({
     [
       buildSubmitInput,
       changedFields,
-      recommendStartPlan,
       canSubmit,
       editing,
       onBack,

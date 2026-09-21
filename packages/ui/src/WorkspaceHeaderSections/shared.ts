@@ -5,8 +5,8 @@ import type {
   EditorInfo,
   GitRepositorySummary,
   RemoteTarget,
-  UserInfo,
 } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 
 export interface WorkspaceHeaderState {
   selectedProvider: KCodeProvider;

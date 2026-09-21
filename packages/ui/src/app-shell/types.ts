@@ -10,8 +10,8 @@ import type {
   RemoteTarget,
   RemoteWorkspaceSessionEntry,
   UpdateStatePayload,
-  UserInfo,
 } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 import type { IFeedbackService, IServiceAccessor } from "@kcode/services";
 import type { BrowserNavigationRequest, RecentClosedSidePaneTab } from "@/hooks/useAppPanels.js";
 import type { CodeViewerSource } from "@/lib/codeViewer.js";

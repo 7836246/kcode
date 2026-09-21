@@ -1,59 +1,24 @@
-import {
-  createCodingPlanApiKeyResolver,
-  createSharedKCodeCredentialStore,
-  createCliOAuthClient,
-  createCliOAuthPollToken,
-  openUrlInBrowser,
-  SHARED_KCODE_CREDENTIAL_KEYS,
-  type BrowserOpenResult,
-  type SharedKCodeCredentialStore,
-  type CliOAuthClient,
-  type CliOAuthInitData,
-  type CliOAuthPollData,
-  type CliOAuthUser,
-} from "@kcode/adapters";
-import { createConfig } from "@kcode/adapters/config";
-import { createNodeHttpClientAdapter } from "@kcode/adapters/http";
+import { createSharedKCodeCredentialStore, SHARED_KCODE_CREDENTIAL_KEYS } from "@kcode/adapters";
 import type { EnvRecord } from "@kcode/adapters/model";
-import { buildKCodeEndpointUrls, resolveRuntimeKCodeEndpointOrigin } from "@kcode/shared";
-import {
-  NodeModelSelectionConfigRepository,
-  NodePersonalProviderConfigRepository,
-  PERSONAL_PROVIDER_CONFIG_FILE_NAME,
-  KCODE_PERSONAL_PROVIDER_CONFIG_FILE_ENV,
-} from "@kcode/provider-node";
-import { readLegacyCliPersonalProviderConfig } from "./app/legacy-cli-personal-provider-config-importer.js";
-import { dirname, join } from "node:path";
-import {
-  createStandaloneAccountIdentityFromSecret,
-  hasStandaloneCodingPlanAccess,
-  readStandaloneCodingPlanProviders,
-  resolveStandaloneCodingPlanProvider,
-  standaloneAccountIdentityCredentialKey,
-  standaloneAccountProviderCredentialKey,
-} from "./app/standalone-account-provider-runtime.js";
-import { throwIfAborted, waitWithAbort } from "./auth-login-abort.js";
-import { setTimeout as delay } from "node:timers/promises";
-import { pollUntilReady } from "./auth-login-polling.js";
-
-const DEFAULT_LOGIN_TIMEOUT_MS = 5 * 60 * 1_000;
+import type { SharedKCodeCredentialStore } from "@kcode/adapters";
 
 export type CodingPlanProviderId = "bigmodel" | "zai";
+
+const OFFICIAL_LOGIN_UNSUPPORTED =
+  "Official Z.ai / BigModel login is no longer supported. Configure a generic API-key provider instead.";
 
 export interface LoginKCodeCliOptions {
   providerId?: CodingPlanProviderId;
   abortSignal?: AbortSignal;
-  apiKeyResolver?: ReturnType<typeof createCodingPlanApiKeyResolver>;
   baseUrl?: string;
   credentialStore?: SharedKCodeCredentialStore;
   env?: EnvRecord;
-  httpClient?: Parameters<typeof createCliOAuthClient>[0]["httpClient"];
   noBrowser?: boolean;
   now?: () => number;
-  onAuthorizeUrl?: (data: CliOAuthInitData) => void | Promise<void>;
-  onBrowserOpen?: (result: BrowserOpenResult) => void | Promise<void>;
-  onPollStatus?: (data: CliOAuthPollData) => void | Promise<void>;
-  openBrowser?: (url: string) => Promise<BrowserOpenResult>;
+  onAuthorizeUrl?: (data: { authorize_url: string }) => void | Promise<void>;
+  onBrowserOpen?: (result: { opened: boolean; reason?: string }) => void | Promise<void>;
+  onPollStatus?: (data: unknown) => void | Promise<void>;
+  openBrowser?: (url: string) => Promise<{ opened: boolean; reason?: string }>;
   pollToken?: string;
   sleep?: (ms: number) => Promise<void>;
   timeoutMs?: number;
@@ -61,12 +26,12 @@ export interface LoginKCodeCliOptions {
 }
 
 export interface LoginKCodeCliResult {
-  browser?: BrowserOpenResult;
+  browser?: { opened: boolean; reason?: string };
   configPath: string;
   credentialsPath: string;
   model: string;
   providerId: CodingPlanProviderId;
-  user: CliOAuthUser;
+  user: { user_id: string; email?: string; name?: string; avatar?: string };
 }
 
 export type LoginBigmodelCodingPlanOptions = Omit<LoginKCodeCliOptions, "providerId">;
@@ -96,14 +61,12 @@ export interface LogoutKCodeCliResult {
 }
 
 export async function hasConfiguredStandaloneCodingPlan(
-  options: {
+  _options: {
     credentialStore?: SharedKCodeCredentialStore;
     env?: EnvRecord;
   } = {},
 ): Promise<boolean> {
-  const credentialStore =
-    options.credentialStore ?? createSharedKCodeCredentialStore({ env: options.env });
-  return hasStandaloneCodingPlanAccess(credentialStore, options.env ?? process.env);
+  return false;
 }
 
 export class KCodeCliLoginError extends Error {
@@ -111,7 +74,8 @@ export class KCodeCliLoginError extends Error {
     | "auth_failed"
     | "auth_timeout"
     | "config_update_failed"
-    | "credential_write_failed";
+    | "credential_write_failed"
+    | "unsupported";
 
   constructor(
     code: KCodeCliLoginError["code"],
@@ -124,159 +88,20 @@ export class KCodeCliLoginError extends Error {
   }
 }
 
-export async function loginKCodeCli(
-  options: LoginKCodeCliOptions = {},
-): Promise<LoginKCodeCliResult> {
-  const env = options.env ?? process.env;
-  const providerId = options.providerId ?? "zai";
-  const now = options.now ?? Date.now;
-  const timeoutMs = options.timeoutMs ?? DEFAULT_LOGIN_TIMEOUT_MS;
-  const deadlineMs = now() + timeoutMs;
-  const timeoutController = new AbortController();
-  const signal = options.abortSignal
-    ? AbortSignal.any([options.abortSignal, timeoutController.signal])
-    : timeoutController.signal;
-  const timeoutError = () =>
-    new KCodeCliLoginError("auth_timeout", "Authorization timed out. Please retry login.");
-  let timer = setTimeout(() => timeoutController.abort(timeoutError()), timeoutMs);
-  try {
-    throwIfAborted(signal);
-    const pollToken = options.pollToken ?? createCliOAuthPollToken();
-    const credentialStore = options.credentialStore ?? createSharedKCodeCredentialStore({ env });
-    const oauthClient = createOAuthClient(options, env);
-    const initData = await waitWithAbort(oauthClient.init({ pollToken }, { signal }), signal);
-    const remainingMs = Math.min(deadlineMs, initData.expires_at * 1_000) - now();
-    if (remainingMs <= 0) throw timeoutError();
-    clearTimeout(timer);
-    timer = setTimeout(() => timeoutController.abort(timeoutError()), remainingMs);
-    await options.onAuthorizeUrl?.(initData);
-    throwIfAborted(signal);
-    const browser = options.noBrowser
-      ? undefined
-      : await waitWithAbort(
-          (options.openBrowser ?? openUrlInBrowser)(initData.authorize_url),
-          signal,
-        );
-    if (browser) await options.onBrowserOpen?.(browser);
-    const readyData = await pollUntilReady({
-      abortSignal: signal,
-      initData,
-      now,
-      oauthClient,
-      onPollStatus: options.onPollStatus,
-      pollToken,
-      sleep: options.sleep ?? ((ms) => delay(ms, undefined, { signal })),
-      timeoutMs: Math.max(0, deadlineMs - now()),
-      createError: (code) =>
-        code === "auth_timeout"
-          ? timeoutError()
-          : new KCodeCliLoginError(code, "Authorization failed. Please retry login."),
-    });
-    const apiKey = await waitWithAbort(
-      resolveCodingPlanApiKey({
-        accessToken: readyData.accessToken,
-        env,
-        httpClient: options.httpClient,
-        family: providerId,
-        resolver: options.apiKeyResolver,
-        signal,
-      }),
-      signal,
-    );
-    // A cancelled/expired attempt must not persist a late ready response or API key.
-    throwIfAborted(signal);
-    try {
-      if (providerId === "zai") {
-        await credentialStore.saveZaiLoginCredentials({
-          accessToken: readyData.accessToken,
-          jwtToken: readyData.token,
-          user: readyData.user,
-        });
-      } else {
-        await credentialStore.saveMany({
-          [SHARED_KCODE_CREDENTIAL_KEYS.activeProvider]: providerId,
-          [SHARED_KCODE_CREDENTIAL_KEYS.kcodeJwtToken]: readyData.token,
-          [SHARED_KCODE_CREDENTIAL_KEYS.bigmodelAccessToken]: readyData.accessToken,
-          ...(readyData.refreshToken
-            ? { [SHARED_KCODE_CREDENTIAL_KEYS.bigmodelRefreshToken]: readyData.refreshToken }
-            : {}),
-          [SHARED_KCODE_CREDENTIAL_KEYS.bigmodelUserInfo]: JSON.stringify({
-            id: readyData.user.user_id,
-            username: readyData.user.name || readyData.user.email || readyData.user.user_id,
-            displayName: readyData.user.name || readyData.user.email || readyData.user.user_id,
-            rawProfile: readyData.user,
-          }),
-        });
-      }
-    } catch (error) {
-      throw new KCodeCliLoginError(
-        "credential_write_failed",
-        "Login succeeded but writing credentials failed.",
-        { cause: error },
-      );
-    }
-    throwIfAborted(signal);
-    let configPatch: StandaloneCodingPlanPersistenceResult;
-    try {
-      configPatch = await persistStandaloneCodingPlanConnection({
-        accountIdentity: readyData.user.user_id,
-        apiKey,
-        credentialStore,
-        env,
-        personalProviderConfigPath: options.personalProviderConfigPath,
-        providerId,
-      });
-    } catch (error) {
-      throw new KCodeCliLoginError(
-        "config_update_failed",
-        "Login succeeded but updating KCode config failed.",
-        { cause: error },
-      );
-    }
-    return {
-      ...(browser ? { browser } : {}),
-      configPath: configPatch.path,
-      credentialsPath: credentialStore.filePath,
-      model: configPatch.mainModel,
-      providerId,
-      user: readyData.user,
-    };
-  } finally {
-    clearTimeout(timer);
-  }
+export async function loginKCodeCli(_options: LoginKCodeCliOptions = {}): Promise<LoginKCodeCliResult> {
+  throw new KCodeCliLoginError("unsupported", OFFICIAL_LOGIN_UNSUPPORTED);
 }
 
 export async function loginBigmodelCodingPlan(
-  options: LoginBigmodelCodingPlanOptions = {},
+  _options: LoginBigmodelCodingPlanOptions = {},
 ): Promise<LoginBigmodelCodingPlanResult> {
-  return {
-    ...(await loginKCodeCli({ ...options, providerId: "bigmodel" })),
-    providerId: "bigmodel",
-  };
+  throw new KCodeCliLoginError("unsupported", OFFICIAL_LOGIN_UNSUPPORTED);
 }
 
 export async function configureCodingPlanApiKey(
-  options: ConfigureCodingPlanApiKeyOptions,
+  _options: ConfigureCodingPlanApiKeyOptions,
 ): Promise<ConfigureCodingPlanApiKeyResult> {
-  const apiKey = options.apiKey.trim();
-  if (!apiKey) {
-    throw new KCodeCliLoginError("config_update_failed", "API key must not be empty.");
-  }
-  const credentialStore =
-    options.credentialStore ?? createSharedKCodeCredentialStore({ env: options.env });
-  const configPatch = await persistStandaloneCodingPlanConnection({
-    accountIdentity: createStandaloneAccountIdentityFromSecret(apiKey),
-    apiKey,
-    credentialStore,
-    env: options.env ?? process.env,
-    personalProviderConfigPath: options.personalProviderConfigPath,
-    providerId: options.providerId,
-  });
-  return {
-    configPath: configPatch.path,
-    model: configPatch.mainModel,
-    providerId: options.providerId,
-  };
+  throw new KCodeCliLoginError("unsupported", OFFICIAL_LOGIN_UNSUPPORTED);
 }
 
 export async function logoutKCodeCli(
@@ -284,27 +109,7 @@ export async function logoutKCodeCli(
 ): Promise<LogoutKCodeCliResult> {
   const credentialStore =
     options.credentialStore ?? createSharedKCodeCredentialStore({ env: options.env });
-  const providerIds = (await readStandaloneCodingPlanProviders(options.env ?? process.env)).map(
-    ({ providerId }) => providerId,
-  );
-  const identityKeys = providerIds.map(standaloneAccountIdentityCredentialKey);
-  const identities = await credentialStore.loadMany(identityKeys);
-  const dynamicApiKeyKeys = providerIds.flatMap((providerId) => {
-    const identity = identities[standaloneAccountIdentityCredentialKey(providerId)]?.trim();
-    return identity
-      ? [
-          standaloneAccountProviderCredentialKey({
-            providerId,
-            accountIdentity: identity,
-          }),
-        ]
-      : [];
-  });
-  const keys = [
-    ...Object.values(SHARED_KCODE_CREDENTIAL_KEYS),
-    ...identityKeys,
-    ...dynamicApiKeyKeys,
-  ];
+  const keys = Object.values(SHARED_KCODE_CREDENTIAL_KEYS);
   const current = await credentialStore.loadMany(keys);
   await credentialStore.deleteIfValues(
     Object.fromEntries(
@@ -314,97 +119,4 @@ export async function logoutKCodeCli(
   return {
     credentialsPath: credentialStore.filePath,
   };
-}
-
-interface StandaloneCodingPlanPersistenceResult {
-  readonly mainModel: string;
-  readonly path: string;
-}
-
-async function persistStandaloneCodingPlanConnection(input: {
-  readonly accountIdentity: string;
-  readonly apiKey: string;
-  readonly credentialStore: SharedKCodeCredentialStore;
-  readonly env: EnvRecord;
-  readonly personalProviderConfigPath?: string;
-  readonly providerId: CodingPlanProviderId;
-}): Promise<StandaloneCodingPlanPersistenceResult> {
-  const configuredProvider = await resolveStandaloneCodingPlanProvider(input.providerId, input.env);
-  const providerId = configuredProvider.providerId;
-  const modelId = configuredProvider.modelId;
-  const credentialKey = standaloneAccountProviderCredentialKey({
-    providerId,
-    accountIdentity: input.accountIdentity,
-  });
-  await input.credentialStore.saveMany({
-    [standaloneAccountIdentityCredentialKey(providerId)]: input.accountIdentity,
-    [credentialKey]: input.apiKey,
-  });
-  const path =
-    input.personalProviderConfigPath ??
-    input.env[KCODE_PERSONAL_PROVIDER_CONFIG_FILE_ENV]?.trim() ??
-    join(dirname(input.credentialStore.filePath), PERSONAL_PROVIDER_CONFIG_FILE_NAME);
-  // 登录与运行时共享文件和事务；首次写入仍先保留旧用户 Provider，不能仅写默认值。
-  const personalRepository = new NodePersonalProviderConfigRepository({
-    filePath: path,
-    importLegacy: () => readLegacyCliPersonalProviderConfig({}),
-    pollingIntervalMs: false,
-  });
-  const repository = new NodeModelSelectionConfigRepository({ personalRepository });
-  try {
-    await repository.saveConfiguredDefault({ providerId, modelId });
-  } finally {
-    repository.dispose();
-    personalRepository.dispose();
-  }
-  return {
-    mainModel: `${providerId}/${modelId}`,
-    path,
-  };
-}
-
-function createOAuthClient(options: LoginKCodeCliOptions, env: EnvRecord): CliOAuthClient {
-  return createCliOAuthClient({
-    baseUrl:
-      options.baseUrl ?? buildKCodeEndpointUrls(resolveCliKCodeEndpointOrigin(env)).apiBaseUrl,
-    providerId: options.providerId ?? "zai",
-    httpClient: options.httpClient ?? createDefaultHttpClient(env),
-  });
-}
-
-function resolveCliKCodeEndpointOrigin(env: EnvRecord): string {
-  return resolveRuntimeKCodeEndpointOrigin(env);
-}
-
-function createDefaultHttpClient(env: EnvRecord) {
-  const config = createConfig({ env });
-  return createNodeHttpClientAdapter({
-    env,
-    proxyUrl: config.config.network.httpProxy,
-    noProxy: config.config.network.noProxy,
-    caCertFile: config.config.network.caCertFile,
-    timeoutMs: config.config.network.timeout,
-  });
-}
-
-async function resolveCodingPlanApiKey(input: {
-  accessToken: string;
-  env: EnvRecord;
-  httpClient?: Parameters<typeof createCodingPlanApiKeyResolver>[0]["httpClient"];
-  family: CodingPlanProviderId;
-  resolver?: ReturnType<typeof createCodingPlanApiKeyResolver>;
-  signal?: AbortSignal;
-}): Promise<string> {
-  const resolver =
-    input.resolver ??
-    createCodingPlanApiKeyResolver({
-      httpClient: input.httpClient ?? createDefaultHttpClient(input.env),
-    });
-  return resolver.resolve(
-    {
-      accessToken: input.accessToken,
-      family: input.family,
-    },
-    { signal: input.signal },
-  );
 }

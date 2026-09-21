@@ -11,8 +11,6 @@ import { thirdPartyNoticesVitePlugin } from "../../scripts/third-party-notices.m
 import {
   resolveRuntimeKCodeEndpointOrigin,
   pickProductEndpointEnv,
-  resolveZaiOAuthClientId,
-  resolveZaiOAuthOrigin,
 } from "@kcode/shared/kcodeEndpoint";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -34,9 +32,6 @@ export default defineConfig(({ mode }) => {
     KCODE_ENV: kcodeEnv,
   };
   const kcodeEndpointOrigin = resolveRuntimeKCodeEndpointOrigin(endpointEnv);
-  const zaiOAuthOrigin = resolveZaiOAuthOrigin(endpointEnv);
-  // ZAI OAuth client_id 是公开标识，允许注入浏览器包；secret/token 不得走 VITE_。
-  const zaiOAuthClientId = resolveZaiOAuthClientId(endpointEnv);
 
   return {
     plugins: [pdfJsCMapsPlugin(), react(), tailwindcss(), thirdPartyNoticesVitePlugin()],
@@ -56,13 +51,6 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        // Web 登录本地调试时，OAuth token 交换必须先命中线上同源接口。
-        // 该专用代理放在 `/api` 通配代理之前，避免被转发到本地 server 导致 404。
-        "/api/v1/oauth/token": {
-          target: kcodeEndpointOrigin,
-          changeOrigin: true,
-          secure: true,
-        },
         // 将 /ws 和 /api 请求代理到 server（默认 3030 端口）
         "/ws": { target: "ws://localhost:3030", ws: true },
         "/api": { target: "http://localhost:3030" },
@@ -89,9 +77,6 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_KCODE_BASE_URL": JSON.stringify(kcodeEndpointOrigin),
       // 兼容旧 Web runtime 读取名；新代码统一读 VITE_KCODE_BASE_URL。
       "import.meta.env.VITE_KCODE_ENDPOINT_ORIGIN": JSON.stringify(kcodeEndpointOrigin),
-      // 明确注入 OAuth 公开配置，避免 Web 端在不同 mode 下隐式依赖源码 fallback。
-      "import.meta.env.VITE_ZAI_OAUTH_CLIENT_ID": JSON.stringify(zaiOAuthClientId),
-      "import.meta.env.VITE_ZAI_OAUTH_ORIGIN": JSON.stringify(zaiOAuthOrigin),
     },
     build: {
       // 生产不在浏览器产物暴露 sourceMappingURL，避免客户端侧还原业务源码。

@@ -20,19 +20,15 @@ const StoreContext = createContext<KCodeStore | null>(null);
 
 export function StoreProvider({
   broadcastService,
-  initialIsRestoringOAuthSession = false,
   children,
 }: {
   broadcastService: IBroadcastService;
-  initialIsRestoringOAuthSession?: boolean;
   children: ReactNode;
 }) {
   // 只在首次渲染时创建 store，避免 HMR 重复订阅
   const storeRef = useRef<KCodeStore | null>(null);
   if (!storeRef.current) {
-    storeRef.current = createKCodeStore(broadcastService, {
-      initialIsRestoringOAuthSession,
-    });
+    storeRef.current = createKCodeStore(broadcastService);
   }
 
   return <StoreContext.Provider value={storeRef.current}>{children}</StoreContext.Provider>;

@@ -1,4 +1,5 @@
-import type { IPlatformService, UserInfo } from "@kcode/shared";
+import type { IPlatformService } from "@kcode/shared";
+import type { UserInfo } from "@/lib/userInfo.js";
 import type { IServiceAccessor } from "@kcode/services";
 import type { ReactNode } from "react";
 import type { CreateTaskRequest } from "@/app-shell/types.js";

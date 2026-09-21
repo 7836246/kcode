@@ -3,11 +3,6 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import {
-  BUILTIN_MODEL_PROVIDER_IDS,
-  resolveBigModelApiOrigin,
-  resolveRuntimeKCodeEnv,
-} from "@kcode/shared";
-import {
   createModelProviderModelConfig,
   getDefaultModelSupportedFormatsFromApiFormat,
   getDefaultModelSupportedFormatsFromEndpoints,
@@ -50,11 +45,17 @@ import { getAppConfigDir } from "../paths.js";
 
 const LEGACY_PRESET_GLM_PROVIDER_IDS = new Set<string>([
   "zai-api",
-  BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan,
-  BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan,
   "bigmodel-api",
-  BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan,
-  BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,
+  "zai-standard-api",
+  "bigmodel-standard-api",
+  "account:zai-individual-coding-plan",
+  "account:zai-start-plan",
+  "account:zai-team-coding-plan",
+  "account:zai-offpeak-idle-plan",
+  "account:bigmodel-individual-coding-plan",
+  "account:bigmodel-start-plan",
+  "account:bigmodel-team-coding-plan",
+  "account:bigmodel-offpeak-idle-plan",
 ]);
 
 function isLegacyPresetGlmProviderId(providerId: string): boolean {
@@ -65,30 +66,13 @@ const BIGMODEL_CODING_PLAN_ANTHROPIC_BASE_URL = "https://open.bigmodel.cn/api/an
 
 function normalizeBigModelCodingPlanAnthropicBaseUrlForEnv(
   baseUrl: string | undefined,
-  env: Record<string, string | undefined> = process.env,
 ): string {
-  const fallbackBaseUrl =
-    resolveRuntimeKCodeEnv(env) === "production"
-      ? BIGMODEL_CODING_PLAN_ANTHROPIC_BASE_URL
-      : `${resolveBigModelApiOrigin(env)}/api/anthropic`;
+  const fallbackBaseUrl = BIGMODEL_CODING_PLAN_ANTHROPIC_BASE_URL;
   const normalizedBaseUrl = normalizeModelProviderBaseUrlForKind(
     baseUrl ?? fallbackBaseUrl,
     "anthropic",
   );
-  if (resolveRuntimeKCodeEnv(env) === "production") {
-    return normalizedBaseUrl || fallbackBaseUrl;
-  }
-
-  try {
-    const parsed = new URL(normalizedBaseUrl || fallbackBaseUrl);
-    const productionParsed = new URL(BIGMODEL_CODING_PLAN_ANTHROPIC_BASE_URL);
-    // 旧配置可能保存生产域名；测试环境的 Team Plan Key 无法调用生产网关。
-    return parsed.origin === productionParsed.origin
-      ? fallbackBaseUrl
-      : normalizedBaseUrl || fallbackBaseUrl;
-  } catch {
-    return fallbackBaseUrl;
-  }
+  return normalizedBaseUrl || fallbackBaseUrl;
 }
 
 function getKCodeConfigFilePath(): string {
@@ -471,7 +455,7 @@ function isBigModelCodingPlanLegacyOpenAiRuntime(
   providerId: string,
   baseURL: string | undefined,
 ): boolean {
-  if (providerId !== BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan) {
+  if (providerId !== "account:bigmodel-individual-coding-plan") {
     return false;
   }
   const normalized = baseURL?.trim().toLowerCase() ?? "";
@@ -498,7 +482,7 @@ function resolveOpenCodeProviderEndpoints(
         },
       };
     }
-    if (providerId === BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan) {
+    if (providerId === "account:bigmodel-individual-coding-plan") {
       return {
         baseURL: normalizeBigModelCodingPlanAnthropicBaseUrlForEnv(baseURL),
         paths: {

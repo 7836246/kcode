@@ -19,6 +19,10 @@ import {
 import { resolveOwnedOrder } from "./owned-order.js";
 import type { ModelSelection } from "@kcode/shared/model-selection";
 import type { ProviderConfigSnapshot, ProviderSource } from "./sources.js";
+import {
+  omitRetiredOfficialProviders,
+  omitRetiredOfficialTemplates,
+} from "./retiredOfficialProviders.js";
 
 export interface ProviderConfigLayerSnapshot {
   readonly revision: string;
@@ -119,9 +123,11 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
       revision: JSON.stringify([kcodeBuiltin.revision, personal.revision]),
       kcodeBuiltinRevision: kcodeBuiltin.revision,
       personalRevision: personal.revision,
-      kcodeBuiltinProviders: kcodeBuiltin.providers,
-      kcodeBuiltinProviderTemplates: kcodeBuiltin.providerTemplates ?? ProviderTemplateMap.empty(),
-      personalProviders: personal.providers,
+      kcodeBuiltinProviders: omitRetiredOfficialProviders(kcodeBuiltin.providers),
+      kcodeBuiltinProviderTemplates: omitRetiredOfficialTemplates(
+        kcodeBuiltin.providerTemplates ?? ProviderTemplateMap.empty(),
+      ),
+      personalProviders: omitRetiredOfficialProviders(personal.providers),
       kcodeBuiltinModelRules: kcodeBuiltin.models,
       personalModels: personal.models,
       personalProviderOrder: personal.providerOrder ?? [],
