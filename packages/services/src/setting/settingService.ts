@@ -24,6 +24,7 @@ import {
   deleteManagedSystemRolePreset,
   loadManagedSystemRoleEditorContent,
   syncManagedSystemRoleProjection,
+  updateManagedSystemRolePreset,
   writeManagedSystemRoleContent,
 } from "./managedSystemRoleProjection.js";
 import { withSettingsWriteQueueTimeout } from "./settingsWriteQueue.js";
@@ -392,6 +393,7 @@ export function createSettingServiceWithMigrations(): {
     readManagedSystemRoleContent: loadManagedSystemRoleEditorContent,
     writeManagedSystemRoleContent,
     createManagedSystemRolePreset,
+    updateManagedSystemRolePreset,
     deleteManagedSystemRolePreset,
   };
 

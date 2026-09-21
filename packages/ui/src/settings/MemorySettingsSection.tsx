@@ -69,6 +69,7 @@ export function MemorySettingsSection({
     | "readManagedSystemRoleContent"
     | "writeManagedSystemRoleContent"
     | "createManagedSystemRolePreset"
+    | "updateManagedSystemRolePreset"
     | "deleteManagedSystemRolePreset"
   >;
   onManagedSystemRoleEnabledChange: (enabled: boolean) => Promise<void>;

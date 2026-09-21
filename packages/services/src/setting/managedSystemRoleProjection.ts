@@ -63,6 +63,20 @@ export interface ManagedSystemRoleEditorSnapshot {
   readonly template: string;
   readonly unrestrictedTemplate: string;
   readonly presets: readonly ManagedSystemRolePreset[];
+  readonly presetId: string | null;
+}
+
+export function resolveSelectedPresetId(
+  presets: readonly ManagedSystemRolePreset[],
+  content: string,
+  preferredId?: string | null,
+): string | null {
+  if (preferredId) {
+    const preferred = presets.find((preset) => preset.id === preferredId);
+    if (preferred && preferred.content === content) return preferred.id;
+  }
+  const matches = presets.filter((preset) => preset.content === content);
+  return matches.length === 1 ? matches[0]?.id ?? null : null;
 }
 
 function resolveUserHomeDir(): string {
@@ -83,6 +97,44 @@ export function resolveManagedSystemRolePath(): string {
 
 export function resolveManagedSystemRolePresetsPath(): string {
   return join(resolveUserHomeDir(), ".kcode", PRESETS_FILE_NAME);
+}
+
+interface ManagedSystemRoleState {
+  enabled?: boolean;
+  presetId?: string;
+}
+
+async function readManagedSystemRoleState(): Promise<ManagedSystemRoleState> {
+  try {
+    const parsed: unknown = JSON.parse(await readFile(resolveManagedSystemRoleStatePath(), "utf8"));
+    if (!parsed || typeof parsed !== "object") return {};
+    const record = parsed as { enabled?: unknown; presetId?: unknown };
+    return {
+      ...(typeof record.enabled === "boolean" ? { enabled: record.enabled } : {}),
+      ...(typeof record.presetId === "string" && record.presetId.trim()
+        ? { presetId: record.presetId.trim() }
+        : {}),
+    };
+  } catch {
+    return {};
+  }
+}
+
+async function writeManagedSystemRoleState(patch: {
+  enabled?: boolean;
+  presetId?: string | null;
+}): Promise<void> {
+  const current = await readManagedSystemRoleState();
+  const next: ManagedSystemRoleState = { ...current };
+  if (patch.enabled !== undefined) next.enabled = patch.enabled;
+  if (patch.presetId === null) {
+    delete next.presetId;
+  } else if (typeof patch.presetId === "string" && patch.presetId.trim()) {
+    next.presetId = patch.presetId.trim();
+  }
+  const path = resolveManagedSystemRoleStatePath();
+  await mkdir(dirname(path), { recursive: true });
+  await atomicWriteText(path, `${JSON.stringify(next, null, 2)}\n`);
 }
 
 function builtinPresets(): readonly ManagedSystemRolePreset[] {
@@ -167,10 +219,9 @@ export async function listManagedSystemRolePresets(): Promise<ManagedSystemRoleP
 
 /** 把设置页开关投影给 Agent；正文文件只在首次开启且缺失时补默认模板。 */
 export async function persistManagedSystemRoleProjection(enabled: boolean): Promise<void> {
-  const statePath = resolveManagedSystemRoleStatePath();
   const rolePath = resolveManagedSystemRolePath();
-  await mkdir(dirname(statePath), { recursive: true });
-  await atomicWriteText(statePath, `${JSON.stringify({ enabled }, null, 2)}\n`);
+  // 只改 enabled，保留已保存的 presetId，避免开关把高亮项清掉。
+  await writeManagedSystemRoleState({ enabled });
   if (!enabled) return;
   try {
     await access(rolePath);
@@ -187,19 +238,60 @@ export async function readManagedSystemRoleContent(): Promise<string> {
   }
 }
 
-export async function writeManagedSystemRoleContent(content: string): Promise<void> {
+export async function writeManagedSystemRoleContent(
+  content: string,
+  options?: { presetId?: string | null },
+): Promise<void> {
   const rolePath = resolveManagedSystemRolePath();
   await mkdir(dirname(rolePath), { recursive: true });
   await atomicWriteText(rolePath, content);
+  if (options && "presetId" in options) {
+    await writeManagedSystemRoleState({ presetId: options.presetId ?? null });
+  }
 }
 
 export async function loadManagedSystemRoleEditorContent(): Promise<ManagedSystemRoleEditorSnapshot> {
+  const [content, presets, state] = await Promise.all([
+    readManagedSystemRoleContent(),
+    listManagedSystemRolePresets(),
+    readManagedSystemRoleState(),
+  ]);
   return {
-    content: await readManagedSystemRoleContent(),
+    content,
     template: DEFAULT_MANAGED_SYSTEM_ROLE,
     unrestrictedTemplate: UNRESTRICTED_MANAGED_SYSTEM_ROLE,
-    presets: await listManagedSystemRolePresets(),
+    presets,
+    presetId: resolveSelectedPresetId(presets, content, state.presetId),
   };
+}
+
+export async function updateManagedSystemRolePreset(input: {
+  id: string;
+  content: string;
+}): Promise<ManagedSystemRolePreset> {
+  if (
+    input.id === DEFAULT_MANAGED_SYSTEM_ROLE_PRESET_ID ||
+    input.id === UNRESTRICTED_MANAGED_SYSTEM_ROLE_PRESET_ID
+  ) {
+    throw new Error("Cannot update a builtin managed system-role preset");
+  }
+  const custom = await readCustomPresets();
+  const index = custom.findIndex((preset) => preset.id === input.id);
+  if (index < 0) {
+    throw new Error("Managed system-role preset not found");
+  }
+  const current = custom[index];
+  if (!current) {
+    throw new Error("Managed system-role preset not found");
+  }
+  const updated: ManagedSystemRolePreset = {
+    ...current,
+    content: input.content,
+  };
+  const next = [...custom];
+  next[index] = updated;
+  await writeCustomPresets(next);
+  return updated;
 }
 
 export async function createManagedSystemRolePreset(input: {
@@ -230,6 +322,10 @@ export async function deleteManagedSystemRolePreset(id: string): Promise<void> {
   }
   const custom = await readCustomPresets();
   await writeCustomPresets(custom.filter((preset) => preset.id !== id));
+  const state = await readManagedSystemRoleState();
+  if (state.presetId === id) {
+    await writeManagedSystemRoleState({ presetId: null });
+  }
 }
 
 export async function syncManagedSystemRoleProjection(params: {

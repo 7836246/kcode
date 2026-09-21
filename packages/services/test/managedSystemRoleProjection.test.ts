@@ -11,8 +11,10 @@ import {
   loadManagedSystemRoleEditorContent,
   persistManagedSystemRoleProjection,
   readManagedSystemRoleContent,
+  resolveSelectedPresetId,
   UNRESTRICTED_MANAGED_SYSTEM_ROLE,
   UNRESTRICTED_MANAGED_SYSTEM_ROLE_PRESET_ID,
+  updateManagedSystemRolePreset,
   writeManagedSystemRoleContent,
 } from "../src/setting/managedSystemRoleProjection.js";
 
@@ -61,6 +63,44 @@ test("开启开关时写入投影，并在正文缺失时补默认模板", async
     const snapshot = await loadManagedSystemRoleEditorContent();
     assert.equal(snapshot.unrestrictedTemplate, UNRESTRICTED_MANAGED_SYSTEM_ROLE);
     assert.ok(snapshot.presets.length >= 2);
+
+    const sameContentCustom = await createManagedSystemRolePreset({
+      name: "默认副本",
+      content: DEFAULT_MANAGED_SYSTEM_ROLE,
+    });
+    const presets = await listManagedSystemRolePresets();
+    assert.equal(
+      resolveSelectedPresetId(presets, DEFAULT_MANAGED_SYSTEM_ROLE),
+      null,
+    );
+    assert.equal(
+      resolveSelectedPresetId(presets, DEFAULT_MANAGED_SYSTEM_ROLE, sameContentCustom.id),
+      sameContentCustom.id,
+    );
+    await writeManagedSystemRoleContent(DEFAULT_MANAGED_SYSTEM_ROLE, {
+      presetId: sameContentCustom.id,
+    });
+    await persistManagedSystemRoleProjection(true);
+    const afterToggle = await loadManagedSystemRoleEditorContent();
+    assert.equal(afterToggle.presetId, sameContentCustom.id);
+    const keptSelection = JSON.parse(
+      await readFile(join(home, ".kcode", "system-role.json"), "utf8"),
+    ) as { enabled?: boolean; presetId?: string };
+    assert.equal(keptSelection.enabled, true);
+    assert.equal(keptSelection.presetId, sameContentCustom.id);
+    const updated = await updateManagedSystemRolePreset({
+      id: sameContentCustom.id,
+      content: "You are an updated custom role.\n",
+    });
+    assert.equal(updated.content, "You are an updated custom role.\n");
+    const listedUpdated = await listManagedSystemRolePresets();
+    assert.equal(
+      listedUpdated.find((preset) => preset.id === sameContentCustom.id)?.content,
+      "You are an updated custom role.\n",
+    );
+    await assert.rejects(() =>
+      updateManagedSystemRolePreset({ id: "default", content: "nope\n" }),
+    );
   } finally {
     if (previousHome === undefined) {
       delete process.env.KCODE_DESKTOP_HOME_DIR;

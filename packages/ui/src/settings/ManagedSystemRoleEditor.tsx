@@ -1,19 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Save, Undo2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Save, Undo2 } from "lucide-react";
 import type { ISettingService, ManagedSystemRolePreset } from "@kcode/services";
 import {
-  TID_SETTINGS_MANAGED_SYSTEM_ROLE_ADD_PRESET,
   TID_SETTINGS_MANAGED_SYSTEM_ROLE_EDITOR,
-  TID_SETTINGS_MANAGED_SYSTEM_ROLE_PRESET,
-  TID_SETTINGS_MANAGED_SYSTEM_ROLE_PRESET_NAME,
   TID_SETTINGS_MANAGED_SYSTEM_ROLE_PREVIEW,
   TID_SETTINGS_MANAGED_SYSTEM_ROLE_RESTORE,
   TID_SETTINGS_MANAGED_SYSTEM_ROLE_SAVE,
   TID_SETTINGS_MANAGED_SYSTEM_ROLE_TAB_EDIT,
   TID_SETTINGS_MANAGED_SYSTEM_ROLE_TAB_PREVIEW,
+  TID_SETTINGS_MANAGED_SYSTEM_ROLE_UPDATE_PRESET,
 } from "@kcode/shared";
 import { Button } from "@/components/ui/button.js";
-import { Input } from "@/components/ui/input.js";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
 import { Textarea } from "@/components/ui/textarea.js";
 import { toast } from "@/components/ui/toast.js";
@@ -21,30 +18,22 @@ import { cn } from "@/components/lib/utils.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
 import { SettingsGroupCard } from "@/settings/SettingsPageParts.js";
+import {
+  ManagedSystemRoleDiscardDialog,
+  ManagedSystemRolePresetToolbar,
+} from "@/settings/ManagedSystemRolePresetToolbar.js";
 
 type ManagedSystemRoleSettingService = Pick<
   ISettingService,
   | "readManagedSystemRoleContent"
   | "writeManagedSystemRoleContent"
-  | "createManagedSystemRolePreset"
-  | "deleteManagedSystemRolePreset"
+    | "createManagedSystemRolePreset"
+    | "updateManagedSystemRolePreset"
+    | "deleteManagedSystemRolePreset"
 >;
 
 const EDITOR_SURFACE_CLASS =
   "h-80 max-h-80 min-h-80 w-full overflow-y-auto rounded-md border border-border bg-surface px-3 py-2 font-mono text-ui-base [field-sizing:fixed] [overflow-wrap:anywhere]";
-
-function presetLabel(
-  preset: ManagedSystemRolePreset,
-  formatMessage: (descriptor: { id: string }) => string,
-): string {
-  if (preset.id === "default") {
-    return formatMessage({ id: "settings.managedSystemRole.preset.default" });
-  }
-  if (preset.id === "unrestricted") {
-    return formatMessage({ id: "settings.managedSystemRole.preset.unrestricted" });
-  }
-  return preset.name;
-}
 
 export function ManagedSystemRoleEditor({
   ready,
@@ -62,12 +51,15 @@ export function ManagedSystemRoleEditor({
   const [saving, setSaving] = useState(false);
   const [addingPreset, setAddingPreset] = useState(false);
   const [presetName, setPresetName] = useState("");
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [pendingSwitch, setPendingSwitch] = useState<
+    { kind: "preset"; preset: ManagedSystemRolePreset } | { kind: "restore" } | null
+  >(null);
   const loadVersionRef = useRef(0);
   const dirty = draft !== saved;
-  const selectedPresetId = useMemo(
-    () => presets.find((preset) => preset.content === draft)?.id ?? null,
-    [draft, presets],
-  );
+  const selectedPreset = presets.find((preset) => preset.id === selectedPresetId) ?? null;
+  const selectedCustomDirty =
+    selectedPreset?.kind === "custom" && selectedPreset.content !== draft;
 
   const load = useCallback(async () => {
     if (!ready) return;
@@ -81,6 +73,7 @@ export function ManagedSystemRoleEditor({
       setSaved(result.content);
       setTemplate(result.template);
       setPresets([...result.presets]);
+      setSelectedPresetId(result.presetId);
     } catch (error) {
       if (loadVersionRef.current !== version) return;
       toast(intl.formatMessage({ id: "settings.managedSystemRole.loadFailed" }));
@@ -104,7 +97,9 @@ export function ManagedSystemRoleEditor({
     if (!dirty || saving || loading) return;
     setSaving(true);
     try {
-      await settingService.writeManagedSystemRoleContent(draft);
+      await settingService.writeManagedSystemRoleContent(draft, {
+        presetId: selectedPresetId,
+      });
       setSaved(draft);
       toast(intl.formatMessage({ id: "settings.managedSystemRole.savedHint" }));
     } catch (error) {
@@ -113,20 +108,43 @@ export function ManagedSystemRoleEditor({
     } finally {
       setSaving(false);
     }
-  }, [dirty, draft, intl, loading, saving, settingService]);
+  }, [dirty, draft, intl, loading, saving, selectedPresetId, settingService]);
+
+  const applyDraft = useCallback((nextDraft: string, nextPresetId: string | null) => {
+    setDraft(nextDraft);
+    setSelectedPresetId(nextPresetId);
+  }, []);
 
   const handleRestore = useCallback(() => {
     if (!template) return;
-    setDraft(template);
-  }, [template]);
+    if (dirty && draft !== template) {
+      setPendingSwitch({ kind: "restore" });
+      return;
+    }
+    applyDraft(template, "default");
+  }, [applyDraft, dirty, draft, template]);
 
   const handleApplyPreset = useCallback(
     (preset: ManagedSystemRolePreset) => {
-      if (preset.content === draft) return;
-      setDraft(preset.content);
+      if (preset.id === selectedPresetId && preset.content === draft) return;
+      if (dirty && preset.content !== draft) {
+        setPendingSwitch({ kind: "preset", preset });
+        return;
+      }
+      applyDraft(preset.content, preset.id);
     },
-    [draft],
+    [applyDraft, dirty, draft, selectedPresetId],
   );
+
+  const handleConfirmSwitch = useCallback(() => {
+    if (!pendingSwitch) return;
+    if (pendingSwitch.kind === "restore") {
+      applyDraft(template, "default");
+    } else {
+      applyDraft(pendingSwitch.preset.content, pendingSwitch.preset.id);
+    }
+    setPendingSwitch(null);
+  }, [applyDraft, pendingSwitch, template]);
 
   const handleCreatePreset = useCallback(async () => {
     const name = presetName.trim();
@@ -138,6 +156,7 @@ export function ManagedSystemRoleEditor({
         content: draft,
       });
       setPresets((current) => [...current.filter((preset) => preset.id !== created.id), created]);
+      setSelectedPresetId(created.id);
       setPresetName("");
       setAddingPreset(false);
       toast(intl.formatMessage({ id: "settings.managedSystemRole.preset.added" }));
@@ -149,6 +168,36 @@ export function ManagedSystemRoleEditor({
     }
   }, [draft, intl, loading, presetName, ready, saving, settingService]);
 
+  const handleUpdatePreset = useCallback(async () => {
+    if (!selectedPreset || selectedPreset.kind !== "custom" || !selectedCustomDirty) return;
+    if (saving || loading || !ready) return;
+    setSaving(true);
+    try {
+      const updated = await settingService.updateManagedSystemRolePreset({
+        id: selectedPreset.id,
+        content: draft,
+      });
+      setPresets((current) =>
+        current.map((preset) => (preset.id === updated.id ? updated : preset)),
+      );
+      toast(intl.formatMessage({ id: "settings.managedSystemRole.preset.updated" }));
+    } catch (error) {
+      toast(intl.formatMessage({ id: "settings.managedSystemRole.preset.updateFailed" }));
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    draft,
+    intl,
+    loading,
+    ready,
+    saving,
+    selectedCustomDirty,
+    selectedPreset,
+    settingService,
+  ]);
+
   const handleDeletePreset = useCallback(
     async (preset: ManagedSystemRolePreset) => {
       if (preset.kind !== "custom" || saving || loading || !ready) return;
@@ -156,6 +205,7 @@ export function ManagedSystemRoleEditor({
       try {
         await settingService.deleteManagedSystemRolePreset(preset.id);
         setPresets((current) => current.filter((item) => item.id !== preset.id));
+        setSelectedPresetId((current) => (current === preset.id ? null : current));
       } catch (error) {
         toast(intl.formatMessage({ id: "settings.managedSystemRole.preset.deleteFailed" }));
         throw error;
@@ -172,112 +222,18 @@ export function ManagedSystemRoleEditor({
         <div className="text-ui-base leading-6 text-foreground-subtle">
           {intl.formatMessage({ id: "settings.managedSystemRole.editorHint" })}
         </div>
-        <div className="space-y-2">
-          <div className="text-ui-sm text-foreground-subtle">
-            {intl.formatMessage({ id: "settings.managedSystemRole.preset.label" })}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {presets.map((preset) => {
-              const selected = selectedPresetId === preset.id;
-              return (
-                <div key={preset.id} className="flex items-center">
-                  <Button
-                    type="button"
-                    variant={selected ? "default" : "outline"}
-                    size="sm"
-                    disabled={loading || saving || !ready}
-                    onClick={() => {
-                      runUserAction({
-                        input: {
-                          featureId: "settings.memory",
-                          action: "apply_managed_system_role_preset",
-                          trigger: "button",
-                        },
-                        operation: () => handleApplyPreset(preset),
-                        completed: { resultSource: "local_commit" },
-                        failureStage: "managed_system_role_preset_apply",
-                      });
-                    }}
-                    data-testid={`${TID_SETTINGS_MANAGED_SYSTEM_ROLE_PRESET}-${preset.id}`}
-                  >
-                    {presetLabel(preset, intl.formatMessage)}
-                  </Button>
-                  {preset.kind === "custom" ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      className="ml-0.5"
-                      disabled={loading || saving || !ready}
-                      aria-label={intl.formatMessage({
-                        id: "settings.managedSystemRole.preset.delete",
-                      })}
-                      onClick={() => {
-                        void runUserActionAsync({
-                          input: {
-                            featureId: "settings.memory",
-                            action: "delete_managed_system_role_preset",
-                            trigger: "button",
-                          },
-                          operation: () => handleDeletePreset(preset),
-                          completed: { resultSource: "shared_settings" },
-                          failureStage: "managed_system_role_preset_delete",
-                        }).catch(() => undefined);
-                      }}
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  ) : null}
-                </div>
-              );
-            })}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={loading || saving || !ready}
-              onClick={() => setAddingPreset((open) => !open)}
-              data-testid={TID_SETTINGS_MANAGED_SYSTEM_ROLE_ADD_PRESET}
-            >
-              <Plus className="size-4" />
-              {intl.formatMessage({ id: "settings.managedSystemRole.preset.add" })}
-            </Button>
-          </div>
-          {addingPreset ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                value={presetName}
-                onChange={(event) => setPresetName(event.target.value)}
-                placeholder={intl.formatMessage({
-                  id: "settings.managedSystemRole.preset.namePlaceholder",
-                })}
-                disabled={loading || saving || !ready}
-                className="max-w-56"
-                data-testid={TID_SETTINGS_MANAGED_SYSTEM_ROLE_PRESET_NAME}
-              />
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                disabled={!presetName.trim() || saving || loading || !ready}
-                onClick={() => {
-                  void runUserActionAsync({
-                    input: {
-                      featureId: "settings.memory",
-                      action: "create_managed_system_role_preset",
-                      trigger: "button",
-                    },
-                    operation: handleCreatePreset,
-                    completed: { resultSource: "shared_settings" },
-                    failureStage: "managed_system_role_preset_create",
-                  }).catch(() => undefined);
-                }}
-              >
-                {intl.formatMessage({ id: "settings.managedSystemRole.preset.saveNew" })}
-              </Button>
-            </div>
-          ) : null}
-        </div>
+        <ManagedSystemRolePresetToolbar
+          addingPreset={addingPreset}
+          disabled={loading || saving || !ready}
+          onAdd={() => setAddingPreset((open) => !open)}
+          onApply={handleApplyPreset}
+          onCreate={handleCreatePreset}
+          onDelete={handleDeletePreset}
+          onPresetNameChange={setPresetName}
+          presetName={presetName}
+          presets={presets}
+          selectedPresetId={selectedPresetId}
+        />
         <Tabs defaultValue="edit">
           <TabsList variant="line">
             <TabsTrigger
@@ -357,6 +313,27 @@ export function ManagedSystemRoleEditor({
           <Button
             variant="outline"
             size="sm"
+            disabled={!selectedCustomDirty || saving || loading || !ready}
+            onClick={() => {
+              void runUserActionAsync({
+                input: {
+                  featureId: "settings.memory",
+                  action: "update_managed_system_role_preset",
+                  trigger: "button",
+                },
+                operation: handleUpdatePreset,
+                completed: { resultSource: "shared_settings" },
+                failureStage: "managed_system_role_preset_update",
+              }).catch(() => undefined);
+            }}
+            data-testid={TID_SETTINGS_MANAGED_SYSTEM_ROLE_UPDATE_PRESET}
+          >
+            <Save className="size-4" />
+            {intl.formatMessage({ id: "settings.managedSystemRole.preset.update" })}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={loading || saving || !ready || !template || draft === template}
             onClick={() => {
               runUserAction({
@@ -382,6 +359,11 @@ export function ManagedSystemRoleEditor({
           ) : null}
         </div>
       </div>
+      <ManagedSystemRoleDiscardDialog
+        open={pendingSwitch !== null}
+        onCancel={() => setPendingSwitch(null)}
+        onConfirm={handleConfirmSwitch}
+      />
     </SettingsGroupCard>
   );
 }

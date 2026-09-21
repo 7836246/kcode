@@ -19,9 +19,16 @@ export interface ISettingService {
   updateDataBaseDir(newDir: string | undefined): Promise<void>;
   ensureDefaultProject(homedir: string): Promise<{ path: string; created: boolean }>;
   readManagedSystemRoleContent(): Promise<ManagedSystemRoleEditorSnapshot>;
-  writeManagedSystemRoleContent(content: string): Promise<void>;
+  writeManagedSystemRoleContent(
+    content: string,
+    options?: { presetId?: string | null },
+  ): Promise<void>;
   createManagedSystemRolePreset(input: {
     name: string;
+    content: string;
+  }): Promise<ManagedSystemRolePreset>;
+  updateManagedSystemRolePreset(input: {
+    id: string;
     content: string;
   }): Promise<ManagedSystemRolePreset>;
   deleteManagedSystemRolePreset(id: string): Promise<void>;
