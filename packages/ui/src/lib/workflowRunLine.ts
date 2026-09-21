@@ -5,8 +5,8 @@ import type {
   SessionWorkflowActivity,
   SessionWorkflowPhaseSummary,
   SessionWorkflowRunSummary,
-} from "@zcode/shared/zcode-protocol-v4";
-import { isSessionWorkflowRunLive } from "@zcode/shared/zcode-protocol-v4";
+} from "@kcode/shared/kcode-protocol-v4";
+import { isSessionWorkflowRunLive } from "@kcode/shared/kcode-protocol-v4";
 import { bandOf, foldPhaseBands, trackOf } from "../components/workflow-timeline/timeline-bands.js";
 
 /** 一个会话最多画的运行行数；其余折成「+n」。 */

@@ -1,4 +1,4 @@
-import type { IPlatformService } from "@zcode/shared";
+import type { IPlatformService } from "@kcode/shared";
 
 type DesktopBrowserPlatformBridge = Pick<
   IPlatformService,
@@ -27,39 +27,39 @@ type DesktopBrowserPlatformBridge = Pick<
 // Rebase 集成：browser bridge 若继续内联在 renderer 入口，会让入口越过 max-lines 门禁。
 // 独立对象只做 preload 委托与旧 bridge 兼容兜底，不持有 Browser 业务状态。
 export const desktopBrowserPlatformBridge = {
-  getPathForFile: (file) => window.zcode.getPathForFile?.(file) ?? null,
+  getPathForFile: (file) => window.kcode.getPathForFile?.(file) ?? null,
   saveFile: (payload) =>
-    window.zcode.saveFile?.(payload) ?? Promise.resolve({ success: false, error: "not_supported" }),
+    window.kcode.saveFile?.(payload) ?? Promise.resolve({ success: false, error: "not_supported" }),
   // 条件定义而非兜底返回失败：UI 靠方法是否存在做能力检测，旧 preload 下必须保持 undefined
-  printPageToPdf: window.zcode.printPageToPdf ? () => window.zcode.printPageToPdf!() : undefined,
-  onBrowserViewReady: (handler) => window.zcode.onBrowserViewReady?.(handler) ?? (() => {}),
-  onBrowserViewOperation: (handler) => window.zcode.onBrowserViewOperation?.(handler) ?? (() => {}),
+  printPageToPdf: window.kcode.printPageToPdf ? () => window.kcode.printPageToPdf!() : undefined,
+  onBrowserViewReady: (handler) => window.kcode.onBrowserViewReady?.(handler) ?? (() => {}),
+  onBrowserViewOperation: (handler) => window.kcode.onBrowserViewOperation?.(handler) ?? (() => {}),
   onBrowserViewViewportChanged: (handler) =>
-    window.zcode.onBrowserViewViewportChanged?.(handler) ?? (() => {}),
+    window.kcode.onBrowserViewViewportChanged?.(handler) ?? (() => {}),
   onBrowserViewVisibility: (handler) =>
-    window.zcode.onBrowserViewVisibility?.(handler) ?? (() => {}),
-  onBrowserViewCloseTab: (handler) => window.zcode.onBrowserViewCloseTab?.(handler) ?? (() => {}),
-  onBrowserViewSuspend: (handler) => window.zcode.onBrowserViewSuspend?.(handler) ?? (() => {}),
-  onBrowserViewRestore: (handler) => window.zcode.onBrowserViewRestore?.(handler) ?? (() => {}),
+    window.kcode.onBrowserViewVisibility?.(handler) ?? (() => {}),
+  onBrowserViewCloseTab: (handler) => window.kcode.onBrowserViewCloseTab?.(handler) ?? (() => {}),
+  onBrowserViewSuspend: (handler) => window.kcode.onBrowserViewSuspend?.(handler) ?? (() => {}),
+  onBrowserViewRestore: (handler) => window.kcode.onBrowserViewRestore?.(handler) ?? (() => {}),
   browserViewAttachGuest: (payload) =>
-    window.zcode.browserViewAttachGuest?.(payload) ??
+    window.kcode.browserViewAttachGuest?.(payload) ??
     Promise.resolve({ ok: false, reason: "not-found", recoveryRequested: false }),
   browserViewDetachGuest: (payload) =>
-    window.zcode.browserViewDetachGuest?.(payload) ?? Promise.resolve(false),
+    window.kcode.browserViewDetachGuest?.(payload) ?? Promise.resolve(false),
   browserViewCloseTab: (payload) =>
-    window.zcode.browserViewCloseTab?.(payload) ?? Promise.resolve(),
+    window.kcode.browserViewCloseTab?.(payload) ?? Promise.resolve(),
   browserViewReportResidency: (payload) =>
-    window.zcode.browserViewReportResidency?.(payload) ?? Promise.resolve(),
+    window.kcode.browserViewReportResidency?.(payload) ?? Promise.resolve(),
   browserViewSuspendReady: (payload) =>
-    window.zcode.browserViewSuspendReady?.(payload) ?? Promise.resolve(),
+    window.kcode.browserViewSuspendReady?.(payload) ?? Promise.resolve(),
   browserViewEnsureResident: (payload) =>
-    window.zcode.browserViewEnsureResident?.(payload) ?? Promise.resolve(),
+    window.kcode.browserViewEnsureResident?.(payload) ?? Promise.resolve(),
   browserViewRestoreTabs: (payload) =>
-    window.zcode.browserViewRestoreTabs?.(payload) ?? Promise.resolve([]),
+    window.kcode.browserViewRestoreTabs?.(payload) ?? Promise.resolve([]),
   browserViewUpdateViewport: (payload) =>
-    window.zcode.browserViewUpdateViewport?.(payload) ?? Promise.resolve(),
+    window.kcode.browserViewUpdateViewport?.(payload) ?? Promise.resolve(),
   importChromeBrowserData: (options) =>
-    window.zcode.importChromeBrowserData?.(options) ??
+    window.kcode.importChromeBrowserData?.(options) ??
     Promise.resolve({
       success: false,
       cookies: { imported: 0, skipped: 0, failed: 0 },
@@ -72,6 +72,6 @@ export const desktopBrowserPlatformBridge = {
       error: "unsupported",
     }),
   clearEmbeddedBrowserData: (mode) =>
-    window.zcode.clearEmbeddedBrowserData?.(mode) ??
+    window.kcode.clearEmbeddedBrowserData?.(mode) ??
     Promise.resolve({ success: false, error: "unsupported" }),
 } satisfies DesktopBrowserPlatformBridge;

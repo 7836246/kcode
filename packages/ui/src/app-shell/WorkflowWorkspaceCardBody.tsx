@@ -8,7 +8,7 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useWorkflowRunNodeResult } from "@/hooks/useWorkflowRunNodeResult.js";
 import {
   formatWorkspaceBytes,
@@ -71,7 +71,7 @@ function DiffLines({ text }: { text: string }) {
 }
 
 function CopyButton({ text }: { text: string }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [copied, setCopied] = useState(false);
   const copy = useCallback(() => {
     if (text.length === 0) return;
@@ -126,7 +126,7 @@ export const WorkspaceCardBody = memo(function WorkspaceCardBody({
   runId: string;
   sessionId: string;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const format = intl.formatMessage.bind(intl);
   const { node } = card;
   const { result, loading, error } = useWorkflowRunNodeResult({

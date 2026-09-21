@@ -1,12 +1,12 @@
 import { create } from "zustand";
-import type { ZCodeTaskMeta } from "@zcode/shared";
-import type { ZCodeTaskListSortBy, IZCodeTaskService } from "@zcode/services";
+import type { KCodeTaskMeta } from "@kcode/shared";
+import type { KCodeTaskListSortBy, IKCodeTaskService } from "@kcode/services";
 import { logger } from "@/logger.js";
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
 import { getRemoteWorkspaceSession } from "@/store/remoteWorkspaceSessionStore.js";
 
 interface RemoteTimelineTaskState {
-  itemsByWorkspaceKey: Record<string, ZCodeTaskMeta[]>;
+  itemsByWorkspaceKey: Record<string, KCodeTaskMeta[]>;
   totalByWorkspaceKey: Record<string, number>;
   hasMoreByWorkspaceKey: Record<string, boolean>;
   loadingByWorkspaceKey: Record<string, boolean>;
@@ -14,11 +14,11 @@ interface RemoteTimelineTaskState {
   refreshWorkspace: (params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    zcodeTaskService: Pick<IZCodeTaskService, "listTaskList">;
-    sortBy: ZCodeTaskListSortBy;
+    kcodeTaskService: Pick<IKCodeTaskService, "listTaskList">;
+    sortBy: KCodeTaskListSortBy;
     limit?: number;
   }) => Promise<void>;
-  upsertTask: (task: ZCodeTaskMeta, sortBy?: ZCodeTaskListSortBy) => void;
+  upsertTask: (task: KCodeTaskMeta, sortBy?: KCodeTaskListSortBy) => void;
   removeTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
   clearWorkspace: (workspacePath: string, workspaceIdentity?: string) => void;
 }
@@ -28,9 +28,9 @@ function getWorkspaceKey(workspacePath: string, workspaceIdentity?: string): str
 }
 
 function sortTimelineTasks(
-  tasks: ZCodeTaskMeta[],
-  sortBy: ZCodeTaskListSortBy = "updated",
-): ZCodeTaskMeta[] {
+  tasks: KCodeTaskMeta[],
+  sortBy: KCodeTaskListSortBy = "updated",
+): KCodeTaskMeta[] {
   return [...tasks].sort((left, right) => {
     if (sortBy === "created") {
       if (right.createdAt !== left.createdAt) {
@@ -57,7 +57,7 @@ export const useRemoteTimelineTaskStore = create<RemoteTimelineTaskState>()((set
   hasMoreByWorkspaceKey: {},
   loadingByWorkspaceKey: {},
   errorByWorkspaceKey: {},
-  async refreshWorkspace({ workspacePath, workspaceIdentity, zcodeTaskService, sortBy, limit }) {
+  async refreshWorkspace({ workspacePath, workspaceIdentity, kcodeTaskService, sortBy, limit }) {
     const workspaceKey = getWorkspaceKey(workspacePath, workspaceIdentity);
     set((state) => ({
       loadingByWorkspaceKey: {
@@ -71,7 +71,7 @@ export const useRemoteTimelineTaskStore = create<RemoteTimelineTaskState>()((set
     }));
 
     try {
-      const result = await zcodeTaskService.listTaskList({
+      const result = await kcodeTaskService.listTaskList({
         kind: "timeline",
         workspaceScopes: [
           {
@@ -191,7 +191,7 @@ export async function refreshRemoteTimelineTasksForSession({
   sessionId: string;
   workspacePath: string;
   workspaceIdentity?: string;
-  sortBy?: ZCodeTaskListSortBy;
+  sortBy?: KCodeTaskListSortBy;
   limit?: number;
 }): Promise<void> {
   const session = getRemoteWorkspaceSession(sessionId);
@@ -207,7 +207,7 @@ export async function refreshRemoteTimelineTasksForSession({
   await useRemoteTimelineTaskStore.getState().refreshWorkspace({
     workspacePath,
     workspaceIdentity,
-    zcodeTaskService: session.services.zcodeTaskService,
+    kcodeTaskService: session.services.kcodeTaskService,
     sortBy,
     limit,
   });

@@ -20,7 +20,7 @@ import type {
   SettingsSyncSourceScope,
   SettingsSyncSourceRootSummary,
   SettingsSyncTaskImportResult,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import {
   copyFile,
   cp,
@@ -411,7 +411,7 @@ const SUPPORTED_MCP_AGENT_SOURCES: ExternalAgentMcpPathSource[] = [
   },
 ];
 
-const ZCODE_PLUGIN_MANIFEST_PATH = [".zcode-plugin", "plugin.json"] as const;
+const KCODE_PLUGIN_MANIFEST_PATH = [".kcode-plugin", "plugin.json"] as const;
 const CLAUDE_PLUGIN_MANIFEST_PATH = [".claude-plugin", "plugin.json"] as const;
 const CODEX_PLUGIN_MANIFEST_PATH = [".codex-plugin", "plugin.json"] as const;
 const INLINE_PLUGIN_MARKETPLACE = "inline";
@@ -422,35 +422,35 @@ function resolveUserHomeDir(): string {
 }
 
 function getWorkspaceZcodeSkillRoot(workspacePath: string): string {
-  return join(workspacePath, ".zcode", "skills");
+  return join(workspacePath, ".kcode", "skills");
 }
 
 function getUserZcodeSkillRoot(): string {
-  return join(resolveUserHomeDir(), ".zcode", "skills");
+  return join(resolveUserHomeDir(), ".kcode", "skills");
 }
 
 function getWorkspaceZcodeCommandRoot(workspacePath: string): string {
-  return join(workspacePath, ".zcode", "commands");
+  return join(workspacePath, ".kcode", "commands");
 }
 
 function getUserZcodeCommandRoot(): string {
-  return join(resolveUserHomeDir(), ".zcode", "commands");
+  return join(resolveUserHomeDir(), ".kcode", "commands");
 }
 
 function getWorkspaceZcodePluginRoot(workspacePath: string): string {
-  return join(workspacePath, ".zcode", "plugins");
+  return join(workspacePath, ".kcode", "plugins");
 }
 
 function getUserZcodePluginRoot(): string {
-  return join(resolveUserHomeDir(), ".zcode", "plugins");
+  return join(resolveUserHomeDir(), ".kcode", "plugins");
 }
 
 function getUserZcodeCliConfigPath(): string {
-  return join(resolveUserHomeDir(), ".zcode", "cli", "config.json");
+  return join(resolveUserHomeDir(), ".kcode", "cli", "config.json");
 }
 
 function getWorkspaceZcodeConfigPath(workspacePath: string): string {
-  return join(workspacePath, ".zcode", "config.json");
+  return join(workspacePath, ".kcode", "config.json");
 }
 
 function getClaudeUserAgentsFileSourcePath(): string {
@@ -458,7 +458,7 @@ function getClaudeUserAgentsFileSourcePath(): string {
 }
 
 function getUserZcodeAgentsFilePath(): string {
-  return join(resolveUserHomeDir(), ".zcode", "AGENTS.md");
+  return join(resolveUserHomeDir(), ".kcode", "AGENTS.md");
 }
 
 function resolveTargetRootForScope(
@@ -778,9 +778,9 @@ async function collectCommandMarkdownPaths(rootPath: string): Promise<string[]> 
 }
 
 async function findPluginManifestPath(pluginPath: string): Promise<string | null> {
-  const zcodeManifestPath = join(pluginPath, ...ZCODE_PLUGIN_MANIFEST_PATH);
-  if (await pathExists(zcodeManifestPath)) {
-    return zcodeManifestPath;
+  const kcodeManifestPath = join(pluginPath, ...KCODE_PLUGIN_MANIFEST_PATH);
+  if (await pathExists(kcodeManifestPath)) {
+    return kcodeManifestPath;
   }
   const claudeManifestPath = join(pluginPath, ...CLAUDE_PLUGIN_MANIFEST_PATH);
   if (await pathExists(claudeManifestPath)) {

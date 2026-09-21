@@ -11,11 +11,11 @@ import {
 import {
   OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME,
   WORKFLOW_REFINE_PERMISSION_OPTION_ID,
-  type ZCodePermissionOption,
-  type ZCodePermissionRequest,
-  type ZCodeProvider,
-} from "@zcode/shared";
-import { MAX_PERMISSION_FEEDBACK_CHARS } from "@zcode/shared/zcode-protocol-v4";
+  type KCodePermissionOption,
+  type KCodePermissionRequest,
+  type KCodeProvider,
+} from "@kcode/shared";
+import { MAX_PERMISSION_FEEDBACK_CHARS } from "@kcode/shared/kcode-protocol-v4";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
 import { Textarea } from "@/components/ui/textarea.js";
@@ -44,9 +44,9 @@ import { InteractionRequestOriginBadge } from "@/InteractionRequestOriginBadge.j
 import { WorkflowPermissionBlock } from "@/WorkflowPermissionBlock.js";
 import { SaveWorkflowPermissionBlock } from "@/SaveWorkflowPermissionBlock.js";
 import { isSaveWorkflowToolCall } from "@/lib/workflowToolNames.js";
-import { useZCodeStoreWithDefault } from "@/store/StoreProvider.js";
+import { useKCodeStoreWithDefault } from "@/store/StoreProvider.js";
 import { DEFAULT_CODE_PREVIEW_SETTINGS } from "@/lib/codePreviewSettings.js";
-import { useZCodeIntl } from "./i18n/IntlProvider.js";
+import { useKCodeIntl } from "./i18n/IntlProvider.js";
 import { Info, LoaderIcon, WrenchIcon } from "lucide-react";
 
 const MCP_PERMISSION_TOOL_ICON = <WrenchIcon className="size-4 shrink-0 text-foreground-subtle" />;
@@ -90,7 +90,7 @@ function formatPermissionRuleScope(content: string): PermissionRuleScope {
   return { display: `${visible}${suffix}`, truncated };
 }
 
-function readPermissionRuleScopes(option: ZCodePermissionOption): PermissionRuleScope[] {
+function readPermissionRuleScopes(option: KCodePermissionOption): PermissionRuleScope[] {
   const scopes: PermissionRuleScope[] = [];
   for (const update of option.response?.permissionUpdates ?? []) {
     if (update.type !== "addRules" || update.behavior !== "allow") continue;
@@ -104,7 +104,7 @@ function readPermissionRuleScopes(option: ZCodePermissionOption): PermissionRule
   return scopes.slice(0, 5);
 }
 
-function isOfficialCuaProjectPermission(option: ZCodePermissionOption): boolean {
+function isOfficialCuaProjectPermission(option: KCodePermissionOption): boolean {
   return (option.response?.permissionUpdates ?? []).some(
     (update) =>
       update.type === "addRules" &&
@@ -118,7 +118,7 @@ function isOfficialCuaProjectPermission(option: ZCodePermissionOption): boolean 
  * 该选项不渲染成按钮，而是作为反馈行的应答目标：用户在其他确认窗同一行编号输入行里写修改意见，
  * 提交时应答携带 freeText，CLI broker 据此把 deny 升级为带 workflow_refine_feedback 的用户反馈。
  */
-function isWorkflowRefineOption(option: ZCodePermissionOption): boolean {
+function isWorkflowRefineOption(option: KCodePermissionOption): boolean {
   return option.optionId === WORKFLOW_REFINE_PERMISSION_OPTION_ID;
 }
 
@@ -160,10 +160,10 @@ function getOptionLabelMessageId(kind: string): string | null {
 }
 
 const PROVIDER_PERMISSION_OPTION_NAME_LABELS: Partial<
-  Record<ZCodeProvider, Record<string, string>>
+  Record<KCodeProvider, Record<string, string>>
 > = {
   glm: {
-    // GLM/ZCode Agent 通过 ZCode Agent 发来的项目级记忆授权文案是英文原文。
+    // GLM/KCode Agent 通过 KCode Agent 发来的项目级记忆授权文案是英文原文。
     // 这里把已知 provider-native 权限文案统一归一到 i18n，避免被当成自定义选项直出英文。
     "always allow in this project": "chat.permission.allowForProject",
   },
@@ -191,7 +191,7 @@ const GLOBAL_PERMISSION_OPTION_NAME_LABELS: Record<string, PermissionOptionNameM
 };
 
 function getProviderOptionNameMessageIds(
-  provider: ZCodeProvider | undefined,
+  provider: KCodeProvider | undefined,
   name: string,
 ): PermissionOptionNameMessageIds | null {
   const normalizedName = name.trim().replace(/\s+/g, " ").toLowerCase();
@@ -231,7 +231,7 @@ function readUserFacingPermissionReason(value: unknown): string | null {
   return reason && !NON_USER_FACING_PERMISSION_REASONS.has(reason) ? reason : null;
 }
 
-function getPermissionDisplayReason(request: ZCodePermissionRequest): string | null {
+function getPermissionDisplayReason(request: KCodePermissionRequest): string | null {
   const rawInput = readRawToolCallInput(request.raw);
   const inputReason = isPlainRecord(rawInput)
     ? (readUserFacingPermissionReason(rawInput.description) ??
@@ -336,7 +336,7 @@ function getPermissionBlockInteraction(blockKind: PermissionBlockKind): Permissi
 }
 
 function buildPermissionToolCall(
-  request: ZCodePermissionRequest,
+  request: KCodePermissionRequest,
   preview: ReturnType<typeof getPermissionRequestPreview>,
 ): TaskChatToolCall {
   const rawInput = readRawToolCallInput(request.raw);
@@ -434,17 +434,17 @@ export function PermissionDialog({
   responding = false,
   responseError,
 }: {
-  request: ZCodePermissionRequest;
+  request: KCodePermissionRequest;
   responding?: boolean;
   responseError?: string;
-  onRespond: (requestId: string, option: ZCodePermissionOption, feedback?: string) => void;
+  onRespond: (requestId: string, option: KCodePermissionOption, feedback?: string) => void;
   workspacePath: string;
-  provider?: ZCodeProvider;
+  provider?: KCodeProvider;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   // store 耦合剥离：主题/代码预览设置在宿主处取 store，向下走 props/render context。
-  const theme = useZCodeStoreWithDefault((state) => state.theme, "system");
-  const codePreviewSettings = useZCodeStoreWithDefault(
+  const theme = useKCodeStoreWithDefault((state) => state.theme, "system");
+  const codePreviewSettings = useKCodeStoreWithDefault(
     (state) => state.codePreviewSettings,
     DEFAULT_CODE_PREVIEW_SETTINGS,
   );
@@ -557,7 +557,7 @@ export function PermissionDialog({
   );
 
   const respondWithOption = useCallback(
-    (option: ZCodePermissionOption) => {
+    (option: KCodePermissionOption) => {
       if (responding) return;
       const selectedKind = getPermissionOptionDisplayKind(option.kind);
       // 通用确认窗里 Deny 顺带把反馈行草稿作为拒绝理由发出；工作流确认窗的草稿属于 Refine，
@@ -682,7 +682,7 @@ export function PermissionDialog({
             : blockKind === "execute"
               ? ExecuteToolCallBlock
               : FallbackToolCallBlock;
-  // 当前 ZCode Agent 的 ExitPlanMode 权限请求不再传 legacy switch_mode。
+  // 当前 KCode Agent 的 ExitPlanMode 权限请求不再传 legacy switch_mode。
   // 这里复用 tool identity，避免审批弹窗和聊天区的计划模式工具分流再次漂移。
   const shouldUseSwitchModePlaceholder = resolveToolCallIdentity(toolCall).family === "switch-mode";
   // 工作流确认窗自带本地化标题（「运行此工作流？」）和图主体，走独立块而不是通用预览块。
@@ -756,7 +756,7 @@ export function PermissionDialog({
                 const knownNameLabel = nameMessageIds
                   ? intl.formatMessage({ id: nameMessageIds.label })
                   : null;
-                // ZCode Agent 协议里 option.name 才是给用户看的真实选项文案，kind 只表示按钮语义。
+                // KCode Agent 协议里 option.name 才是给用户看的真实选项文案，kind 只表示按钮语义。
                 // 之前这里一律按 kind 本地化，像 switch_mode 这类不同语义但同属 allow_always 的选项，
                 // 会被错误压成两条一模一样的“始终允许”。
                 const preferOptionName = shouldPreferPermissionOptionName(option);

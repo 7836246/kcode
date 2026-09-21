@@ -1,5 +1,5 @@
-import { BUILTIN_MODEL_PROVIDER_IDS, resolveZaiBusinessBaseUrl } from "@zcode/shared";
-import type { CodingPlanSubscriptionProviderId } from "@zcode/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS, resolveZaiBusinessBaseUrl } from "@kcode/shared";
+import type { CodingPlanSubscriptionProviderId } from "@kcode/shared";
 import {
   BigModelCodingPlanSubscriptionProvider,
   createZaiLoginAuthHeaders,

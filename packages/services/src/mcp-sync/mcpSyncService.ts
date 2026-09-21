@@ -17,7 +17,7 @@ import type {
   SaveCliMcpToUserDirectoryRequest,
   SettingsDirectoryLocation,
   SettingsDirectorySource,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { IMcpSyncService } from "./mcpSync.js";
 import { checkRemoteSyncDirectoryWriteAccess } from "../remote-sync/remoteSyncWriteAccess.js";
 
@@ -40,11 +40,11 @@ interface UserMcpRecord {
   path: string;
 }
 
-const ZCODE_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
-  source: "zcode",
-  directorySource: "zcode",
-  userConfigDirSegments: [".zcode", "cli"],
-  workspaceConfigDirSegments: [".zcode"],
+const KCODE_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
+  source: "kcode",
+  directorySource: "kcode",
+  userConfigDirSegments: [".kcode", "cli"],
+  workspaceConfigDirSegments: [".kcode"],
   fileName: "config.json",
   configKeyName: "mcp.servers",
 };
@@ -65,7 +65,7 @@ const ENABLED_KEY = "enabled";
 const LEGACY_ENABLE_KEY = "enable";
 const SECRET_CONFIG_FILE_MODE = 0o600;
 const DIRECTORY_MCP_DESCRIPTORS: readonly DirectoryMcpDescriptor[] = [
-  ZCODE_MCP_DESCRIPTOR,
+  KCODE_MCP_DESCRIPTOR,
   AGENTS_MCP_DESCRIPTOR,
 ];
 
@@ -170,7 +170,7 @@ function buildUserConfigPath(descriptor: DirectoryMcpDescriptor): string {
 }
 
 function getUserZcodeMcpConfigPath(): string {
-  return buildUserConfigPath(ZCODE_MCP_DESCRIPTOR);
+  return buildUserConfigPath(KCODE_MCP_DESCRIPTOR);
 }
 
 function buildDirectoryMcpLocation(
@@ -198,9 +198,9 @@ function findDescriptorByLocation(location: SettingsDirectoryLocation): Director
 }
 
 async function collectEffectiveUserMcpRecords(): Promise<UserMcpRecord[]> {
-  const zcodeRecords = await readUserMcpRecordsFromFile(ZCODE_MCP_DESCRIPTOR);
-  if (zcodeRecords.length > 0) {
-    return sortMcpRecords(zcodeRecords);
+  const kcodeRecords = await readUserMcpRecordsFromFile(KCODE_MCP_DESCRIPTOR);
+  if (kcodeRecords.length > 0) {
+    return sortMcpRecords(kcodeRecords);
   }
   return sortMcpRecords(await readUserMcpRecordsFromFile(AGENTS_MCP_DESCRIPTOR));
 }
@@ -237,7 +237,7 @@ async function saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest)
     const scope: Exclude<McpScope, "common"> = payload.projectPath ? "workspace" : "user";
     const location =
       payload.location ??
-      buildDirectoryMcpLocation(ZCODE_MCP_DESCRIPTOR, scope, payload.projectPath);
+      buildDirectoryMcpLocation(KCODE_MCP_DESCRIPTOR, scope, payload.projectPath);
     await writeServerEnabledToFile(
       findDescriptorByLocation(location),
       location,
@@ -250,7 +250,7 @@ async function saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest)
 
   const scope: Exclude<McpScope, "common"> = payload.projectPath ? "workspace" : "user";
   const existingServers = await readDirectoryServersFromFile(
-    ZCODE_MCP_DESCRIPTOR,
+    KCODE_MCP_DESCRIPTOR,
     scope,
     payload.projectPath,
   );
@@ -267,7 +267,7 @@ async function saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest)
     delete nextServers[payload.name];
   }
 
-  await writeZCodeServersToFile(scope, nextServers, payload.projectPath);
+  await writeKCodeServersToFile(scope, nextServers, payload.projectPath);
 }
 
 function sortMcpRecords(records: UserMcpRecord[]): UserMcpRecord[] {
@@ -278,13 +278,13 @@ async function readDirectoryServersFromPreferredSources(
   scope: Exclude<McpScope, "common">,
   workspacePath?: string,
 ): Promise<NativeMcpServerRecord[]> {
-  const zcodeServers = await readDirectoryServersFromFile(
-    ZCODE_MCP_DESCRIPTOR,
+  const kcodeServers = await readDirectoryServersFromFile(
+    KCODE_MCP_DESCRIPTOR,
     scope,
     workspacePath,
   );
-  if (zcodeServers.length > 0) {
-    return zcodeServers;
+  if (kcodeServers.length > 0) {
+    return kcodeServers;
   }
   return readDirectoryServersFromFile(AGENTS_MCP_DESCRIPTOR, scope, workspacePath);
 }
@@ -306,7 +306,7 @@ async function readDirectoryServersFromFile(
   );
   const location = buildDirectoryMcpLocation(descriptor, scope, workspacePath);
   return Object.entries(serverMap).map(([name, config]) => ({
-    source: "zcodeagentmcp",
+    source: "kcodeagentmcp",
     scope,
     name,
     config: config as McpServerConfig,
@@ -320,14 +320,14 @@ async function readDirectoryServersFromFile(
   }));
 }
 
-async function writeZCodeServersToFile(
+async function writeKCodeServersToFile(
   scope: Exclude<McpScope, "common">,
   servers: Record<string, Record<string, unknown>>,
   workspacePath?: string,
 ): Promise<void> {
-  const filePath = buildDirectoryConfigPath(ZCODE_MCP_DESCRIPTOR, scope, workspacePath);
+  const filePath = buildDirectoryConfigPath(KCODE_MCP_DESCRIPTOR, scope, workspacePath);
   const current = (await readJsonObject(filePath)) ?? {};
-  const next = writeServerMapToJson(current, ZCODE_MCP_DESCRIPTOR.configKeyName, servers);
+  const next = writeServerMapToJson(current, KCODE_MCP_DESCRIPTOR.configKeyName, servers);
   await writeTextAtomic(filePath, `${JSON.stringify(next, null, 2)}\n`);
 }
 
@@ -564,7 +564,7 @@ async function importMcpServers(params: {
 }): Promise<McpSyncImportResult> {
   const targetPath = getUserZcodeMcpConfigPath();
   const current = (await readJsonObject(targetPath)) ?? {};
-  const targetServers = readServerMapFromJson(current, ZCODE_MCP_DESCRIPTOR.configKeyName);
+  const targetServers = readServerMapFromJson(current, KCODE_MCP_DESCRIPTOR.configKeyName);
   const existingByName = await collectEffectiveUserMcpRecordByName();
   const results: McpSyncImportResult["results"] = [];
   let changed = false;
@@ -603,7 +603,7 @@ async function importMcpServers(params: {
         name: server.name,
         config: rewrittenConfig,
         enabled: server.enabled,
-        source: "zcode",
+        source: "kcode",
         path: targetPath,
       });
       results.push({ name: server.name, status: "synced", path: targetPath });
@@ -621,7 +621,7 @@ async function importMcpServers(params: {
   if (changed) {
     await writeTextAtomic(
       targetPath,
-      `${JSON.stringify(writeServerMapToJson(current, ZCODE_MCP_DESCRIPTOR.configKeyName, targetServers), null, 2)}\n`,
+      `${JSON.stringify(writeServerMapToJson(current, KCODE_MCP_DESCRIPTOR.configKeyName, targetServers), null, 2)}\n`,
     );
   }
 

@@ -1,5 +1,5 @@
-import type { ConversationRow, ToolCallRow } from "@zcode/shared/zcode-protocol-v4";
-import type { OfficialMcpToolErrorCode } from "@zcode/shared";
+import type { ConversationRow, ToolCallRow } from "@kcode/shared/kcode-protocol-v4";
+import type { OfficialMcpToolErrorCode } from "@kcode/shared";
 
 /**
  * 官方 Server MCP 本次会话内被判定不可用的事实（额度耗尽 / 无 Coding Plan）。

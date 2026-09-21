@@ -1,6 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "../plugin-marketplaces.js";
+import { KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "../plugin-marketplaces.js";
 
 interface OfficialPluginCacheRoot {
   /** 缓存目录名，即官方插件 name。 */
@@ -10,14 +10,14 @@ interface OfficialPluginCacheRoot {
 }
 
 /**
- * 扫描 `<plugins storage>/cache/zcode-plugins-official/<name>/<version>/`。
+ * 扫描 `<plugins storage>/cache/kcode-plugins-official/<name>/<version>/`。
  * 内置官方插件由 CLI seed 到这里、没有 installed_plugins.json 记录，services 只读安装记录时会漏掉它们。
  * 版本目录跳过 CLI 的备份 / seed 锁 / 临时目录，并按数字感知降序排序，与 CLI 回退选取一致。
  */
 export async function scanOfficialPluginCacheRoots(
   pluginStorageRoot: string,
 ): Promise<OfficialPluginCacheRoot[]> {
-  const cacheRoot = join(pluginStorageRoot, "cache", ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID);
+  const cacheRoot = join(pluginStorageRoot, "cache", KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID);
   let pluginEntries;
   try {
     pluginEntries = await readdir(cacheRoot, { withFileTypes: true });

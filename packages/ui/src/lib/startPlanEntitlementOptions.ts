@@ -1,5 +1,5 @@
-import type { ProviderSettingsView } from "@zcode/services";
-import { resolveModelProviderFamilySpecByProviderId } from "@zcode/shared";
+import type { ProviderSettingsView } from "@kcode/services";
+import { resolveModelProviderFamilySpecByProviderId } from "@kcode/shared";
 import type { UseUsageEntitlementOptions } from "@/hooks/useUsageEntitlement.js";
 import { resolveAccountProviderInspectionAccess } from "@/lib/accountProviderAccess.js";
 import { buildUsageEntitlementCacheKey } from "@/lib/usageEntitlementCache.js";

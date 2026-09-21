@@ -1,8 +1,8 @@
 import { AlertTriangle, Loader2, RefreshCw, Trash2 } from "lucide-react";
-import type { ZCodePluginMarketplaceSummary } from "@zcode/shared";
+import type { KCodePluginMarketplaceSummary } from "@kcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { resolveMarketplaceDisplayName } from "@/settings/pluginSourceLabel.js";
 import {
   isPublicStoreMarketplaceId,
@@ -10,16 +10,16 @@ import {
 } from "@/settings/pluginStoreListing.js";
 
 // 官方市场不可移除：移除后启动时会被重新补种，只会造成「删了又回来」的困惑。
-function isRemovableMarketplace(marketplace: ZCodePluginMarketplaceSummary): boolean {
+function isRemovableMarketplace(marketplace: KCodePluginMarketplaceSummary): boolean {
   return !isPublicStoreMarketplaceId(marketplace.id);
 }
 
 function PluginStoreSourceRefreshFailure({
   failure,
 }: {
-  failure: NonNullable<ZCodePluginMarketplaceSummary["refreshFailure"]>;
+  failure: NonNullable<KCodePluginMarketplaceSummary["refreshFailure"]>;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   return (
     <div
       className="mt-1 flex min-w-0 items-start gap-1 text-ui-base text-destructive"
@@ -48,12 +48,12 @@ export function PluginStoreSourcesDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  marketplaces: ZCodePluginMarketplaceSummary[];
+  marketplaces: KCodePluginMarketplaceSummary[];
   onUpdateMarketplace: (marketplace: string) => void;
   onRemoveMarketplace: (marketplace: string) => void;
   operationId: string | null;
 }) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const sortedMarketplaces = sortMarketplaceSources(marketplaces, locale);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

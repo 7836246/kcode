@@ -4,6 +4,18 @@ export const BUILTIN_PROVIDER_TEMPLATE_IDS = {
   bigmodel: "bigmodel-api",
 } as const;
 
+/** 官方智谱 / Z.ai / BigModel 模板，KCode 不再向用户提供。 */
+export const OFFICIAL_ZHIPU_PROVIDER_TEMPLATE_IDS = [
+  "zai-api",
+  "bigmodel-api",
+  "zai-standard-api",
+  "bigmodel-standard-api",
+] as const;
+
+export function isOfficialZhipuProviderTemplateId(templateId: string): boolean {
+  return (OFFICIAL_ZHIPU_PROVIDER_TEMPLATE_IDS as readonly string[]).includes(templateId);
+}
+
 export const BUILTIN_MODEL_PROVIDER_IDS = {
   zaiIndividualCodingPlan: "account:zai-individual-coding-plan",
   zaiTeamCodingPlan: "account:zai-team-coding-plan",

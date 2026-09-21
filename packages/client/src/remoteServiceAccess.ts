@@ -1,4 +1,4 @@
-import { ProxyChannel, type IChannelClient } from "@zcode/rpc";
+import { ProxyChannel, type IChannelClient } from "@kcode/rpc";
 import {
   IFileService,
   IMediaPreviewService,
@@ -10,9 +10,9 @@ import {
   IOnboardingRecordService,
   ICredentialService,
   IBroadcastService,
-  IZCodeTaskService,
-  IZCodeAgentService,
-  IZCodeSessionService,
+  IKCodeTaskService,
+  IKCodeAgentService,
+  IKCodeSessionService,
   ICuaPermissionService,
   IConversationShareService,
   IFileWatcherService,
@@ -40,7 +40,7 @@ import {
   IPromptAttachmentTransferService,
   IWindowControllerService,
   type IServiceAccessor,
-} from "@zcode/services";
+} from "@kcode/services";
 
 /**
  * RemoteServiceAccess — 通过 ChannelClient 自动创建类型安全的服务代理
@@ -58,10 +58,10 @@ export class RemoteServiceAccess implements IServiceAccessor {
   readonly onboardingRecordService: IOnboardingRecordService;
   readonly credentialService: ICredentialService;
   readonly broadcastService: IBroadcastService;
-  readonly zcodeTaskService: IZCodeTaskService;
+  readonly kcodeTaskService: IKCodeTaskService;
   readonly windowControllerService: IWindowControllerService;
-  readonly zcodeAgentService: IZCodeAgentService;
-  readonly zcodeSessionService: IZCodeSessionService;
+  readonly kcodeAgentService: IKCodeAgentService;
+  readonly kcodeSessionService: IKCodeSessionService;
   // cuaPermissionService 在 IServiceAccessor 上是可选（远端 host 不提供），但桌面 renderer
   // 经 RPC 一定能拿到（main host 始终注册此 descriptor；非 macOS / 未启用时方法返回 available:false）。
   readonly cuaPermissionService: ICuaPermissionService;
@@ -124,17 +124,17 @@ export class RemoteServiceAccess implements IServiceAccessor {
     this.broadcastService = ProxyChannel.toService<IBroadcastService>(
       channelClient.getChannel(IBroadcastService.channelName),
     );
-    this.zcodeTaskService = ProxyChannel.toService<IZCodeTaskService>(
-      channelClient.getChannel(IZCodeTaskService.channelName),
+    this.kcodeTaskService = ProxyChannel.toService<IKCodeTaskService>(
+      channelClient.getChannel(IKCodeTaskService.channelName),
     );
     this.windowControllerService = ProxyChannel.toService<IWindowControllerService>(
       channelClient.getChannel(IWindowControllerService.channelName),
     );
-    this.zcodeAgentService = ProxyChannel.toService<IZCodeAgentService>(
-      channelClient.getChannel(IZCodeAgentService.channelName),
+    this.kcodeAgentService = ProxyChannel.toService<IKCodeAgentService>(
+      channelClient.getChannel(IKCodeAgentService.channelName),
     );
-    this.zcodeSessionService = ProxyChannel.toService<IZCodeSessionService>(
-      channelClient.getChannel(IZCodeSessionService.channelName),
+    this.kcodeSessionService = ProxyChannel.toService<IKCodeSessionService>(
+      channelClient.getChannel(IKCodeSessionService.channelName),
     );
     this.cuaPermissionService = ProxyChannel.toService<ICuaPermissionService>(
       channelClient.getChannel(ICuaPermissionService.channelName),

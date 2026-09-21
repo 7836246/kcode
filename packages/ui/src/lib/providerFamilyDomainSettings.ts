@@ -1,8 +1,8 @@
-import type { ISettingService } from "@zcode/services";
+import type { ISettingService } from "@kcode/services";
 import {
   type ProviderFamilyConnectionSelectionSettings,
   type ProviderFamilyDomain,
-} from "@zcode/shared";
+} from "@kcode/shared";
 
 export function resolveLogoutProviderFamilyDomain(params: {
   currentDomain: ProviderFamilyDomain | null | undefined;

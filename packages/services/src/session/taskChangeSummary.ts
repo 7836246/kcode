@@ -1,10 +1,10 @@
 import type {
-  ZCodePersistedFileChange,
-  ZCodeTaskChangeSummary,
-  ZCodeTaskChangedFileSummary,
-  ZCodeTaskMeta,
-} from "@zcode/shared";
-import { computeLineChangeStat } from "@zcode/shared";
+  KCodePersistedFileChange,
+  KCodeTaskChangeSummary,
+  KCodeTaskChangedFileSummary,
+  KCodeTaskMeta,
+} from "@kcode/shared";
+import { computeLineChangeStat } from "@kcode/shared";
 
 interface AggregatedFileChange {
   path: string;
@@ -19,9 +19,9 @@ interface AggregatedFileChange {
  * 每个轮次独立计算 diff，用于在每条 assistant 消息下方显示该轮的文件改动。
  */
 export function buildPerTurnChangeSummaries(
-  fileChanges: readonly ZCodePersistedFileChange[] | undefined,
-): Map<number, ZCodeTaskChangeSummary> {
-  const result = new Map<number, ZCodeTaskChangeSummary>();
+  fileChanges: readonly KCodePersistedFileChange[] | undefined,
+): Map<number, KCodeTaskChangeSummary> {
+  const result = new Map<number, KCodeTaskChangeSummary>();
   if (!fileChanges || fileChanges.length === 0) {
     return result;
   }
@@ -53,7 +53,7 @@ export function buildPerTurnChangeSummaries(
 
     let added = 0;
     let removed = 0;
-    const files: ZCodeTaskChangedFileSummary[] = Array.from(turnFileMap.entries())
+    const files: KCodeTaskChangedFileSummary[] = Array.from(turnFileMap.entries())
       .map(([path, file]) => {
         const fileStat = computeLineChangeStat(file.beforeContent, file.afterContent);
         added += fileStat.added;
@@ -80,8 +80,8 @@ export function buildPerTurnChangeSummaries(
 }
 
 export function buildTaskChangeSummary(
-  fileChanges: readonly ZCodePersistedFileChange[] | undefined,
-): ZCodeTaskChangeSummary | undefined {
+  fileChanges: readonly KCodePersistedFileChange[] | undefined,
+): KCodeTaskChangeSummary | undefined {
   if (!fileChanges || fileChanges.length === 0) {
     return undefined;
   }
@@ -114,7 +114,7 @@ export function buildTaskChangeSummary(
 
   let added = 0;
   let removed = 0;
-  const files: ZCodeTaskChangedFileSummary[] = Array.from(changedFileMap.values())
+  const files: KCodeTaskChangedFileSummary[] = Array.from(changedFileMap.values())
     .map((file) => {
       const fileStat = computeLineChangeStat(file.originalContent, file.finalContent);
       added += fileStat.added;

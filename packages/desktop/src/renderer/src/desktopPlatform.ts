@@ -1,5 +1,5 @@
-import { recordArmsCustomEventForE2E } from "@zcode/ui";
-import { DesktopCommandIds, buildLocalMediaPreviewUrl, type IPlatformService } from "@zcode/shared";
+import { recordArmsCustomEventForE2E } from "@kcode/ui";
+import { DesktopCommandIds, buildLocalMediaPreviewUrl, type IPlatformService } from "@kcode/shared";
 
 import { desktopBrowserPlatformBridge } from "./desktopBrowserPlatformBridge.js";
 
@@ -10,155 +10,155 @@ export function createDesktopPlatform(options: {
     canSelectFilePath: true,
     createLocalMediaPreviewUrl: buildLocalMediaPreviewUrl,
     isLocalDevelopmentRuntime: options.isLocalDevelopmentRuntime,
-    selectDirectory: () => window.zcode.selectDirectory(),
-    selectFile: () => window.zcode.selectFile(),
-    selectFiles: () => window.zcode.selectFiles?.() ?? Promise.resolve([]),
-    createTempTextAttachment: (payload) => window.zcode.createTempTextAttachment(payload),
-    onRemoteConnectionLog: (handler) => window.zcode.onRemoteConnectionLog(handler),
-    onRemoteSessionClosed: (handler) => window.zcode.onRemoteSessionClosed(handler),
+    selectDirectory: () => window.kcode.selectDirectory(),
+    selectFile: () => window.kcode.selectFile(),
+    selectFiles: () => window.kcode.selectFiles?.() ?? Promise.resolve([]),
+    createTempTextAttachment: (payload) => window.kcode.createTempTextAttachment(payload),
+    onRemoteConnectionLog: (handler) => window.kcode.onRemoteConnectionLog(handler),
+    onRemoteSessionClosed: (handler) => window.kcode.onRemoteSessionClosed(handler),
     activateOrSetWorkspace: (path) =>
-      window.zcode.activateOrSetWorkspace?.(path) ?? Promise.resolve({ activated: false }),
+      window.kcode.activateOrSetWorkspace?.(path) ?? Promise.resolve({ activated: false }),
     connectRemote: (remoteOptions, requestId, context) =>
-      window.zcode.connectRemote(remoteOptions, requestId, context),
+      window.kcode.connectRemote(remoteOptions, requestId, context),
     cancelPendingRemoteConnection: (requestId) =>
-      window.zcode.cancelPendingRemoteConnection?.(requestId) ?? Promise.resolve(),
+      window.kcode.cancelPendingRemoteConnection?.(requestId) ?? Promise.resolve(),
     bindRemoteWorkspaceSessionContext: (context) =>
-      window.zcode.bindRemoteWorkspaceSessionContext?.(context) ?? Promise.resolve(),
-    disposeRemoteSession: (sessionId) => window.zcode.disposeRemoteSession(sessionId),
-    isDockerAvailable: () => window.zcode.isDockerAvailable(),
-    listWSLDistros: () => window.zcode.listWSLDistros(),
-    listDockerContainers: () => window.zcode.listDockerContainers(),
-    listSSHConfigAliases: () => window.zcode.listSSHConfigAliases(),
-    loadMcpFromUserDirectory: (payload) => window.zcode.loadMcpFromUserDirectory(payload),
-    saveMcpToUserDirectory: (payload) => window.zcode.saveMcpToUserDirectory(payload),
-    migrateLegacyCommonMcp: (payload) => window.zcode.migrateLegacyCommonMcp(payload),
-    openExternal: (url) => window.zcode.openExternal(url),
-    openFeedback: () => window.zcode.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
-    openCommunity: () => window.zcode.executeDesktopCommand(DesktopCommandIds.OpenCommunity),
-    canOpenCommunity: (locale) => window.zcode.canOpenCommunity(locale),
-    openInFileManager: (path) => window.zcode.openInFileManager(path),
-    openExternalFile: (path) => window.zcode.openExternalFile(path),
-    openCuaPermissionOnboarding: window.zcode.openCuaPermissionOnboarding
+      window.kcode.bindRemoteWorkspaceSessionContext?.(context) ?? Promise.resolve(),
+    disposeRemoteSession: (sessionId) => window.kcode.disposeRemoteSession(sessionId),
+    isDockerAvailable: () => window.kcode.isDockerAvailable(),
+    listWSLDistros: () => window.kcode.listWSLDistros(),
+    listDockerContainers: () => window.kcode.listDockerContainers(),
+    listSSHConfigAliases: () => window.kcode.listSSHConfigAliases(),
+    loadMcpFromUserDirectory: (payload) => window.kcode.loadMcpFromUserDirectory(payload),
+    saveMcpToUserDirectory: (payload) => window.kcode.saveMcpToUserDirectory(payload),
+    migrateLegacyCommonMcp: (payload) => window.kcode.migrateLegacyCommonMcp(payload),
+    openExternal: (url) => window.kcode.openExternal(url),
+    openFeedback: () => window.kcode.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
+    openCommunity: () => window.kcode.executeDesktopCommand(DesktopCommandIds.OpenCommunity),
+    canOpenCommunity: (locale) => window.kcode.canOpenCommunity(locale),
+    openInFileManager: (path) => window.kcode.openInFileManager(path),
+    openExternalFile: (path) => window.kcode.openExternalFile(path),
+    openCuaPermissionOnboarding: window.kcode.openCuaPermissionOnboarding
       ? (permissionOptions) =>
-          window.zcode.openCuaPermissionOnboarding?.(permissionOptions) ??
+          window.kcode.openCuaPermissionOnboarding?.(permissionOptions) ??
           Promise.resolve({ success: false, error: "not_supported" })
       : undefined,
-    prepareCuaHelperPermissionDrag: window.zcode.prepareCuaHelperPermissionDrag
+    prepareCuaHelperPermissionDrag: window.kcode.prepareCuaHelperPermissionDrag
       ? () =>
-          window.zcode.prepareCuaHelperPermissionDrag?.() ??
+          window.kcode.prepareCuaHelperPermissionDrag?.() ??
           Promise.resolve({ success: false, error: "not_supported" })
       : undefined,
-    startCuaHelperPermissionDrag: window.zcode.startCuaHelperPermissionDrag
-      ? () => window.zcode.startCuaHelperPermissionDrag?.()
+    startCuaHelperPermissionDrag: window.kcode.startCuaHelperPermissionDrag
+      ? () => window.kcode.startCuaHelperPermissionDrag?.()
       : undefined,
-    registerOAuthState: (payload) => window.zcode.registerOAuthState(payload),
-    onOAuthCallback: (callback) => window.zcode.onOAuthCallback(callback),
-    onPaymentCallback: (callback) => window.zcode.onPaymentCallback(callback),
-    onShareImport: (callback) => window.zcode.onShareImport?.(callback) ?? (() => {}),
-    notifyRendererReady: () => window.zcode.notifyRendererReady(),
-    reportTelemetryEvent: (payload) => window.zcode.reportTelemetryEvent(payload),
+    registerOAuthState: (payload) => window.kcode.registerOAuthState(payload),
+    onOAuthCallback: (callback) => window.kcode.onOAuthCallback(callback),
+    onPaymentCallback: (callback) => window.kcode.onPaymentCallback(callback),
+    onShareImport: (callback) => window.kcode.onShareImport?.(callback) ?? (() => {}),
+    notifyRendererReady: () => window.kcode.notifyRendererReady(),
+    reportTelemetryEvent: (payload) => window.kcode.reportTelemetryEvent(payload),
     reportArmsCustomEvent: (payload) => {
       recordArmsCustomEventForE2E(payload);
-      return window.zcode.reportArmsCustomEvent(payload);
+      return window.kcode.reportArmsCustomEvent(payload);
     },
-    getRendererActionTraceConfig: window.zcode.getRendererActionTraceConfig
-      ? () => window.zcode.getRendererActionTraceConfig!()
+    getRendererActionTraceConfig: window.kcode.getRendererActionTraceConfig
+      ? () => window.kcode.getRendererActionTraceConfig!()
       : undefined,
-    onRendererActionTraceConfigChanged: window.zcode.onRendererActionTraceConfigChanged
-      ? (callback) => window.zcode.onRendererActionTraceConfigChanged!(callback)
+    onRendererActionTraceConfigChanged: window.kcode.onRendererActionTraceConfigChanged
+      ? (callback) => window.kcode.onRendererActionTraceConfigChanged!(callback)
       : undefined,
-    reportLocalTtftBatch: (batch) => window.zcode.reportLocalTtftBatch(batch),
-    reportRendererActionTraceBatch: window.zcode.reportRendererActionTraceBatch
-      ? (batch) => window.zcode.reportRendererActionTraceBatch!(batch)
+    reportLocalTtftBatch: (batch) => window.kcode.reportLocalTtftBatch(batch),
+    reportRendererActionTraceBatch: window.kcode.reportRendererActionTraceBatch
+      ? (batch) => window.kcode.reportRendererActionTraceBatch!(batch)
       : undefined,
-    reportRendererHeapSample: window.zcode.reportRendererHeapSample
-      ? (sample) => window.zcode.reportRendererHeapSample!(sample)
+    reportRendererHeapSample: window.kcode.reportRendererHeapSample
+      ? (sample) => window.kcode.reportRendererHeapSample!(sample)
       : undefined,
-    showTaskNotification: (payload) => window.zcode.showTaskNotification(payload),
-    syncWindowTabs: (paths) => window.zcode.syncWindowTabs(paths),
-    syncWindowUnreadCount: (count) => window.zcode.syncWindowUnreadCount(count),
-    syncActiveTaskSession: (sessionId) => window.zcode.syncActiveTaskSession(sessionId),
-    syncAppSettings: (patch) => window.zcode.syncAppSettings?.(patch),
-    setShortcutRecordingActive: (active) => window.zcode.setShortcutRecordingActive?.(active),
-    onFocusTab: (handler) => window.zcode.onFocusTab(handler),
-    onNewTab: (handler) => window.zcode.onNewTab(handler),
+    showTaskNotification: (payload) => window.kcode.showTaskNotification(payload),
+    syncWindowTabs: (paths) => window.kcode.syncWindowTabs(paths),
+    syncWindowUnreadCount: (count) => window.kcode.syncWindowUnreadCount(count),
+    syncActiveTaskSession: (sessionId) => window.kcode.syncActiveTaskSession(sessionId),
+    syncAppSettings: (patch) => window.kcode.syncAppSettings?.(patch),
+    setShortcutRecordingActive: (active) => window.kcode.setShortcutRecordingActive?.(active),
+    onFocusTab: (handler) => window.kcode.onFocusTab(handler),
+    onNewTab: (handler) => window.kcode.onNewTab(handler),
     onCloseActiveContextRequest: (handler) =>
-      window.zcode.onCloseActiveContextRequest?.(handler) ?? (() => {}),
-    onOpenBrowserUrl: (handler) => window.zcode.onOpenBrowserUrl?.(handler) ?? (() => {}),
+      window.kcode.onCloseActiveContextRequest?.(handler) ?? (() => {}),
+    onOpenBrowserUrl: (handler) => window.kcode.onOpenBrowserUrl?.(handler) ?? (() => {}),
     onBrowserViewScreenshotSurfacePrepare: (handler) =>
-      window.zcode.onBrowserViewScreenshotSurfacePrepare?.(handler) ?? (() => {}),
+      window.kcode.onBrowserViewScreenshotSurfacePrepare?.(handler) ?? (() => {}),
     onBrowserViewScreenshotSurfaceRelease: (handler) =>
-      window.zcode.onBrowserViewScreenshotSurfaceRelease?.(handler) ?? (() => {}),
+      window.kcode.onBrowserViewScreenshotSurfaceRelease?.(handler) ?? (() => {}),
     browserViewScreenshotSurfaceReady: (payload) =>
-      window.zcode.browserViewScreenshotSurfaceReady?.(payload),
+      window.kcode.browserViewScreenshotSurfaceReady?.(payload),
     ...desktopBrowserPlatformBridge,
-    onNewTask: (handler) => window.zcode.onNewTask(handler),
+    onNewTask: (handler) => window.kcode.onNewTask(handler),
     onOpenWorkspace: (handler) => {
       // 开发态或升级后的旧窗口可能仍运行未暴露 onOpenWorkspace 的 preload，
       // renderer 直接调用会在启动时崩溃。这里和 activateOrSetWorkspace 一样做兼容兜底，
       // 缺少该 bridge 时只禁用原生菜单回调，不影响应用继续打开。
-      return window.zcode.onOpenWorkspace?.(handler) ?? (() => {});
+      return window.kcode.onOpenWorkspace?.(handler) ?? (() => {});
     },
-    onOpenWorkspacePath: (handler) => window.zcode.onOpenWorkspacePath?.(handler) ?? (() => {}),
-    onOpenFeedbackDialog: (handler) => window.zcode.onOpenFeedbackDialog?.(handler) ?? (() => {}),
-    onOpenTicketsPanel: (handler) => window.zcode.onOpenTicketsPanel?.(handler) ?? (() => {}),
-    onWindowFullscreenChanged: (handler) => window.zcode.onWindowFullscreenChanged(handler),
-    getDesktopWindowChromeState: window.zcode.getDesktopWindowChromeState
-      ? () => window.zcode.getDesktopWindowChromeState!()
+    onOpenWorkspacePath: (handler) => window.kcode.onOpenWorkspacePath?.(handler) ?? (() => {}),
+    onOpenFeedbackDialog: (handler) => window.kcode.onOpenFeedbackDialog?.(handler) ?? (() => {}),
+    onOpenTicketsPanel: (handler) => window.kcode.onOpenTicketsPanel?.(handler) ?? (() => {}),
+    onWindowFullscreenChanged: (handler) => window.kcode.onWindowFullscreenChanged(handler),
+    getDesktopWindowChromeState: window.kcode.getDesktopWindowChromeState
+      ? () => window.kcode.getDesktopWindowChromeState!()
       : undefined,
-    onDesktopWindowChromeStateChanged: window.zcode.onDesktopWindowChromeStateChanged
-      ? (handler) => window.zcode.onDesktopWindowChromeStateChanged!(handler)
+    onDesktopWindowChromeStateChanged: window.kcode.onDesktopWindowChromeStateChanged
+      ? (handler) => window.kcode.onDesktopWindowChromeStateChanged!(handler)
       : undefined,
-    getWindowControlsOverlayMetrics: () => window.zcode.getWindowControlsOverlayMetrics?.() ?? null,
+    getWindowControlsOverlayMetrics: () => window.kcode.getWindowControlsOverlayMetrics?.() ?? null,
     onWindowControlsOverlayChanged: (handler) =>
-      window.zcode.onWindowControlsOverlayChanged?.(handler) ?? (() => {}),
+      window.kcode.onWindowControlsOverlayChanged?.(handler) ?? (() => {}),
     getDesktopZoomLevel: () =>
-      window.zcode.getDesktopZoomLevel?.() ?? Promise.resolve({ zoomLevel: 0 }),
+      window.kcode.getDesktopZoomLevel?.() ?? Promise.resolve({ zoomLevel: 0 }),
     onDesktopZoomLevelChanged: (handler) =>
-      window.zcode.onDesktopZoomLevelChanged?.(handler) ?? (() => {}),
-    onTaskNotificationClick: (handler) => window.zcode.onTaskNotificationClick(handler),
-    exportLogs: () => window.zcode.exportLogs(),
+      window.kcode.onDesktopZoomLevelChanged?.(handler) ?? (() => {}),
+    onTaskNotificationClick: (handler) => window.kcode.onTaskNotificationClick(handler),
+    exportLogs: () => window.kcode.exportLogs(),
     captureWindowScreenshot: () =>
-      window.zcode.captureWindowScreenshot?.() ?? Promise.resolve(null),
-    onUpdateReady: (callback) => window.zcode.onUpdateReady(callback),
-    onUpdateCheckResult: (callback) => window.zcode.onUpdateCheckResult(callback),
-    onUpdateStateChanged: (callback) => window.zcode.onUpdateStateChanged?.(callback) ?? (() => {}),
+      window.kcode.captureWindowScreenshot?.() ?? Promise.resolve(null),
+    onUpdateReady: (callback) => window.kcode.onUpdateReady(callback),
+    onUpdateCheckResult: (callback) => window.kcode.onUpdateCheckResult(callback),
+    onUpdateStateChanged: (callback) => window.kcode.onUpdateStateChanged?.(callback) ?? (() => {}),
     getUpdateState: () =>
-      window.zcode.getUpdateState?.() ?? Promise.resolve({ kind: "idle", enabled: true }),
-    downloadUpdate: () => window.zcode.downloadUpdate?.() ?? Promise.resolve(),
-    cancelUpdateDownload: () => window.zcode.cancelUpdateDownload?.() ?? Promise.resolve(),
-    openUpdateStatusWindow: () => window.zcode.openUpdateStatusWindow?.() ?? Promise.resolve(),
+      window.kcode.getUpdateState?.() ?? Promise.resolve({ kind: "idle", enabled: true }),
+    downloadUpdate: () => window.kcode.downloadUpdate?.() ?? Promise.resolve(),
+    cancelUpdateDownload: () => window.kcode.cancelUpdateDownload?.() ?? Promise.resolve(),
+    openUpdateStatusWindow: () => window.kcode.openUpdateStatusWindow?.() ?? Promise.resolve(),
     getAutoUpdatePreferences: () =>
-      window.zcode.getAutoUpdatePreferences?.() ??
+      window.kcode.getAutoUpdatePreferences?.() ??
       Promise.resolve({ autoDownloadAndInstallUpdates: false }),
     setAutoDownloadAndInstallUpdates: (enabled) =>
-      window.zcode.setAutoDownloadAndInstallUpdates?.(enabled) ?? Promise.resolve(),
+      window.kcode.setAutoDownloadAndInstallUpdates?.(enabled) ?? Promise.resolve(),
     getDesktopSessionActivity: () =>
-      window.zcode.getDesktopSessionActivity?.() ??
+      window.kcode.getDesktopSessionActivity?.() ??
       Promise.resolve({ runningAgentSessionCount: 0 }),
-    getZCodeStdioTapDevState: () =>
-      window.zcode.getZCodeStdioTapDevState?.() ??
+    getKCodeStdioTapDevState: () =>
+      window.kcode.getKCodeStdioTapDevState?.() ??
       Promise.resolve({ enabled: false, visible: false, logDir: "", statePath: "" }),
-    onSettingsChanged: (callback) => window.zcode.onSettingsChanged?.(callback) ?? (() => {}),
+    onSettingsChanged: (callback) => window.kcode.onSettingsChanged?.(callback) ?? (() => {}),
     onApplicationLocaleChanged: (callback) =>
-      window.zcode.onApplicationLocaleChanged?.(callback) ?? (() => {}),
-    onPostUpdateReleaseNotes: (callback) => window.zcode.onPostUpdateReleaseNotes(callback),
+      window.kcode.onApplicationLocaleChanged?.(callback) ?? (() => {}),
+    onPostUpdateReleaseNotes: (callback) => window.kcode.onPostUpdateReleaseNotes(callback),
     acknowledgePostUpdateReleaseNotes: (version) =>
-      window.zcode.acknowledgePostUpdateReleaseNotes(version),
-    skipUpdateVersion: (version) => window.zcode.skipUpdateVersion?.(version) ?? Promise.resolve(),
-    quitAndInstallUpdate: () => window.zcode.quitAndInstallUpdate(),
-    getInstalledEditors: () => window.zcode.getInstalledEditors(),
+      window.kcode.acknowledgePostUpdateReleaseNotes(version),
+    skipUpdateVersion: (version) => window.kcode.skipUpdateVersion?.(version) ?? Promise.resolve(),
+    quitAndInstallUpdate: () => window.kcode.quitAndInstallUpdate(),
+    getInstalledEditors: () => window.kcode.getInstalledEditors(),
     getApplicationIcon: (bundleId) =>
-      window.zcode.getApplicationIcon?.(bundleId) ?? Promise.resolve(null),
+      window.kcode.getApplicationIcon?.(bundleId) ?? Promise.resolve(null),
     openInEditor: (editorId, path, editorOptions) =>
-      window.zcode.openInEditor(editorId, path, editorOptions),
-    executeDesktopCommand: (command) => window.zcode.executeDesktopCommand(command),
-    setApplicationLocale: (locale) => window.zcode.setApplicationLocale(locale),
+      window.kcode.openInEditor(editorId, path, editorOptions),
+    executeDesktopCommand: (command) => window.kcode.executeDesktopCommand(command),
+    setApplicationLocale: (locale) => window.kcode.setApplicationLocale(locale),
     getSystemLocale: () =>
-      window.zcode.getSystemLocale?.() ??
+      window.kcode.getSystemLocale?.() ??
       Promise.resolve(navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US"),
-    setTitleBarTheme: (theme) => window.zcode.setTitleBarTheme(theme),
+    setTitleBarTheme: (theme) => window.kcode.setTitleBarTheme(theme),
     getDeviceId: () =>
-      (window as Window & { __ZCODE_DEVICE_ID__?: string }).__ZCODE_DEVICE_ID__ ?? "",
+      (window as Window & { __KCODE_DEVICE_ID__?: string }).__KCODE_DEVICE_ID__ ?? "",
   };
 }

@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const repoRoot = resolve(import.meta.dirname, "..");
-const defaultEntryPath = join(repoRoot, "apps/zcode-cli/packages/cli/dist/zcode.cjs");
+const defaultEntryPath = join(repoRoot, "apps/kcode-cli/packages/cli/dist/kcode.cjs");
 const runtimeSourcePath = join(import.meta.dirname, "desktop-agent-bytecode-runtime.cjs");
 const compilerPath = join(import.meta.dirname, "compile-desktop-agent-bytecode.cjs");
 
@@ -28,21 +28,21 @@ export async function buildDesktopAgentBytecode({
   electronPath = createRequire(import.meta.url)("electron"),
   env = process.env,
 } = {}) {
-  if (env.ZCODE_E2E_COVERAGE === "1") throw new Error("coverage 构建不能启用字节码试验");
+  if (env.KCODE_E2E_COVERAGE === "1") throw new Error("coverage 构建不能启用字节码试验");
   const directory = dirname(entryPath);
   const temporary = join(directory, `.bytecode-${randomUUID()}`);
-  const loaderPath = join(directory, "zcode.bytecode.cjs");
+  const loaderPath = join(directory, "kcode.bytecode.cjs");
   try {
     const { stdout } = await execFileAsync(electronPath, [compilerPath, entryPath, temporary], {
       env: { ...env, ELECTRON_RUN_AS_NODE: "1", NODE_OPTIONS: "" },
       maxBuffer: 1024 * 1024,
     });
     const metadata = JSON.parse(stdout);
-    const bytecodeFile = `zcode.bytecode-${metadata.bytecodeSha256}.jsc`;
+    const bytecodeFile = `kcode.bytecode-${metadata.bytecodeSha256}.jsc`;
     const bytecodePath = join(directory, bytecodeFile);
     const runtimeSource = await readFile(runtimeSourcePath);
     const runtimeHash = createHash("sha256").update(runtimeSource).digest("hex");
-    const runtimeFile = `zcode.bytecode-runtime-${runtimeHash}.cjs`;
+    const runtimeFile = `kcode.bytecode-runtime-${runtimeHash}.cjs`;
     metadata.bytecodeFile = bytecodeFile;
     metadata.sourceFile = basename(entryPath);
     // 先写不可变依赖，最后原子替换入口；失败时上次可用的加载器仍能找到自己的字节码。

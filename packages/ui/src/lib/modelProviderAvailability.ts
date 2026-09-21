@@ -1,4 +1,5 @@
-import type { ModelSelectionView } from "@zcode/services";
+import { isBuiltinModelProviderId } from "@kcode/shared";
+import type { ModelSelectionView } from "@kcode/services";
 
 interface ProviderAvailabilityState {
   readonly source: "registry";
@@ -10,7 +11,9 @@ interface ProviderAvailabilityState {
 export function resolveProviderAvailabilityState(params: {
   modelSelectionView: ModelSelectionView | null;
 }): ProviderAvailabilityState {
-  const providers = params.modelSelectionView?.providers ?? [];
+  const providers = (params.modelSelectionView?.providers ?? []).filter(
+    (provider) => !isBuiltinModelProviderId(provider.providerId),
+  );
   return {
     source: "registry",
     hydrated: params.modelSelectionView !== null,

@@ -1,8 +1,8 @@
-import type { UsageEntitlementSubscriptionDetail } from "@zcode/shared";
+import type { UsageEntitlementSubscriptionDetail } from "@kcode/shared";
 import { Loader2Icon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 
 export function CodingPlanStatusMeta({
   renewTime,
@@ -25,7 +25,7 @@ export function CodingPlanStatusMeta({
   onManage?: () => void;
   onUnlink?: () => void;
 }) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const subscriptionTime = resolveCodingPlanSubscriptionTime({
     renewTime,
     expireTime,
@@ -96,7 +96,7 @@ export function StartPlanStatusMeta({
   refreshing?: boolean;
   onRefresh?: () => void;
 }) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   useEffect(() => {
     setCurrentTime(Date.now());

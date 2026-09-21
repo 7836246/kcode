@@ -5,13 +5,13 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   createUuid,
   type OAuthProviderId,
-  ZCODE_ENV,
+  KCODE_ENV,
   ZAI_PROVIDER_ID,
   type BuiltinModelProviderId,
   type UsageQuotaLimit,
   type UsageEntitlementSubscriptionDetail,
   type UsageEntitlementSnapshot,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { ProviderSettingsFormProvider } from "@/lib/providerSettingsFormTypes.js";
 import { getProviderFormLabel } from "@/lib/providerSettingsFormTypes.js";
 
@@ -20,9 +20,9 @@ export function generateId(): string {
 }
 
 export const PRESET_SUBSCRIPTION_TIMEOUT_MS = 2 * 60 * 1000;
-export const BIGMODEL_REGISTRATION_URL = buildBigModelApiUrl({ ZCODE_ENV }, "/login");
+export const BIGMODEL_REGISTRATION_URL = buildBigModelApiUrl({ KCODE_ENV }, "/login");
 const BIGMODEL_CODING_PLAN_PERSONAL_MANAGE_URL = buildBigModelCodingPlanPersonalManageUrl({
-  ZCODE_ENV,
+  KCODE_ENV,
 });
 
 export interface PresetProviderSpec {

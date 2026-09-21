@@ -4,33 +4,33 @@
  * 拆出原因：useWorkspacePrepare.ts 只保留可单测的轻量判定入口；
  * 这里只读取 workspace presentation（mode/slash commands）；模型选择事实由目标 Host View 提供。
  */
-import type { IZCodeSessionService } from "@zcode/services";
-import { type ZCodeProvider, type ZCodeWorkspacePrepareResult } from "@zcode/shared";
+import type { IKCodeSessionService } from "@kcode/services";
+import { type KCodeProvider, type KCodeWorkspacePrepareResult } from "@kcode/shared";
 import { getChatErrorMessage } from "@/lib/chatPrepareError.js";
 import { logger } from "@/logger.js";
-import { zcodeWorkspacePresentationToConfigOptions } from "@/lib/zcodeSessionProjection.js";
+import { kcodeWorkspacePresentationToConfigOptions } from "@/lib/kcodeSessionProjection.js";
 
-export async function prepareWorkspaceWithZCodeSessionService(params: {
+export async function prepareWorkspaceWithKCodeSessionService(params: {
   workspacePath: string;
   workspaceIdentity?: string;
-  provider: ZCodeProvider;
-  zcodeSessionService: Pick<IZCodeSessionService, "readWorkspacePresentation">;
-}): Promise<ZCodeWorkspacePrepareResult> {
+  provider: KCodeProvider;
+  kcodeSessionService: Pick<IKCodeSessionService, "readWorkspacePresentation">;
+}): Promise<KCodeWorkspacePrepareResult> {
   const startedAt = Date.now();
-  logger.info("[zcode-workspace-presentation] workspace prepare start", {
+  logger.info("[kcode-workspace-presentation] workspace prepare start", {
     workspacePath: params.workspacePath,
     workspaceIdentity: params.workspaceIdentity ?? null,
     provider: params.provider,
   });
 
-  let presentation: Awaited<ReturnType<IZCodeSessionService["readWorkspacePresentation"]>>;
+  let presentation: Awaited<ReturnType<IKCodeSessionService["readWorkspacePresentation"]>>;
   try {
-    presentation = await params.zcodeSessionService.readWorkspacePresentation({
+    presentation = await params.kcodeSessionService.readWorkspacePresentation({
       workspacePath: params.workspacePath,
       workspaceIdentity: params.workspaceIdentity,
     });
   } catch (error) {
-    logger.warn("[zcode-workspace-presentation] readWorkspacePresentation failed", {
+    logger.warn("[kcode-workspace-presentation] readWorkspacePresentation failed", {
       workspacePath: params.workspacePath,
       workspaceIdentity: params.workspaceIdentity ?? null,
       provider: params.provider,
@@ -41,9 +41,9 @@ export async function prepareWorkspaceWithZCodeSessionService(params: {
   }
 
   const readPresentationDurationMs = Date.now() - startedAt;
-  const configOptions = zcodeWorkspacePresentationToConfigOptions(presentation.mode);
+  const configOptions = kcodeWorkspacePresentationToConfigOptions(presentation.mode);
   const totalDurationMs = Date.now() - startedAt;
-  logger.info("[zcode-workspace-presentation] readWorkspacePresentation done", {
+  logger.info("[kcode-workspace-presentation] readWorkspacePresentation done", {
     workspacePath: params.workspacePath,
     workspaceIdentity: params.workspaceIdentity ?? null,
     provider: params.provider,
@@ -56,7 +56,7 @@ export async function prepareWorkspaceWithZCodeSessionService(params: {
   return {
     workspacePath: params.workspacePath,
     preparedSessionId: "",
-    version: "ZCode Protocol/1",
+    version: "KCode Protocol/1",
     provider: params.provider,
     configOptions,
     slashCommands: presentation.slashCommands,

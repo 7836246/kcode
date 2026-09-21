@@ -8,20 +8,20 @@ import {
   type ConversationPreviewArtifactCandidate,
   type ConversationPreviewFileChange,
   type ConversationShareCapabilities,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type {
   ArtifactRow,
   ConversationArtifactType,
   ConversationRow,
   TurnHeaderRow,
-} from "@zcode/shared/zcode-protocol-v4";
+} from "@kcode/shared/kcode-protocol-v4";
 import {
   PROTOCOL_V4_LIMITS,
-  ZCODE_ATTACHMENT_FAULT_CODES,
-  readZCodeAttachmentFaultCode,
-} from "@zcode/shared/zcode-protocol-v4";
+  KCODE_ATTACHMENT_FAULT_CODES,
+  readKCodeAttachmentFaultCode,
+} from "@kcode/shared/kcode-protocol-v4";
 
-import type { IZCodeAgentService } from "../zcode-agent/zcodeAgent.js";
+import type { IKCodeAgentService } from "../kcode-agent/kcodeAgent.js";
 import type {
   ConversationShareFailureIssue,
   PublishTextConversationInput,
@@ -139,8 +139,8 @@ async function materializeRegisteredArtifacts(options: {
 }
 
 async function discoverPreviewArtifacts(options: {
-  zcodeAgentService: Pick<
-    IZCodeAgentService,
+  kcodeAgentService: Pick<
+    IKCodeAgentService,
     "conversationFileChangesV4" | "conversationAttachmentReadV4"
   >;
   artifactSource: ConversationShareArtifactSource;
@@ -206,9 +206,9 @@ async function discoverPreviewArtifacts(options: {
       if (!header.entityId || !header.productTurnId) {
         throwDiscoveryError("Conversation file changes are missing a stable turn identity");
       }
-      let result: Awaited<ReturnType<IZCodeAgentService["conversationFileChangesV4"]>>;
+      let result: Awaited<ReturnType<IKCodeAgentService["conversationFileChangesV4"]>>;
       try {
-        result = await options.zcodeAgentService.conversationFileChangesV4({
+        result = await options.kcodeAgentService.conversationFileChangesV4({
           workspacePath: options.input.workspacePath,
           ...(options.input.workspaceIdentity
             ? { workspaceIdentity: options.input.workspaceIdentity }
@@ -398,7 +398,7 @@ async function discoverPreviewArtifacts(options: {
 }
 
 async function readInputAttachment(options: {
-  zcodeAgentService: Pick<IZCodeAgentService, "conversationAttachmentReadV4">;
+  kcodeAgentService: Pick<IKCodeAgentService, "conversationAttachmentReadV4">;
   input: PublishTextConversationInput;
   row: Extract<ConversationRow, { kind: "userInput" }>;
   attachmentIndex: number;
@@ -416,7 +416,7 @@ async function readInputAttachment(options: {
   let totalBytes: number | undefined;
   let mediaType = attachment.mime;
   while (true) {
-    const result = await options.zcodeAgentService.conversationAttachmentReadV4({
+    const result = await options.kcodeAgentService.conversationAttachmentReadV4({
       workspacePath: options.input.workspacePath,
       ...(options.input.workspaceIdentity
         ? { workspaceIdentity: options.input.workspaceIdentity }
@@ -473,7 +473,7 @@ async function readInputAttachment(options: {
 }
 
 async function discoverInputAttachments(options: {
-  zcodeAgentService: Pick<IZCodeAgentService, "conversationAttachmentReadV4">;
+  kcodeAgentService: Pick<IKCodeAgentService, "conversationAttachmentReadV4">;
   input: PublishTextConversationInput;
   selectedRows: ConversationRow[];
   capabilities: ConversationShareCapabilities;
@@ -527,7 +527,7 @@ async function discoverInputAttachments(options: {
       }
       try {
         const materialized = await readInputAttachment({
-          zcodeAgentService: options.zcodeAgentService,
+          kcodeAgentService: options.kcodeAgentService,
           input: options.input,
           row,
           attachmentIndex,
@@ -535,7 +535,7 @@ async function discoverInputAttachments(options: {
         });
         const sourceRef = `input:${row.rowId}:${attachmentIndex}`;
         const artifactId = `share-input-artifact-${++artifactIndex}`;
-        const ref = `zcode-artifact://share/${artifactId}`;
+        const ref = `kcode-artifact://share/${artifactId}`;
         const sha256 = createHash("sha256").update(materialized.bytes).digest("hex");
         artifacts.push({
           sourceRef,
@@ -562,10 +562,10 @@ async function discoverInputAttachments(options: {
           bytes: materialized.bytes.byteLength,
         });
       } catch (error) {
-        const faultCode = readZCodeAttachmentFaultCode(error);
+        const faultCode = readKCodeAttachmentFaultCode(error);
         if (
-          faultCode === ZCODE_ATTACHMENT_FAULT_CODES.shareReadNotAuthorized ||
-          faultCode === ZCODE_ATTACHMENT_FAULT_CODES.shareReadConnectionUntrusted
+          faultCode === KCODE_ATTACHMENT_FAULT_CODES.shareReadNotAuthorized ||
+          faultCode === KCODE_ATTACHMENT_FAULT_CODES.shareReadConnectionUntrusted
         ) {
           throw new ConversationShareServiceError(
             "artifact_protocol_not_ready",
@@ -574,8 +574,8 @@ async function discoverInputAttachments(options: {
           );
         }
         if (
-          faultCode === ZCODE_ATTACHMENT_FAULT_CODES.previewTooLarge ||
-          faultCode === ZCODE_ATTACHMENT_FAULT_CODES.shareStatTooLarge
+          faultCode === KCODE_ATTACHMENT_FAULT_CODES.previewTooLarge ||
+          faultCode === KCODE_ATTACHMENT_FAULT_CODES.shareStatTooLarge
         ) {
           // 容量超限是确定阻断，不能降级成「附件不可用」warning 后静默发布——
           // 那样接收者拿不到附件，分享者也看不出错误类别（见预检同名分类）。
@@ -612,8 +612,8 @@ async function discoverInputAttachments(options: {
           extension,
           mimeType,
           availability:
-            faultCode === ZCODE_ATTACHMENT_FAULT_CODES.shareStatNotFound ||
-            faultCode === ZCODE_ATTACHMENT_FAULT_CODES.statNotFile ||
+            faultCode === KCODE_ATTACHMENT_FAULT_CODES.shareStatNotFound ||
+            faultCode === KCODE_ATTACHMENT_FAULT_CODES.statNotFile ||
             (error instanceof ConversationShareServiceError &&
               error.diagnostics?.errno === "ENOENT")
               ? "not_found"
@@ -655,8 +655,8 @@ function insertDiscoveredArtifacts(
 }
 
 export async function buildConversationShareArtifactSnapshot(options: {
-  zcodeAgentService: Pick<
-    IZCodeAgentService,
+  kcodeAgentService: Pick<
+    IKCodeAgentService,
     "conversationFileChangesV4" | "conversationAttachmentReadV4"
   >;
   artifactSource: ConversationShareArtifactSource;
@@ -673,7 +673,7 @@ export async function buildConversationShareArtifactSnapshot(options: {
   const issues: ConversationShareFailureIssue[] = [];
   const warnings: ConversationShareFailureIssue[] = [];
   const inputAttachments = await discoverInputAttachments({
-    zcodeAgentService: options.zcodeAgentService,
+    kcodeAgentService: options.kcodeAgentService,
     input: options.input,
     selectedRows: options.selectedRows,
     capabilities: options.capabilities,

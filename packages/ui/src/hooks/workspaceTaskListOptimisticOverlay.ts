@@ -1,16 +1,16 @@
 import { useMemo } from "react";
-import type { ZCodeTaskMeta } from "@zcode/shared";
+import type { KCodeTaskMeta } from "@kcode/shared";
 import type { WorkspaceTabState } from "@/store/tabStore.js";
 import { buildTaskEntityKey, buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
-import { compareZCodeTaskListItems } from "@/lib/taskListOrdering.js";
-import { mergeTaskWithOptimisticMeta } from "@/lib/zcodeTaskMetaMerge.js";
-import { selectWorkspaceZCodeState, useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
-import type { GroupedDraftTaskState } from "@/store/zcodeSessionStoreTypes.js";
+import { compareKCodeTaskListItems } from "@/lib/taskListOrdering.js";
+import { mergeTaskWithOptimisticMeta } from "@/lib/kcodeTaskMetaMerge.js";
+import { selectWorkspaceKCodeState, useKCodeSessionStore } from "@/store/kcodeSessionStore.js";
+import type { GroupedDraftTaskState } from "@/store/kcodeSessionStoreTypes.js";
 import { mergeTaskListMembershipFields } from "@/v4/taskListRowActivity.js";
 
 export interface WorkspaceOptimisticTaskOverlay {
   activeTaskId: string | null;
-  tasks: ZCodeTaskMeta[];
+  tasks: KCodeTaskMeta[];
   promotedGroupedDraftTaskByTaskId: Record<string, GroupedDraftTaskState>;
 }
 
@@ -23,12 +23,12 @@ interface WorkspaceOptimisticScope {
 }
 
 export function mergeWorkspaceTaskListItemsWithOptimistic(params: {
-  items: readonly ZCodeTaskMeta[];
-  optimisticTasks: readonly ZCodeTaskMeta[];
+  items: readonly KCodeTaskMeta[];
+  optimisticTasks: readonly KCodeTaskMeta[];
   activeTaskId: string | null;
   sortBy: WorkspaceTaskListSortBy;
   visibleLimit: number | null;
-}): ZCodeTaskMeta[] {
+}): KCodeTaskMeta[] {
   const taskByKey = new Map(params.items.map((task) => [buildTaskEntityKey(task), task] as const));
 
   for (const optimisticTask of params.optimisticTasks) {
@@ -56,7 +56,7 @@ export function mergeWorkspaceTaskListItemsWithOptimistic(params: {
   }
 
   const sortedItems = [...taskByKey.values()].sort((left, right) =>
-    compareZCodeTaskListItems(left, right, params.sortBy),
+    compareKCodeTaskListItems(left, right, params.sortBy),
   );
   return params.visibleLimit === null ? sortedItems : sortedItems.slice(0, params.visibleLimit);
 }
@@ -77,10 +77,10 @@ export function useWorkspaceTaskOptimisticOverlayByWorkspaceKey(
     () => JSON.parse(workspaceScopeSignature) as WorkspaceOptimisticScope[],
     [workspaceScopeSignature],
   );
-  const optimisticTaskListSignature = useZCodeSessionStore((state) =>
+  const optimisticTaskListSignature = useKCodeSessionStore((state) =>
     JSON.stringify(
       workspaceScopes.map((scope) => {
-        const workspaceState = selectWorkspaceZCodeState(
+        const workspaceState = selectWorkspaceKCodeState(
           state,
           scope.workspacePath,
           scope.workspaceIdentity,
@@ -114,10 +114,10 @@ export function useWorkspaceTaskOptimisticOverlayByWorkspaceKey(
   );
 
   return useMemo(() => {
-    const state = useZCodeSessionStore.getState();
+    const state = useKCodeSessionStore.getState();
     return new Map<string, WorkspaceOptimisticTaskOverlay>(
       workspaceScopes.map((scope) => {
-        const workspaceState = selectWorkspaceZCodeState(
+        const workspaceState = selectWorkspaceKCodeState(
           state,
           scope.workspacePath,
           scope.workspaceIdentity,

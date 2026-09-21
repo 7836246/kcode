@@ -1,0 +1,40 @@
+{
+  "name": "@kcode/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Main CLI application for kcode",
+  "bin": {
+    "kcode": "./dist/kcode.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/kcode.cjs",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:desktop-agent": "node scripts/build.mjs --desktop-agent",
+    "build:sea": "pnpm --dir ../../../.. exec turbo --skip-infer --cwd apps/kcode-cli run build --filter=!@kcode/cli --force && pnpm build && node scripts/build-sea.mjs --all",
+    "sea": "node scripts/build-sea.mjs",
+    "upload:sea": "node scripts/upload-sea-smb.mjs",
+    "clean": "node ../../scripts/clean-dist.mjs",
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint --write src"
+  },
+  "dependencies": {
+    "@kcode/adapters": "workspace:*",
+    "@kcode/bootstrap": "workspace:*",
+    "@kcode/contracts": "workspace:*",
+    "@kcode/core": "workspace:*",
+    "@kcode/dynamic-workflow-runtime": "workspace:*",
+    "@kcode/i18n": "workspace:*",
+    "@kcode/provider-node": "workspace:*",
+    "@kcode/shared": "workspace:*",
+    "@kcode/shared-types": "workspace:*",
+    "@kcode/tui": "workspace:*",
+    "dotenv": "^17.4.2",
+    "playwright-core": "1.59.1"
+  }
+}

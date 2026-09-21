@@ -7,16 +7,16 @@ import {
   Root,
   GlobalDatabaseStartupLoading,
   UpdateStatusWindowRoot,
-  ZCodeIntlProvider,
+  KCodeIntlProvider,
   registerBaseWorkspaceServices,
   registerRemoteWorkspaceSession,
   createRemoteWorkspaceDisconnectedError,
   playTaskNotificationSound,
   setStreamClientId,
   setReactErrorArmsReporter,
-} from "@zcode/ui";
-import "@zcode/ui/styles.css";
-import { connectViaMessagePort, createMessagePortServiceConnection } from "@zcode/client";
+} from "@kcode/ui";
+import "@kcode/ui/styles.css";
+import { connectViaMessagePort, createMessagePortServiceConnection } from "@kcode/client";
 import {
   InternalChannels,
   databaseStartupStateSchema,
@@ -26,9 +26,9 @@ import {
   LAUNCH_MARKS_QUERY_KEY,
   type LaunchMarks,
   DEFAULT_LOCALE,
-} from "@zcode/shared";
-import type { Locale } from "@zcode/shared";
-import type { IServiceAccessor } from "@zcode/services";
+} from "@kcode/shared";
+import type { Locale } from "@kcode/shared";
+import type { IServiceAccessor } from "@kcode/services";
 import { syncAppTelemetryContext } from "../appTelemetryBridge.js";
 import { createDesktopPlatform } from "./desktopPlatform.js";
 import { startPerformanceTimelineCleanup } from "./performanceTimelineCleanup.js";
@@ -41,7 +41,7 @@ import {
 } from "./remoteWorkspaceServicePortBridge.js";
 
 type DesktopRendererImportMetaEnv = {
-  VITE_ZCODE_E2E_STORE_BRIDGE?: string;
+  VITE_KCODE_E2E_STORE_BRIDGE?: string;
 };
 
 startPerformanceTimelineCleanup();
@@ -53,29 +53,29 @@ const launchMarks: LaunchMarks | null = parseLaunchMarks(
 );
 (
   window as Window & {
-    __ZCODE_RENDERER_START__?: number;
-    __ZCODE_LAUNCH_MARKS__?: LaunchMarks | null;
+    __KCODE_RENDERER_START__?: number;
+    __KCODE_LAUNCH_MARKS__?: LaunchMarks | null;
   }
-).__ZCODE_RENDERER_START__ = rendererStartedAt;
-(window as Window & { __ZCODE_LAUNCH_MARKS__?: LaunchMarks | null }).__ZCODE_LAUNCH_MARKS__ =
+).__KCODE_RENDERER_START__ = rendererStartedAt;
+(window as Window & { __KCODE_LAUNCH_MARKS__?: LaunchMarks | null }).__KCODE_LAUNCH_MARKS__ =
   launchMarks;
 registerE2EStoreBridgesIfEnabled();
 
 function registerE2EStoreBridgesIfEnabled() {
   const env = ((import.meta as ImportMeta & { env?: DesktopRendererImportMetaEnv }).env ??
     {}) as DesktopRendererImportMetaEnv;
-  if (env.VITE_ZCODE_E2E_STORE_BRIDGE !== "1") {
+  if (env.VITE_KCODE_E2E_STORE_BRIDGE !== "1") {
     return;
   }
 
-  void import("@zcode/ui/e2e-store-bridge").then(({ registerE2EStoreBridges }) => {
+  void import("@kcode/ui/e2e-store-bridge").then(({ registerE2EStoreBridges }) => {
     registerE2EStoreBridges();
   });
 }
 
 // 初始化主题：默认 Zai dark，后续由 useTheme hook 接管
 {
-  const saved = localStorage.getItem("zcode-theme") || "zai-dark";
+  const saved = localStorage.getItem("kcode-theme") || "zai-dark";
   const resolved =
     saved === "system"
       ? window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -112,8 +112,8 @@ document.documentElement.classList.toggle("platform-windows-desktop", isWindowsD
 // 会把标题栏点击区一起拦截。给桌面 Linux 根节点打平台标记，让 UI overlay 能只在 Linux 避开标题栏。
 document.documentElement.classList.toggle("platform-linux-desktop", isLinuxDesktop);
 const isLocalDevelopmentRuntime =
-  (globalThis as typeof globalThis & { __ZCODE_LOCAL_DEVELOPMENT_RUNTIME__?: boolean })
-    .__ZCODE_LOCAL_DEVELOPMENT_RUNTIME__ === true;
+  (globalThis as typeof globalThis & { __KCODE_LOCAL_DEVELOPMENT_RUNTIME__?: boolean })
+    .__KCODE_LOCAL_DEVELOPMENT_RUNTIME__ === true;
 
 function readBooleanFlag(name: string, defaultValue: boolean): boolean {
   const value = new URLSearchParams(window.location.search).get(name);
@@ -165,7 +165,7 @@ const sendStartupControl = (control: DatabaseStartupControl) =>
 function renderDatabaseStartup(): void {
   appRoot?.render(
     <AppErrorBoundary isDesktop isMacDesktop={isMacDesktop} isWindowsDesktop={isWindowsDesktop}>
-      <ZCodeIntlProvider
+      <KCodeIntlProvider
         initialLocale={initialLocaleFlag ? initialLocale : undefined}
         resolveSystemLocale={desktopPlatform.getSystemLocale}
       >
@@ -182,7 +182,7 @@ function renderDatabaseStartup(): void {
           onCopy={(details) => navigator.clipboard.writeText(details)}
           onExit={() => sendStartupControl({ action: "exit" })}
         />
-      </ZCodeIntlProvider>
+      </KCodeIntlProvider>
     </AppErrorBoundary>,
   );
 }
@@ -248,11 +248,11 @@ function flushPendingRemoteWorkspaceServicePorts(): void {
 function StartupReadyNotifier() {
   useEffect(() => {
     // T5:React 首次 commit。供启动分阶段耗时计算 react_commit 段。
-    (window as Window & { __ZCODE_REACT_COMMIT_AT__?: number }).__ZCODE_REACT_COMMIT_AT__ =
+    (window as Window & { __KCODE_REACT_COMMIT_AT__?: number }).__KCODE_REACT_COMMIT_AT__ =
       Date.now();
     // HTML 启动壳的弹出动画结束时，React 首屏可能还没 commit，直接移除壳会露出空白。
     // 这里在 React commit 后通知 index.html，再由启动壳统一判断动画和 React ready 两个条件后退场。
-    window.dispatchEvent(new Event("zcode-react-startup-ready"));
+    window.dispatchEvent(new Event("kcode-react-startup-ready"));
   }, []);
 
   return null;
@@ -310,7 +310,7 @@ function initializeBusinessRoot(port: MessagePort): void {
 
   syncAppTelemetryContext({
     bridge: {
-      syncTelemetryContext: (context) => window.zcode.syncTelemetryContext(context),
+      syncTelemetryContext: (context) => window.kcode.syncTelemetryContext(context),
     },
     createRendererContext: collectTelemetryRendererContext,
   });
@@ -325,7 +325,7 @@ function initializeBusinessRoot(port: MessagePort): void {
 
   appRoot?.render(
     <AppErrorBoundary isDesktop isMacDesktop={isMacDesktop} isWindowsDesktop={isWindowsDesktop}>
-      <ZCodeIntlProvider
+      <KCodeIntlProvider
         settingService={settingService}
         broadcastService={services.broadcastService}
         resolveSystemLocale={desktopPlatform.getSystemLocale}
@@ -346,7 +346,7 @@ function initializeBusinessRoot(port: MessagePort): void {
           }
           unavailableWorkspacePath={unavailableWorkspacePath}
         />
-      </ZCodeIntlProvider>
+      </KCodeIntlProvider>
     </AppErrorBoundary>,
   );
 }

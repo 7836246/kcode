@@ -5,7 +5,7 @@
 // 同时运行」，与详情页的来龙去脉块「由你调整设置」下的 from → to 两行。两处读同一块 `amend` 元数据，
 // 措辞规则只在这里写一次。纯函数 + 注入的 formatMessage / providerName，与 subagent-model-label 同规。
 
-import type { WorkflowSettingsAmendMeta } from "@zcode/shared/zcode-protocol-v4";
+import type { WorkflowSettingsAmendMeta } from "@kcode/shared/kcode-protocol-v4";
 import {
   describeWorkflowSubagentModel,
   type WorkflowSubagentModelDeps,

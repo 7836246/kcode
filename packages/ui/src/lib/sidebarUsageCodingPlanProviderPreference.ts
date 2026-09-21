@@ -1,4 +1,4 @@
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@zcode/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@kcode/shared";
 import { logger } from "@/logger.js";
 
 export type SidebarUsageCodingPlanProviderId =
@@ -8,7 +8,7 @@ export type SidebarUsageCodingPlanProviderId =
   | typeof BUILTIN_MODEL_PROVIDER_IDS.bigmodelTeamCodingPlan;
 export type SidebarUsageCodingPlanSourceId = SidebarUsageCodingPlanProviderId | `team:${string}`;
 
-const SIDEBAR_USAGE_CODING_PLAN_PROVIDER_STORAGE_KEY = "zcode:sidebar-usage-coding-plan-provider";
+const SIDEBAR_USAGE_CODING_PLAN_PROVIDER_STORAGE_KEY = "kcode:sidebar-usage-coding-plan-provider";
 
 const SIDEBAR_USAGE_CODING_PLAN_PROVIDER_IDS: SidebarUsageCodingPlanProviderId[] = [
   BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan,

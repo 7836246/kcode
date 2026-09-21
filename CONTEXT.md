@@ -1,4 +1,4 @@
-# ZCode 插件商店（Plugin Store）
+# KCode 插件商店（Plugin Store）
 
 插件设置页及其市场浏览/安装体验的领域词汇表。本文件统一定义商店相关术语，供页面、服务和文档使用。
 
@@ -7,7 +7,7 @@
 ### 市场与来源
 
 **Official Marketplace（官方市场）**:
-ZCode 官方运营的唯一分发渠道，市场 id 为 `zcode-plugins-official`，内容 = 内置插件 + CDN 插件。是"分发渠道"而非"作者归属"——其中可以收录社区作者的插件。
+KCode 官方运营的唯一分发渠道，市场 id 为 `kcode-plugins-official`，内容 = 内置插件 + CDN 插件。是"分发渠道"而非"作者归属"——其中可以收录社区作者的插件。上游 CDN 若仍声明 `zcode-plugins-official`，解析时改写成规范 id，不单独开第二个官方市场。
 _Avoid_: "官方"泛指一切受信市场
 
 **Builtin Plugin（内置插件）**:

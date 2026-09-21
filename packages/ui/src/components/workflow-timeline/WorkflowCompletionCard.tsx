@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { buildPresetLabels } from "@/app-shell/workflow-artifacts/artifactPresentation.js";
 import { cn } from "@/components/lib/utils.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { workDurationParts, workDurationUnitSeparator } from "@/lib/workDuration.js";
 import type { WorkflowCompletionArtifact } from "./WorkflowArtifactTile.js";
 import {
@@ -114,7 +114,7 @@ function Figure({
   title?: string;
   delayMs: number;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const unavailable = intl.formatMessage({ id: "chat.toolCall.workflow.completion.unavailable" });
   const style: CSSProperties = { animationDelay: `${delayMs}ms`, animationFillMode: "backwards" };
   return (
@@ -161,7 +161,7 @@ export function WorkflowCompletionCard({
   renderPreview,
   testIdKey,
 }: WorkflowCompletionCardProps) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const format = intl.formatMessage.bind(intl);
   const labels = useMemo(
     () => buildPresetLabels((descriptor, values) => intl.formatMessage(descriptor, values)),

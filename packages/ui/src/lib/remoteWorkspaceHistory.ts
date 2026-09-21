@@ -5,7 +5,7 @@ import type {
   RemoteTarget,
   RemoteTargetSnapshot,
   RemoteWorkspaceSessionEntry,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { WindowTabState } from "@/store/tabStore.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 

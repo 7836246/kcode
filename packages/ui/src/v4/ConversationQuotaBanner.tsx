@@ -1,8 +1,7 @@
-import { CodingPlanEntryButton } from "@/settings/CodingPlanEntryButton.js";
 import { useEffect, useRef } from "react";
-import { InfoIcon, RocketIcon, XIcon } from "lucide-react";
+import { InfoIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type {
   SessionQuotaBannerKind,
   SessionQuotaBannerState,
@@ -46,18 +45,14 @@ function formatPercent(value: number | null): string {
 
 export function ConversationQuotaBanner({
   state,
-  upgradeActionLabelId = "chat.quota.action.upgrade",
-  onUpgrade,
   onDismiss,
   onShown,
 }: {
   state: SessionQuotaBannerState;
-  upgradeActionLabelId?: string;
-  onUpgrade?: () => void;
   onDismiss: () => void;
   onShown?: () => void;
 }) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const bannerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!onShown || !state.visible || !bannerRef.current) return;
@@ -110,17 +105,6 @@ export function ConversationQuotaBanner({
           <InfoIcon className="size-4 shrink-0" />
           <div className="min-w-0 break-words">{message}</div>
         </div>
-        {onUpgrade ? (
-          <CodingPlanEntryButton
-            type="button"
-            size="sm"
-            className="h-auto shrink-0 gap-1.5 rounded-full"
-            onClick={onUpgrade}
-          >
-            <RocketIcon className="size-3.5" />
-            {intl.formatMessage({ id: upgradeActionLabelId })}
-          </CodingPlanEntryButton>
-        ) : null}
         {state.dismissible ? (
           <Button
             type="button"

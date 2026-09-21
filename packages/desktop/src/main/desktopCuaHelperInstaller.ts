@@ -1,16 +1,16 @@
 import { join } from "node:path";
 import { app } from "electron";
-import { HELPER_APP_NAME } from "@zcode/zcode-cua/broker/helperConstants";
+import { HELPER_APP_NAME } from "@kcode/kcode-cua/broker/helperConstants";
 import {
   canonicalizeCuaHelperInstallerOptions,
   createCuaHelperInstaller,
   type CuaHelperInstaller,
   type CuaHelperInstallerOptions,
-} from "@zcode/services/node";
+} from "@kcode/services/node";
 
 type InstallerFactory = (options: CuaHelperInstallerOptions) => CuaHelperInstaller;
 
-export { normalizeCuaHelperArch, normalizeCuaHelperArchs } from "@zcode/services/node";
+export { normalizeCuaHelperArch, normalizeCuaHelperArchs } from "@kcode/services/node";
 
 interface DesktopCuaHelperInstallerOptions extends Pick<
   CuaHelperInstallerOptions,
@@ -45,7 +45,7 @@ export function createDesktopCuaHelperInstaller(
   // A signed app with a bundled Helper must be deterministic even when its
   // LaunchServices environment was polluted by an earlier dev session.
   if (bundledAppPath) {
-    delete env.ZCODE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL;
+    delete env.KCODE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL;
   }
   return createInstaller(
     canonicalizeCuaHelperInstallerOptions({

@@ -16,7 +16,7 @@ import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
 import type {
-  ZCodeProvider,
+  KCodeProvider,
   SkillDiagnostic,
   SkillMetadata,
   SkillScope,
@@ -24,8 +24,8 @@ import type {
   SkillsPromptContext,
   SkillsListResult,
   SkillsCapability,
-} from "@zcode/shared";
-import { DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS } from "@zcode/shared";
+} from "@kcode/shared";
+import { DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS } from "@kcode/shared";
 import type { ISkillsService } from "./skills.js";
 import { SKILL_FILE_NAME, walkSkillMarkdownPaths } from "./skillDiscoveryWalk.js";
 import { readInstalledPluginRoots } from "#src/plugins/installedPluginRoots.js";
@@ -47,18 +47,18 @@ interface ParsedFrontmatter {
 }
 
 const SKILL_META_FILE_NAME = "_meta.json";
-const SKILL_SETTINGS_DIR = join(resolveUserHomeDir(), ".zcode", "v2");
-const SKILL_CLI_SETTINGS_DIR = join(resolveUserHomeDir(), ".zcode", "cli");
+const SKILL_SETTINGS_DIR = join(resolveUserHomeDir(), ".kcode", "v2");
+const SKILL_CLI_SETTINGS_DIR = join(resolveUserHomeDir(), ".kcode", "cli");
 const SKILL_CLI_CONFIG_FILE = join(SKILL_CLI_SETTINGS_DIR, "config.json");
 const GIT_MARKER = ".git";
 const HOME_PREFIX = "~/";
-const ZCODE_OFFICIAL_PLUGIN_MARKETPLACE = "zcode-plugins-official";
-const ZCODE_INLINE_PLUGIN_MARKETPLACE = "inline";
-const ZCODE_PLUGIN_MANIFEST_PATH = join(".zcode-plugin", "plugin.json");
+const KCODE_OFFICIAL_PLUGIN_MARKETPLACE = "kcode-plugins-official";
+const KCODE_INLINE_PLUGIN_MARKETPLACE = "inline";
+const KCODE_PLUGIN_MANIFEST_PATH = join(".kcode-plugin", "plugin.json");
 const CLAUDE_PLUGIN_MANIFEST_PATH = join(".claude-plugin", "plugin.json");
 const CODEX_PLUGIN_MANIFEST_PATH = join(".codex-plugin", "plugin.json");
 
-/** 对齐 apps/zcode-cli/packages/adapters/src/skills/index.ts:19 */
+/** 对齐 apps/kcode-cli/packages/adapters/src/skills/index.ts:19 */
 const MAX_DESCRIPTION_LENGTH = 1024;
 function resolveUserHomeDir() {
   const envHome = process.env.HOME?.trim() || process.env.USERPROFILE?.trim();
@@ -69,19 +69,19 @@ interface SkillsServiceOptions {
   isDesktopRuntime?: boolean;
 }
 
-/** ZCode Agent 工作区级技能目录。 */
+/** KCode Agent 工作区级技能目录。 */
 function getWorkspaceZcodeSkillRoot(workspacePath: string): string {
-  return join(workspacePath, ".zcode", "skills");
+  return join(workspacePath, ".kcode", "skills");
 }
 
-/** 兼容目录: workspace 级 `.agents/skills`, 仅在同层 `.zcode/skills` 没读到技能时 fallback。 */
+/** 兼容目录: workspace 级 `.agents/skills`, 仅在同层 `.kcode/skills` 没读到技能时 fallback。 */
 function getWorkspaceAgentsSkillRoot(workspacePath: string): string {
   return join(workspacePath, ".agents", "skills");
 }
 
-/** ZCode Agent 用户级技能目录。 */
+/** KCode Agent 用户级技能目录。 */
 function getUserZcodeSkillRoot(): string {
-  return join(resolveUserHomeDir(), ".zcode", "skills");
+  return join(resolveUserHomeDir(), ".kcode", "skills");
 }
 
 /** 兼容目录: 用户级 `~/.agents/skills`。 */
@@ -133,8 +133,8 @@ async function isUserAgentsSkillCoveredByZcode(params: {
 
 /**
  * 从 workspacePath 向上走到 worktree 根（含 .git 标记），把每一层的
- * `.zcode/skills` 与 `.agents/skills` 都收集起来。
- * 对齐 apps/zcode-cli/packages/adapters/src/skills/roots.ts:60-72。
+ * `.kcode/skills` 与 `.agents/skills` 都收集起来。
+ * 对齐 apps/kcode-cli/packages/adapters/src/skills/roots.ts:60-72。
  * 找不到 .git 时退回 workspacePath 自身。
  */
 async function resolveAncestorWorkspaceRoots(workspacePath: string): Promise<string[]> {
@@ -155,7 +155,7 @@ async function resolveAncestorWorkspaceRoots(workspacePath: string): Promise<str
   const roots: string[] = [];
   for (const dir of baseDirectories) {
     // Agent runtime 会合并扫描两个 workspace skill 根。UI 之前把 `.agents`
-    // 当成 `.zcode` 的 fallback，导致同层 `.zcode` 只要有一个技能，`/`、`$` 和设置页
+    // 当成 `.kcode` 的 fallback，导致同层 `.kcode` 只要有一个技能，`/`、`$` 和设置页
     // 就会整根漏掉 `.agents` 技能，形成“模型可执行但 UI 无法引用”的发现语义分裂。
     roots.push(getWorkspaceZcodeSkillRoot(dir));
     roots.push(getWorkspaceAgentsSkillRoot(dir));
@@ -234,7 +234,7 @@ function hashStableIdPart(value: string): string {
 }
 
 function buildSkillId(params: {
-  provider: ZCodeProvider;
+  provider: KCodeProvider;
   scope: SkillScope;
   name: string;
   path: string;
@@ -643,7 +643,7 @@ function readStorageDirFromConfig(config: Record<string, unknown>): string {
   const storage = isObjectRecord(config.storage) ? config.storage : {};
   return typeof storage.dir === "string" && storage.dir.trim().length > 0
     ? storage.dir
-    : "~/.zcode";
+    : "~/.kcode";
 }
 
 function resolveConfigPath(path: string): string {
@@ -685,7 +685,7 @@ function resolveInside(rootPath: string, rawPath: string): string | null {
 }
 
 async function scanOfficialPluginCacheRoots(pluginStorageRoot: string): Promise<string[]> {
-  const cacheRoot = join(pluginStorageRoot, "cache", ZCODE_OFFICIAL_PLUGIN_MARKETPLACE);
+  const cacheRoot = join(pluginStorageRoot, "cache", KCODE_OFFICIAL_PLUGIN_MARKETPLACE);
   let pluginEntries: Dirent[] = [];
   try {
     pluginEntries = await readdir(cacheRoot, { withFileTypes: true });
@@ -742,7 +742,7 @@ async function readPluginManifest(rootPath: string): Promise<PluginManifestSumma
 
 async function findPluginManifestPath(rootPath: string): Promise<string | null> {
   for (const manifestPath of [
-    join(rootPath, ZCODE_PLUGIN_MANIFEST_PATH),
+    join(rootPath, KCODE_PLUGIN_MANIFEST_PATH),
     join(rootPath, CLAUDE_PLUGIN_MANIFEST_PATH),
     join(rootPath, CODEX_PLUGIN_MANIFEST_PATH),
   ]) {
@@ -785,12 +785,12 @@ async function resolvePluginSkillRootDescriptors(): Promise<SkillRootDescriptor[
   const candidates: PluginRootCandidate[] = [
     ...config.dirs.map((dir) => ({
       defaultEnabled: true,
-      marketplace: ZCODE_INLINE_PLUGIN_MARKETPLACE,
+      marketplace: KCODE_INLINE_PLUGIN_MARKETPLACE,
       rootPath: resolveConfigPath(dir),
     })),
     ...officialCacheRoots.map((rootPath) => ({
       defaultEnabled: false,
-      marketplace: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+      marketplace: KCODE_OFFICIAL_PLUGIN_MARKETPLACE,
       rootPath,
     })),
     ...installedRoots,
@@ -808,7 +808,7 @@ async function resolvePluginSkillRootDescriptors(): Promise<SkillRootDescriptor[
     // 官方 cache 时不经过 CLI resolve 的过滤，需要在这里同样跳过，否则被卸载的内置插件
     // 仍会从 cache 贡献技能。
     if (
-      candidate.marketplace === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE &&
+      candidate.marketplace === KCODE_OFFICIAL_PLUGIN_MARKETPLACE &&
       config.suppressedBuiltins.includes(pluginId)
     ) {
       continue;
@@ -843,7 +843,7 @@ async function discoverSkills(params: {
   workspacePath: string;
   workspaceIdentity?: string;
   includeUserSkills: boolean;
-  provider: ZCodeProvider;
+  provider: KCodeProvider;
 }): Promise<DiscoverResult> {
   const workspaceRoots = dedupeRoots(await resolveAncestorWorkspaceRoots(params.workspacePath));
   const roots: SkillRootDescriptor[] = workspaceRoots.map((rootPath) => ({
@@ -851,7 +851,7 @@ async function discoverSkills(params: {
     rootPath,
   }));
   if (params.includeUserSkills) {
-    // 用户级技能是全局资源，`.zcode/skills` 里只要存在一个技能就截断
+    // 用户级技能是全局资源，`.kcode/skills` 里只要存在一个技能就截断
     // `.agents/skills` 会导致外部 Agent 的全局技能在导入后从设置页消失。
     roots.push({
       scope: "user" as const,
@@ -943,7 +943,7 @@ async function discoverSkills(params: {
       }
 
       // frontmatter 扩展字段通常来自不同 skill 生态的元信息。
-      // 这些字段不影响 ZCode 读取 name/description，继续报 warning 只会制造无操作价值的噪音。
+      // 这些字段不影响 KCode 读取 name/description，继续报 warning 只会制造无操作价值的噪音。
 
       const body = parsed.body.trim();
       const metadata = await readSkillMetadata(skillPath);
@@ -1007,7 +1007,7 @@ async function collectSkillMarkdownPaths(
 }
 
 function resolveCapabilities(options?: SkillsServiceOptions): SkillsCapability {
-  const isDesktopRuntime = options?.isDesktopRuntime ?? Boolean(process.env.ZCODE_PROCESS_LABEL);
+  const isDesktopRuntime = options?.isDesktopRuntime ?? Boolean(process.env.KCODE_PROCESS_LABEL);
   if (isDesktopRuntime) {
     return { userScopeAvailable: true };
   }
@@ -1031,7 +1031,7 @@ export function createSkillsService(options?: SkillsServiceOptions): ISkillsServ
     async list(params: {
       workspacePath: string;
       workspaceIdentity?: string;
-      provider?: ZCodeProvider;
+      provider?: KCodeProvider;
     }): Promise<SkillsListResult> {
       const capability = resolveCapabilities(options);
       const provider = "glm";
@@ -1052,7 +1052,7 @@ export function createSkillsService(options?: SkillsServiceOptions): ISkillsServ
     async setEnabled(params: {
       workspacePath: string;
       workspaceIdentity?: string;
-      provider?: ZCodeProvider;
+      provider?: KCodeProvider;
       scope?: SkillScope;
       skillId: string;
       enabled: boolean;
@@ -1083,7 +1083,7 @@ export function createSkillsService(options?: SkillsServiceOptions): ISkillsServ
     async buildPromptContext(params: {
       workspacePath: string;
       workspaceIdentity?: string;
-      provider?: ZCodeProvider;
+      provider?: KCodeProvider;
       prompt: string;
     }): Promise<SkillsPromptContext> {
       const mentionedSkillNames = collectMentionedSkillNames(params.prompt);
@@ -1193,7 +1193,7 @@ export function createSkillsService(options?: SkillsServiceOptions): ISkillsServ
 
       // 用发现阶段命中的原始路径（sourcePath，未 realpath）定位技能目录项。
       // 软链导入的技能 skill.path 是 realpath 后的目标文件，dirname 会指向目标目录；
-      // sourcePath 才指向 `~/.zcode/skills/<name>` 下的目录项本身。
+      // sourcePath 才指向 `~/.kcode/skills/<name>` 下的目录项本身。
       const skillDir = dirname(skill.sourcePath ?? skill.path);
       const skillLeafName = basename(skillDir);
       // 只解析父目录，不解析叶子本身：
@@ -1206,7 +1206,7 @@ export function createSkillsService(options?: SkillsServiceOptions): ISkillsServ
       }
 
       // 安全护栏：删除是 `rm -rf` 目录的破坏性操作，仅允许命中受控技能根。
-      // 收集工作区各层级（沿 worktree 向上）的 .zcode/skills 与 .agents/skills，外加用户级两根。
+      // 收集工作区各层级（沿 worktree 向上）的 .kcode/skills 与 .agents/skills，外加用户级两根。
       const allowedRootCandidates = await resolveAncestorWorkspaceRoots(params.workspacePath);
       allowedRootCandidates.push(getUserZcodeSkillRoot());
       allowedRootCandidates.push(getUserAgentsSkillRoot());

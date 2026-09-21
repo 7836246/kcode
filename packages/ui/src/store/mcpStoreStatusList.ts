@@ -1,14 +1,14 @@
-import type { McpServerStatus, ZCodeMcpServer, ZCodeMcpServerStatusSnapshot } from "@zcode/shared";
+import type { McpServerStatus, KCodeMcpServer, KCodeMcpServerStatusSnapshot } from "@kcode/shared";
 
 type MappedMcpServerStatus = {
-  authorization?: ZCodeMcpServerStatusSnapshot["authorization"];
+  authorization?: KCodeMcpServerStatusSnapshot["authorization"];
   error?: string;
-  failureKind?: ZCodeMcpServerStatusSnapshot["failureKind"];
+  failureKind?: KCodeMcpServerStatusSnapshot["failureKind"];
   serverRequestId?: string;
   status: McpServerStatus;
 };
 
-function mapRuntimeStatusToUi(snapshot: ZCodeMcpServerStatusSnapshot): MappedMcpServerStatus {
+function mapRuntimeStatusToUi(snapshot: KCodeMcpServerStatusSnapshot): MappedMcpServerStatus {
   switch (snapshot.status) {
     case "connected":
     case "connecting":
@@ -44,13 +44,13 @@ function mapRuntimeStatusToUi(snapshot: ZCodeMcpServerStatusSnapshot): MappedMcp
 }
 
 export function mergeMcpServerStatusSnapshots(
-  servers: ZCodeMcpServer[],
-  statuses: Record<string, ZCodeMcpServerStatusSnapshot>,
+  servers: KCodeMcpServer[],
+  statuses: Record<string, KCodeMcpServerStatusSnapshot>,
   options: { markMissingConnectingAsError?: boolean } = {},
-): ZCodeMcpServer[] {
+): KCodeMcpServer[] {
   const markMissingConnectingAsError = options.markMissingConnectingAsError ?? true;
   return servers.map((server) => {
-    if (server.source !== "zcodeagentmcp") {
+    if (server.source !== "kcodeagentmcp") {
       return server;
     }
     const snapshot = statuses[server.name];

@@ -14,10 +14,10 @@ import {
   SlidersHorizontalIcon,
   SquareIcon,
 } from "lucide-react";
-import type { WorkflowRunState, WorkflowRunUsage } from "@zcode/shared/zcode-protocol-v4";
+import type { WorkflowRunState, WorkflowRunUsage } from "@kcode/shared/kcode-protocol-v4";
 import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type { workflowRunResultView } from "@/app-shell/workflowRunPanel.js";
 import { workflowRunConcurrencyView } from "@/app-shell/workflowRunThrottle.js";
 import { WorkflowRunStatus } from "@/components/workflow-timeline/WorkflowCardChrome.js";
@@ -112,7 +112,7 @@ export const WorkflowRunStatusHeader = memo(function WorkflowRunStatusHeader({
   title: string;
   usage: WorkflowRunUsage | undefined;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const cancelLabel = intl.formatMessage({ id: "chat.toolCall.workflow.run.cancel" });
   const resumeLabel = intl.formatMessage({ id: "chat.toolCall.workflow.run.resume" });
   // 并发读数：只在实际并发
@@ -355,7 +355,7 @@ export const WorkflowRunResultSections = memo(function WorkflowRunResultSections
 }: {
   result: ReturnType<typeof workflowRunResultView>;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <>

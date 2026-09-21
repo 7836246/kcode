@@ -1,7 +1,7 @@
 import { useCallback } from "react";
-import type { Locale } from "@zcode/shared";
-import { TID_LOCALE_TOGGLE } from "@zcode/shared";
-import { useZCodeIntl } from "./IntlProvider.js";
+import type { Locale } from "@kcode/shared";
+import { TID_LOCALE_TOGGLE } from "@kcode/shared";
+import { useKCodeIntl } from "./IntlProvider.js";
 
 const LOCALE_CYCLE: Locale[] = ["zh-CN", "en-US"];
 
@@ -14,7 +14,7 @@ const LOCALE_LABELS: Record<Locale, string> = {
  * 语言切换按钮 —— 点击循环切换语言
  */
 export function LocaleSwitcher() {
-  const { intl, locale, setLocale } = useZCodeIntl();
+  const { intl, locale, setLocale } = useKCodeIntl();
 
   const cycleLocale = useCallback(() => {
     const idx = LOCALE_CYCLE.indexOf(locale);

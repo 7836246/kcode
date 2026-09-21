@@ -8,18 +8,18 @@ import {
   createNodeProviderRuntimePathEnv,
   NodeModelSelectionConfigRepository,
   PERSONAL_PROVIDER_CONFIG_FILE_NAME,
-} from "@zcode/provider-node";
+} from "@kcode/provider-node";
 import { getAppConfigDir as resolveAppConfigDir } from "./paths.js";
 import {
   buildLocalMediaPreviewUrl,
   isProviderProvisioningAccountCredentialKey,
   type ProviderProvisioningTrigger,
-} from "@zcode/shared";
+} from "@kcode/shared";
 
 export {
-  materializeZCodeBuiltinProviderConfig,
-  ZCODE_BUILTIN_PROVIDER_CONFIG_FILE_ENV,
-} from "@zcode/provider-node";
+  materializeKCodeBuiltinProviderConfig,
+  KCODE_BUILTIN_PROVIDER_CONFIG_FILE_ENV,
+} from "@kcode/provider-node";
 
 export { createFileService } from "./file/fileService.js";
 export {
@@ -45,8 +45,8 @@ export {
   parseFsFaultRulesFromEnvValue,
   resetProcessFsFaultInjectorForTests,
   setFsFaultInjectorForTests,
-  ZCODE_E2E_FS_FAULTS_ALLOW_ENV,
-  ZCODE_E2E_FS_FAULTS_ENV,
+  KCODE_E2E_FS_FAULTS_ALLOW_ENV,
+  KCODE_E2E_FS_FAULTS_ENV,
 } from "./fs/fsFaultInjection.js";
 export type {
   FsFaultCheckInput,
@@ -59,7 +59,7 @@ export type {
 export {
   setDataBaseDir,
   getDataBaseDir,
-  getZCodeDataRootDir,
+  getKCodeDataRootDir,
   getConversationWorkspaceDir,
   getAppConfigDir,
   getExportLogStageDir,
@@ -70,7 +70,7 @@ export {
   getGitCheckpointIndexRootDir,
   copyDataDirectory,
   validateDataBaseDirTarget,
-  ZCODE_WINDOWS_APP_INSTALL_DIR_ENV,
+  KCODE_WINDOWS_APP_INSTALL_DIR_ENV,
 } from "./paths.js";
 export { createGitService } from "./git/gitService.js";
 export { GitCommitMessageGenerator } from "./git/gitCommitMessageGenerator.js";
@@ -84,28 +84,28 @@ export {
 } from "./setting/settingService.js";
 export { createCredentialService } from "./credential/credentialService.js";
 export { createBroadcastService } from "./broadcast/broadcastService.js";
-export { createZCodeAgentService } from "./zcode-agent/zcodeAgentService.js";
-export { createZCodeTaskServiceAdapter } from "./zcode-agent/zcodeTaskServiceAdapter.js";
-export { createZCodeSessionService } from "./zcode-session/zcodeSessionService.js";
+export { createKCodeAgentService } from "./kcode-agent/kcodeAgentService.js";
+export { createKCodeTaskServiceAdapter } from "./kcode-agent/kcodeTaskServiceAdapter.js";
+export { createKCodeSessionService } from "./kcode-session/kcodeSessionService.js";
 export {
-  resolveDefaultZCodeAgentCommand,
-  ZCodeAgentProcessManager,
-} from "./zcode-agent/zcodeAgentProcessManager.js";
+  resolveDefaultKCodeAgentCommand,
+  KCodeAgentProcessManager,
+} from "./kcode-agent/kcodeAgentProcessManager.js";
 export type {
-  ZCodeAgentCommand,
-  ZCodeAgentCommandResolver,
-  ZCodeAgentCommandResolverContext,
-  ZCodeAgentProcessManagerOptions,
-} from "./zcode-agent/zcodeAgentProcessManager.js";
-export { ZCodeProtocolClient } from "./zcode-agent/zcodeProtocolClient.js";
-export type { ZCodeProtocolTransport } from "./zcode-agent/zcodeProtocolTransport.js";
-export { ZCodeStdioTransport } from "./zcode-agent/zcodeStdioTransport.js";
+  KCodeAgentCommand,
+  KCodeAgentCommandResolver,
+  KCodeAgentCommandResolverContext,
+  KCodeAgentProcessManagerOptions,
+} from "./kcode-agent/kcodeAgentProcessManager.js";
+export { KCodeProtocolClient } from "./kcode-agent/kcodeProtocolClient.js";
+export type { KCodeProtocolTransport } from "./kcode-agent/kcodeProtocolTransport.js";
+export { KCodeStdioTransport } from "./kcode-agent/kcodeStdioTransport.js";
 export {
-  getZCodeStdioTapDevLogDir,
-  readZCodeStdioTapDevState,
-  setZCodeStdioTapDevEnabled,
-} from "./zcode-agent/zcodeStdioTapDevConfig.js";
-export type { ZCodeStdioTapDevState } from "@zcode/shared";
+  getKCodeStdioTapDevLogDir,
+  readKCodeStdioTapDevState,
+  setKCodeStdioTapDevEnabled,
+} from "./kcode-agent/kcodeStdioTapDevConfig.js";
+export type { KCodeStdioTapDevState } from "@kcode/shared";
 export {
   createCuaHelperInstaller,
   requestHelperAccessibilityPermissionViaLaunchServices,
@@ -293,10 +293,10 @@ import { ISettingService } from "./setting/setting.js";
 import { IOnboardingRecordService } from "./onboarding/onboardingRecord.js";
 import { ICredentialService } from "./credential/credential.js";
 import { IBroadcastService } from "./broadcast/broadcast.js";
-import { IZCodeTaskService } from "./session/zcodeTaskService.js";
-import { IZCodeAgentService } from "./zcode-agent/zcodeAgent.js";
-import type { CuaOperationStateReporter } from "./zcode-agent/cuaOperationTurnTracker.js";
-import { IZCodeSessionService } from "./zcode-session/zcodeSession.js";
+import { IKCodeTaskService } from "./session/kcodeTaskService.js";
+import { IKCodeAgentService } from "./kcode-agent/kcodeAgent.js";
+import type { CuaOperationStateReporter } from "./kcode-agent/cuaOperationTurnTracker.js";
+import { IKCodeSessionService } from "./kcode-session/kcodeSession.js";
 import {
   createUnsupportedConversationShareService,
   IConversationShareService,
@@ -340,13 +340,13 @@ import { createLegacyTeamOrganizationResolver } from "./model-provider/legacyTea
 import { createObservableSettingService } from "./setting/observableSettingService.js";
 import { createCredentialService } from "./credential/credentialService.js";
 import { createBroadcastService } from "./broadcast/broadcastService.js";
-import { createZCodeAgentService } from "./zcode-agent/zcodeAgentService.js";
-import type { ZCodeAgentCommandResolver } from "./zcode-agent/zcodeAgentProcessManager.js";
-import { buildAgentTelemetrySpawnEnv } from "./zcode-agent/agentTelemetryEnv.js";
-import { resolveZCodeAgentPresentationSurface } from "./zcode-agent/zcodeAgentPresentationSurface.js";
-import { createZCodeTaskServiceAdapter } from "./zcode-agent/zcodeTaskServiceAdapter.js";
-import { createZCodeSessionService } from "./zcode-session/zcodeSessionService.js";
-import { createZCodeTaskIndexSyncer } from "./zcode-agent/zcodeTaskIndexSyncer.js";
+import { createKCodeAgentService } from "./kcode-agent/kcodeAgentService.js";
+import type { KCodeAgentCommandResolver } from "./kcode-agent/kcodeAgentProcessManager.js";
+import { buildAgentTelemetrySpawnEnv } from "./kcode-agent/agentTelemetryEnv.js";
+import { resolveKCodeAgentPresentationSurface } from "./kcode-agent/kcodeAgentPresentationSurface.js";
+import { createKCodeTaskServiceAdapter } from "./kcode-agent/kcodeTaskServiceAdapter.js";
+import { createKCodeSessionService } from "./kcode-session/kcodeSessionService.js";
+import { createKCodeTaskIndexSyncer } from "./kcode-agent/kcodeTaskIndexSyncer.js";
 import { TaskIndexRepo } from "./session/taskIndexRepo.js";
 import type { SessionMessageSendRequested } from "#src/session/sessionMailbox.js";
 import { createFileWatcherService } from "./fileWatcher/fileWatcherService.js";
@@ -354,7 +354,7 @@ import { createOAuthService } from "./oauth/oauthService.js";
 import { isCurrentOAuthCredentialRequest } from "#src/oauth/oauthUnauthorizedRequest.js";
 import { createOAuthProviderLogoutHandler } from "./oauth/oauthProviderLogout.js";
 import { OAuthCredentialRepo } from "./oauth/repo/oauthCredentialRepo.js";
-import { readLegacyZCodeConfigProviders } from "./model-provider/legacyZCodeConfigProviderReader.js";
+import { readLegacyKCodeConfigProviders } from "./model-provider/legacyKCodeConfigProviderReader.js";
 import { resolveAccountTeamPlanRuntimeApiKey } from "./model-provider/accountProviderTeamPlanRequestKey.js";
 import { createAccountProviderCredentialStore } from "./model-provider/accountProviderCredentialStore.js";
 import { createAccountProviderCredentialService } from "./model-provider/accountProviderCredentialService.js";
@@ -368,7 +368,7 @@ import { bindAccountProviderInvalidation } from "./model-provider/accountProvide
 import { AccountProviderApiClient } from "./model-provider/accountProviderApiClient.js";
 import { AccountProviderApiKeyResolver } from "./model-provider/accountProviderApiKeyResolver.js";
 import { createProviderConfigRuntime } from "./model-provider/providerConfigRuntime.js";
-import { fetchZCodeBuiltinRemoteRelease } from "./model-provider/zcodeBuiltinRemoteConfig.js";
+import { fetchKCodeBuiltinRemoteRelease } from "./model-provider/kcodeBuiltinRemoteConfig.js";
 import {
   createProviderRuntimeFromConfigRuntime,
   type ProviderRuntime,
@@ -429,7 +429,7 @@ import {
   buildAgentRuntimeEnv,
 } from "./runtime-tools/agentProxyEnv.js";
 import { ensureAppCaCert } from "./runtime-tools/appCaCert.js";
-import { buildHelperOpenArgs, isCuaLocalDevelopmentRuntime } from "@zcode/zcode-cua/broker/server";
+import { buildHelperOpenArgs, isCuaLocalDevelopmentRuntime } from "@kcode/kcode-cua/broker/server";
 import { createServiceLogger, type ServiceLogger } from "#src/logger/serviceLogger.js";
 import { IOffPeakTaskService } from "./session/offPeakTask.js";
 import { OffPeakTaskService } from "./session/offPeakTaskService.js";
@@ -449,7 +449,7 @@ import {
 import {
   createOfficialMcpTrustedOriginRegistry,
   OFFICIAL_MCP_DEV_TRUSTED_ORIGINS_ENV,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import {
   BROKER_SOCKET_ENV,
   BROKER_UNAVAILABLE_ENV,
@@ -464,7 +464,7 @@ import {
   ICuaPipSessionService,
   isCuaHelperError,
   isOfficialCuaPluginEnabledForWorkspace,
-  isPotentialZCodeCuaAgentMcpServer,
+  isPotentialKCodeCuaAgentMcpServer,
   isScreenCaptureProbeSuccess,
   markCuaProductHelperAgentEnvUnavailable,
   reapOrphanedHelpers,
@@ -490,12 +490,12 @@ import {
 } from "#src/cua-permission-broker/windowsCuaDevRuntime.js";
 import { createCanonicalCuaHelperInstaller } from "./cua-permission-broker/cuaHelperInstaller.js";
 import { WindowsCuaHelperHost } from "#src/cua-permission-broker/windowsCuaDevHelperHost.js";
-import { DEV_HELPER_APP_NAME, HELPER_APP_NAME } from "@zcode/zcode-cua/broker/helperConstants";
-import { resolveBrokerSocketPath } from "@zcode/zcode-cua/broker/socketPath";
+import { DEV_HELPER_APP_NAME, HELPER_APP_NAME } from "@kcode/kcode-cua/broker/helperConstants";
+import { resolveBrokerSocketPath } from "@kcode/kcode-cua/broker/socketPath";
 import {
-  DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
+  DEFAULT_KCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
   resolveSafeEndpointHostname,
-  ZCODE_JWT_INVALID_BROADCAST_CHANNEL,
+  KCODE_JWT_INVALID_BROADCAST_CHANNEL,
   formatLogPrefix,
   isCredentialDecryptError,
   isStartPlanModelProviderId,
@@ -503,27 +503,27 @@ import {
   BIGMODEL_PROVIDER_ID,
   type ProviderFamilyDomain,
   type ServiceAuthorityMode,
-  resolveRuntimeZCodeEndpointOrigin,
+  resolveRuntimeKCodeEndpointOrigin,
   type BrowserBackendDescriptor,
   type BrowserClientMode,
   type BrowserCommand,
-  isZCodeCuaMcpCommand,
-  isZCodeCuaMcpPackageArg,
-  isZCodeCuaInternalFeatureEnabled,
-  ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
-  type ZCodeAutomation,
-  type ZCodeAutomationRun,
-  getCapturedZCodeAgentTelemetryEnv,
-  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
+  isKCodeCuaMcpCommand,
+  isKCodeCuaMcpPackageArg,
+  isKCodeCuaInternalFeatureEnabled,
+  KCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
+  type KCodeAutomation,
+  type KCodeAutomationRun,
+  getCapturedKCodeAgentTelemetryEnv,
+  KCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
   ZAI_PROVIDER_ID,
-  zcodeAccountAccessSchema,
-  zcodeProviderAccountAccessSchema,
-  ZCODE_VERSION,
-  ZCODE_ENV,
-  buildRuntimeZCodeApiUrl,
-} from "@zcode/shared";
+  kcodeAccountAccessSchema,
+  kcodeProviderAccountAccessSchema,
+  KCODE_VERSION,
+  KCODE_ENV,
+  buildRuntimeKCodeApiUrl,
+} from "@kcode/shared";
 
-// 这些 conversation-share 实现依赖 Node 文件系统；仅通过 @zcode/services/node 暴露，
+// 这些 conversation-share 实现依赖 Node 文件系统；仅通过 @kcode/services/node 暴露，
 // 防止 browser-safe 根入口把 node:* 依赖带进 renderer。
 export {
   ConversationShareService,
@@ -695,10 +695,10 @@ export function shouldEnableDefaultCuaProductHelper(
     env?: NodeJS.ProcessEnv;
   } = {},
 ): boolean {
-  // CUA 已随正式版默认开启（isZCodeCuaInternalFeatureEnabled 默认 ON，仅显式 0/false/off 关闭；2026-08 注释更正——旧注释称默认关闭已过期）。显式开启后 macOS 使用既有产品 Helper，Windows 使用安装包内 runtime；
+  // CUA 已随正式版默认开启（isKCodeCuaInternalFeatureEnabled 默认 ON，仅显式 0/false/off 关闭；2026-08 注释更正——旧注释称默认关闭已过期）。显式开启后 macOS 使用既有产品 Helper，Windows 使用安装包内 runtime；
   // 两端都保持按需启动。关闭时不创建 host、不探测资源、不产生子进程或权限提示。
   const env = options.env ?? process.env;
-  if (!isZCodeCuaInternalFeatureEnabled(env)) return false;
+  if (!isKCodeCuaInternalFeatureEnabled(env)) return false;
   const platform = options.platform ?? process.platform;
   return platform === "darwin" || platform === "win32";
 }
@@ -804,14 +804,14 @@ export function createDynamicCuaProductMcpServerResolver(options: {
       // delegate 可能跨过 Helper start/health await；dispose 在等待中置 terminal 时，不能把旧代际
       // 刚注入的 socket/token 交给晚到 Agent。移除 CUA candidate，保持其它 MCP 原样。
       return options.isResolverCurrent?.(resolver, context) === false
-        ? servers?.filter((server) => !isPotentialZCodeCuaAgentMcpServer(server))
+        ? servers?.filter((server) => !isPotentialKCodeCuaAgentMcpServer(server))
         : resolved;
     },
     async restart() {
       // 委托到底层真实 resolver（由 ICuaPermissionService.restartHelper 经此调用）。
       const resolver = await options.getResolver();
       if (!resolver) {
-        throw new Error("ZCode Computer Use is not enabled (plugin off or not product mode).");
+        throw new Error("KCode Computer Use is not enabled (plugin off or not product mode).");
       }
       await resolver.restart();
     },
@@ -819,7 +819,7 @@ export function createDynamicCuaProductMcpServerResolver(options: {
       // 授权完成后的 restart 必须保留 session id，才能复用底层的幂等与时序保障。
       const resolver = await options.getResolver();
       if (!resolver) {
-        throw new Error("ZCode Computer Use is not enabled (plugin off or not product mode).");
+        throw new Error("KCode Computer Use is not enabled (plugin off or not product mode).");
       }
       await resolver.restartAfterPermissionGrant(onboardingSessionId);
     },
@@ -1050,12 +1050,12 @@ export function createDefaultCuaProductHelper(
   };
 }
 
-export const ZCODE_CUA_BUNDLED_HELPER_APP_PATH_ENV = "ZCODE_CUA_BUNDLED_HELPER_APP_PATH";
+export const KCODE_CUA_BUNDLED_HELPER_APP_PATH_ENV = "KCODE_CUA_BUNDLED_HELPER_APP_PATH";
 
 export function resolveBundledCuaHelperAppPath(
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
-  const injectedPath = env[ZCODE_CUA_BUNDLED_HELPER_APP_PATH_ENV]?.trim();
+  const injectedPath = env[KCODE_CUA_BUNDLED_HELPER_APP_PATH_ENV]?.trim();
   if (injectedPath) {
     return injectedPath;
   }
@@ -1067,9 +1067,9 @@ export function resolveBundledCuaHelperAppPath(
 
 export { isOfficialCuaPluginEnabledForWorkspace };
 
-export function hasGlobalCliZCodeCuaServer(env: NodeJS.ProcessEnv = process.env): boolean {
+export function hasGlobalCliKCodeCuaServer(env: NodeJS.ProcessEnv = process.env): boolean {
   const home = env.HOME?.trim() || homedir();
-  const configPath = join(home, ".zcode", "cli", "config.json");
+  const configPath = join(home, ".kcode", "cli", "config.json");
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(configPath, "utf8"));
@@ -1080,24 +1080,24 @@ export function hasGlobalCliZCodeCuaServer(env: NodeJS.ProcessEnv = process.env)
   if (isRecord(parsed.features) && parsed.features.mcp === false) return false;
   if (!isRecord(parsed.mcp) || !isRecord(parsed.mcp.servers)) return false;
   return Object.entries(parsed.mcp.servers).some(([name, config]) =>
-    isGlobalCliZCodeCuaServer(name, config),
+    isGlobalCliKCodeCuaServer(name, config),
   );
 }
 
-function isGlobalCliZCodeCuaServer(name: string, config: unknown): boolean {
+function isGlobalCliKCodeCuaServer(name: string, config: unknown): boolean {
   if (!isRecord(config)) return false;
   if (config.enabled === false) return false;
   if (typeof config.type === "string" && config.type !== "stdio") return false;
   if (name === "computer-use") return true;
-  // 与 desktop/services resolver 和 CLI bootstrap 共用 @zcode/shared 的单一事实源，避免第三处
-  // 判定漂移：git/.git/本地路径形态的 zcode-cua 若这里漏判，全局 CLI env 注入不会带 broker
+  // 与 desktop/services resolver 和 CLI bootstrap 共用 @kcode/shared 的单一事实源，避免第三处
+  // 判定漂移：git/.git/本地路径形态的 kcode-cua 若这里漏判，全局 CLI env 注入不会带 broker
   // socket/token，agent 会回退成 Python/uvx 自己持有 macOS TCC（违反 product broker 边界）。
-  if (typeof config.command === "string" && isZCodeCuaMcpCommand(config.command)) {
+  if (typeof config.command === "string" && isKCodeCuaMcpCommand(config.command)) {
     return true;
   }
   return (
     Array.isArray(config.args) &&
-    config.args.some((arg) => typeof arg === "string" && isZCodeCuaMcpPackageArg(arg))
+    config.args.some((arg) => typeof arg === "string" && isKCodeCuaMcpPackageArg(arg))
   );
 }
 
@@ -1145,7 +1145,7 @@ export async function buildCuaProductHelperAgentEnv(
   // 只收敛后续 spawn admission，再开放 broker tuple；
   // 绝不从后台 completion 异步打断首个 session，也绝不让 spawn 等 10s。
   //
-  // fail-closed 理由：CLI 全局配置里存在 zcode-cua 时，返回空 env 会让 agent 按原始
+  // fail-closed 理由：CLI 全局配置里存在 kcode-cua 时，返回空 env 会让 agent 按原始
   // 无 broker 凭据启动 MCP 子进程会绕过已获授权的 Helper broker，让 Python
   // MCP 成为实际 TCC 执行主体。broker 未就绪时必须返回 BROKER_UNAVAILABLE，绝不返回空 env。
   try {
@@ -1188,7 +1188,7 @@ export async function buildCuaProductHelperAgentEnv(
       cuaProductHelperAgentEnvRetryAt.delete(host);
       return {
         [BROKER_SOCKET_ENV]: transport.socketPath,
-        [ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: transport.pluginAuthority,
+        [KCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: transport.pluginAuthority,
       };
     }
     // 原来只在 1s 超时后读取预留 tuple，Host 已安全占住 socket 时也会白等。
@@ -1201,7 +1201,7 @@ export async function buildCuaProductHelperAgentEnv(
       // token 鉴权已整体删除（连接门是代码签名身份）。凭据只剩 socket + authority。
       return {
         [BROKER_SOCKET_ENV]: reserved.socketPath,
-        [ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: reserved.pluginAuthority,
+        [KCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: reserved.pluginAuthority,
       };
     }
     // 有界 deadline race：cold launch 没在 1s 内 ready 且无预留才 fail-closed。waitForCuaHelperStartup
@@ -1221,7 +1221,7 @@ export async function buildCuaProductHelperAgentEnv(
     cuaProductHelperAgentEnvRetryAt.delete(host);
     return {
       [BROKER_SOCKET_ENV]: handle.socketPath,
-      [ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: handle.pluginAuthority,
+      [KCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: handle.pluginAuthority,
     };
   } catch (error) {
     // caller_timeout 仅表示共享的 30s startup 仍在后台运行；trackCuaProductHelperStartup 会在其
@@ -1242,7 +1242,7 @@ export async function buildCuaProductHelperAgentEnv(
         cuaProductHelperAgentEnvRetryAt.delete(host);
         return {
           [BROKER_SOCKET_ENV]: reserved.socketPath,
-          [ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: reserved.pluginAuthority,
+          [KCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: reserved.pluginAuthority,
         };
       }
     }
@@ -1252,7 +1252,7 @@ export async function buildCuaProductHelperAgentEnv(
     }
     logger.warn(
       undefined,
-      `Computer Use Helper broker_unavailable; disabling workspace zcode-cua MCP server for this agent spawn (${cuaHelperStartErrorDetail(error)})`,
+      `Computer Use Helper broker_unavailable; disabling workspace kcode-cua MCP server for this agent spawn (${cuaHelperStartErrorDetail(error)})`,
     );
     return {
       [BROKER_UNAVAILABLE_ENV]: isCallerTimeout
@@ -1302,25 +1302,25 @@ export function createLocalServices(options: {
   ) => Promise<void> | void;
   /** desktop local host 在 manual run 落库后直接派发，不经过 scheduler 正常路径。 */
   onAutomationManualRunRequested?: (params: {
-    automation: ZCodeAutomation;
-    run: ZCodeAutomationRun;
+    automation: KCodeAutomation;
+    run: KCodeAutomationRun;
   }) => Promise<void>;
   /** 闲时任务翻 schedulable 后请求宿主立即唤醒 scheduler（desktop host 注入 parentPort 转发）。 */
   onOffPeakSchedulerWakeRequested?: () => void;
   // 注入点：默认 resolver 已能覆盖 dev/桌面/SSH 远端三类形态；
   // 测试或特殊宿主想强制走自定义 binary/参数时从这里注入。
-  zcodeAgentCommandResolver?: ZCodeAgentCommandResolver;
+  kcodeAgentCommandResolver?: KCodeAgentCommandResolver;
   /** Desktop Main 提前异步采集的本机 runtime 环境；Local Host 注入后不再同步启动 login shell。 */
   runtimeProcessEnvPatch?: Record<string, string>;
   /** 本地桌面上次 workspace 缺失时，仅用于 Agent 子进程 spawn.cwd 兜底。 */
-  zcodeAgentSpawnFallbackCwd?: string;
+  kcodeAgentSpawnFallbackCwd?: string;
   /** desktop-attached remote server 从 Desktop Host 收到的一次性 Agent 网络配置。 */
   remoteAgentNetwork?: {
     httpProxy?: string;
     noProxy?: string;
   };
-  /** 所属 Environment 的 ZCode Built-in Provider Config 物理路径。 */
-  zcodeBuiltinProviderConfigFilePath: string;
+  /** 所属 Environment 的 KCode Built-in Provider Config 物理路径。 */
+  kcodeBuiltinProviderConfigFilePath: string;
   /** HTTP Server 只有在调用方明确配置认证时才暴露跨 Environment Provisioning target。 */
   providerProvisioningTargetEnabled?: boolean;
   /** Desktop Host 私有通知；只在 Source 成功持久化后请求 Main 调度远端镜像。 */
@@ -1367,13 +1367,13 @@ export function createLocalServices(options: {
   const isDesktopAttachedRemote = options?.serviceAuthorityMode === "desktop-attached-remote";
   // host / remote server 以前直接沿用当前进程环境启动后续服务。
   // GUI 启动的 desktop、SSH/WSL/Docker 拉起的 remote server 往往拿不到用户 login shell 里的 PATH，
-  // 导致 bun 这类只在 shell profile 里追加的命令在 ZCode Agent/终端里不可见。
+  // 导致 bun 这类只在 shell profile 里追加的命令在 KCode Agent/终端里不可见。
   // 这里在所有本地服务启动前统一修正运行时环境，并顺带把内置 rg 注入 PATH，
-  // 让 ZCode Agent、终端、认证 runtime 共用同一套命令解析结果。
+  // 让 KCode Agent、终端、认证 runtime 共用同一套命令解析结果。
   initializeRuntimeProcessEnv(options?.runtimeProcessEnvPatch);
 
   const desktopContextPromptEnabledRaw =
-    process.env[ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]?.trim();
+    process.env[KCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]?.trim();
   const desktopContextPromptEnabled =
     desktopContextPromptEnabledRaw === "1"
       ? true
@@ -1393,9 +1393,9 @@ export function createLocalServices(options: {
   const settingService = createObservableSettingService(
     options?.settingService ?? localSettings!.service,
   );
-  const resolveCurrentZCodeEndpointOrigin = async () =>
-    resolveRuntimeZCodeEndpointOrigin(process.env, {
-      overrideOrigin: (await settingService.get()).zcodeEndpointOrigin,
+  const resolveCurrentKCodeEndpointOrigin = async () =>
+    resolveRuntimeKCodeEndpointOrigin(process.env, {
+      overrideOrigin: (await settingService.get()).kcodeEndpointOrigin,
     });
   const provisioningOAuthKeys = new Set<string>(PROVIDER_PROVISIONING_OAUTH_CREDENTIAL_KEYS);
   const credentialService = createCredentialService({
@@ -1420,15 +1420,15 @@ export function createLocalServices(options: {
         caCertPath: settings.httpProxyCaCertPath,
       };
     });
-  const zcodeJwtLogoutHandlerRef: {
+  const kcodeJwtLogoutHandlerRef: {
     current: ((input: string | URL, headers: Headers) => void) | null;
   } = { current: null };
   const apiClient = createNodeApiClient({
     fetchImpl: hostApiNetworkTransport.fetch,
-    onZcodeJwtInvalid: (input, headers) => zcodeJwtLogoutHandlerRef.current?.(input, headers),
+    onZcodeJwtInvalid: (input, headers) => kcodeJwtLogoutHandlerRef.current?.(input, headers),
     isZcodeJwtRequest: (input, headers) =>
       isCurrentOAuthCredentialRequest({ input, headers, credentialService }),
-    resolveZCodeEndpointOrigin: resolveCurrentZCodeEndpointOrigin,
+    resolveKCodeEndpointOrigin: resolveCurrentKCodeEndpointOrigin,
   });
   const systemService = createSystemService();
   // onboarding 完成记录：userId 由登录态补全（apikey/未登录为 null）。
@@ -1509,28 +1509,28 @@ export function createLocalServices(options: {
   const providerConfigLog = createServiceLogger("provider-config");
   const clientConfigPlatform = resolveClientConfigPlatform();
   const providerConfigRuntime = createProviderConfigRuntime({
-    zcodeBuiltinFilePath: options.zcodeBuiltinProviderConfigFilePath,
-    zcodeBuiltinEnvironment: {
+    kcodeBuiltinFilePath: options.kcodeBuiltinProviderConfigFilePath,
+    kcodeBuiltinEnvironment: {
       environmentConfigRoot: resolveAppConfigDir(),
       platform: clientConfigPlatform,
-      appVersion: ZCODE_VERSION,
-      resolveEndpointOrigin: resolveCurrentZCodeEndpointOrigin,
+      appVersion: KCODE_VERSION,
+      resolveEndpointOrigin: resolveCurrentKCodeEndpointOrigin,
       onRefreshResult: (event) => {
         if (event.result === "updated")
-          providerConfigLog.info(undefined, "ZCode Built-in CDN 配置已更新", event);
-        else providerConfigLog.debug(undefined, "ZCode Built-in 刷新检查", event);
+          providerConfigLog.info(undefined, "KCode Built-in CDN 配置已更新", event);
+        else providerConfigLog.debug(undefined, "KCode Built-in 刷新检查", event);
       },
       fetchRelease: (endpointOrigin, signal) =>
-        fetchZCodeBuiltinRemoteRelease({
+        fetchKCodeBuiltinRemoteRelease({
           apiClient,
           endpointOrigin,
           signal,
-          appVersion: ZCODE_VERSION,
+          appVersion: KCODE_VERSION,
           platform: clientConfigPlatform,
         }),
     },
-    onZCodeBuiltinRefreshError: (error) => {
-      providerConfigLog.warn(undefined, "ZCode Built-in Config 远端刷新失败", { error });
+    onKCodeBuiltinRefreshError: (error) => {
+      providerConfigLog.warn(undefined, "KCode Built-in Config 远端刷新失败", { error });
     },
     onPersonalConfigRecovery: (event) => {
       providerConfigLog.warn(
@@ -1547,9 +1547,9 @@ export function createLocalServices(options: {
         error,
       });
     },
-    // 已发布 config.json 保存的是 ZCode 用户配置；清理第三方 ACP 不能移除这条升级路径。
+    // 已发布 config.json 保存的是 KCode 用户配置；清理第三方 ACP 不能移除这条升级路径。
     // Repository 仅在新 Personal 配置不存在时导入，并保留旧文件以便回滚。
-    readLegacyProviders: () => readLegacyZCodeConfigProviders(),
+    readLegacyProviders: () => readLegacyKCodeConfigProviders(),
   });
   const accountProviderConfigSource = createAccountProviderConfigSource({
     configSource: providerConfigRuntime.configService,
@@ -1609,7 +1609,7 @@ export function createLocalServices(options: {
     },
   );
   let providerConnectivityAgentService:
-    | Pick<IZCodeAgentService, "testModelConnectivity">
+    | Pick<IKCodeAgentService, "testModelConnectivity">
     | undefined;
   const providerRuntime = createProviderRuntimeFromConfigRuntime({
     configRuntime: providerConfigRuntime,
@@ -1647,11 +1647,11 @@ export function createLocalServices(options: {
         modelSelectionService: providerRuntime.modelSelection,
       }),
   };
-  // mcpSync/hooks 里引用 zcodeAgentService 的闭包是惰性调用，声明顺序不影响初始化。
+  // mcpSync/hooks 里引用 kcodeAgentService 的闭包是惰性调用，声明顺序不影响初始化。
   const skillsService = createSkillsService({ isDesktopRuntime: true });
   const mcpSyncService = createMcpSyncService({
     // mcp/list 的 host 消费点收拢到 mcpSync 服务；真实状态检查仍在 agent 进程。
-    listMcpServerStatuses: (params) => zcodeAgentService.listMcpServerStatuses(params),
+    listMcpServerStatuses: (params) => kcodeAgentService.listMcpServerStatuses(params),
   });
   const pluginSyncService = createPluginSyncService();
   const subagentsService = createSubagentsService({
@@ -1659,7 +1659,7 @@ export function createLocalServices(options: {
   });
   const commandsService = createCommandsService({ isDesktopRuntime: true });
   const hooksService = createHooksService({
-    grantWorkspaceHookTrust: (params) => zcodeAgentService.grantWorkspaceHookTrust(params),
+    grantWorkspaceHookTrust: (params) => kcodeAgentService.grantWorkspaceHookTrust(params),
   });
   const memoryService = createMemoryService();
   // 只要当前进程已经装配 Provider Runtime，就由该 Environment 自己的 Selection View
@@ -1675,18 +1675,18 @@ export function createLocalServices(options: {
   // CUA spawn/resolve 等按需边界执行；④ Helper restart 尽可能复用 host transport，既有 Agent
   // 的 session、进程与 MCP stream 保持不变。
   const cuaProductHelperWorkspaceRegistry = new CuaProductHelperWorkspaceRegistry();
-  // createDefaultCuaProductHelper() 在 zcodeAgentService 存在之前就要组装 resolver，
-  // 但"是否有活跃 turn"这个信号只有 zcodeAgentService 建好之后才能查询。用前向引用占位——resolver 真正
+  // createDefaultCuaProductHelper() 在 kcodeAgentService 存在之前就要组装 resolver，
+  // 但"是否有活跃 turn"这个信号只有 kcodeAgentService 建好之后才能查询。用前向引用占位——resolver 真正
   // 调用 hasActiveTurn() 发生在后续某次 resolveMcpServers（异步），那时 hasActiveTurnRef 早已被赋值。
   // 先用前向引用连接 agent service 的 CUA turn tracker，避免在活跃 CUA 请求中途重启 Helper；
   // service 创建完成后再赋值。Helper recovery 始终不能回收 Agent。
   let hasActiveTurnRef: (() => boolean) | undefined;
   const isCuaEnabledForContext = (context?: CuaProductMcpServerResolverContext): boolean =>
-    // 保留 main 原有 gate 行为（避免回归）：dev/internal 特性开启时（ZCODE_CUA_DEV_MODE=1 或
-    // ZCODE_CUA_PRODUCT_HELPER=1）即视为启用，不依赖 config.json 显式 enable——main 的 bootstrap
-    // 用 isZCodeCuaInternalFeatureEnabled 门控 bundled plugin，与 feat 的 workspace enablement 不同。
+    // 保留 main 原有 gate 行为（避免回归）：dev/internal 特性开启时（KCODE_CUA_DEV_MODE=1 或
+    // KCODE_CUA_PRODUCT_HELPER=1）即视为启用，不依赖 config.json 显式 enable——main 的 bootstrap
+    // 用 isKCodeCuaInternalFeatureEnabled 门控 bundled plugin，与 feat 的 workspace enablement 不同。
     // 生产路径（dev mode off）回落到官方插件 workspace enablement 判定（与 feat 一致）。
-    isZCodeCuaInternalFeatureEnabled(process.env) ||
+    isKCodeCuaInternalFeatureEnabled(process.env) ||
     isOfficialCuaPluginEnabledForWorkspace({
       env: process.env,
       workingDirectory: context?.workspacePath,
@@ -1699,7 +1699,7 @@ export function createLocalServices(options: {
     context?: CuaProductMcpServerResolverContext,
   ): ManagedDefaultCuaProductHelper | undefined => {
     const helper = createDefaultCuaProductHelper({
-      // 转发活跃-turn 查询（前向引用，zcodeAgentService 建好后赋值）。
+      // 转发活跃-turn 查询（前向引用，kcodeAgentService 建好后赋值）。
       hasActiveTurn: () => hasActiveTurnRef?.() ?? false,
     });
     if (!helper) return undefined;
@@ -1776,17 +1776,17 @@ export function createLocalServices(options: {
   // 签名门查询；产品 Helper 不嵌 dev policy，这对 argv 无效（产品签名天然过 Team 门）。
   // 拉起后轮询 ping（5s/100ms），就绪返回 socket 路径，否则 null。
   //
-  // dev 判定直接用上游的 isCuaLocalDevelopmentRuntime（@zcode/zcode-cua/broker/server，
+  // dev 判定直接用上游的 isCuaLocalDevelopmentRuntime（@kcode/kcode-cua/broker/server，
   // 即本文件已经用来 import buildHelperOpenArgs 的那个 subpath，可正常导入）。
   //
   // 行为等价性（别误读成安全加固）：上游是 `COMPILED_LOCAL_DEVELOPMENT_RUNTIME &&
-  // ZCODE_RUNTIME_ENV!=="production"`，而那个编译期常量只有 scripts/build-cua-helper-app.mjs
+  // KCODE_RUNTIME_ENV!=="production"`，而那个编译期常量只有 scripts/build-cua-helper-app.mjs
   // 会用 define 折叠（Helper bundle）；desktop host bundle 没有该 define，于是回退成
   // `process.env.NODE_ENV !== "production"` —— 正是复制品写的那一项。所以在**当前**打包形态下
-  // 两者逐字等价，关门靠的是 ZCODE_RUNTIME_ENV=production（打包态显式注入且不传 NODE_ENV）。
+  // 两者逐字等价，关门靠的是 KCODE_RUNTIME_ENV=production（打包态显式注入且不传 NODE_ENV）。
   //
   // 换成上游的收益是消除漂移面：折叠点、因子个数与 fail-closed 方向都由上游一处决定，
-  // 哪天 host bundle 也补上 __ZCODE_LOCAL_DEVELOPMENT_RUNTIME__ define（Helper 侧已经有），
+  // 哪天 host bundle 也补上 __KCODE_LOCAL_DEVELOPMENT_RUNTIME__ define（Helper 侧已经有），
   // 编译期门自动生效，不需要再回来改这里。
 
   const launchStandaloneCuaHelperForStatus = async (): Promise<string | null> => {
@@ -1797,7 +1797,7 @@ export function createLocalServices(options: {
     const socketPath = resolveBrokerSocketPath();
     // standaloneHelperCandidatePaths 未在上游 exports 白名单——此处按同一规则枚举安装候选
     //（dev-desktop → dev/ 前缀；app 名一律取 helperConstants，不写字面量）。
-    const home = process.env.ZCODE_HOME?.trim() || join(homedir(), ".zcode");
+    const home = process.env.KCODE_HOME?.trim() || join(homedir(), ".kcode");
     const baseRoot = join(home, "computer-use");
     // 安装布局见上游 helperLauncher.resolveCuaHelperInstallRoot：dev 是独立子根 `dev/` 且 app
     // 名换成 DEV_HELPER_APP_NAME；preview 是独立子根 `preview/` 但**沿用**稳定 app 名
@@ -1844,7 +1844,7 @@ export function createLocalServices(options: {
     enabled: cuaPipSessionEnabled,
     resolveCredentials: async () => {
       const host = defaultCuaProductHelperLifecycle.peek()?.helper.macPermissionHost;
-      // PiP 客户端以 role=presentation 声明，资格由 Helper 按对端（ZCode 主进程）签名 identifier 裁决。
+      // PiP 客户端以 role=presentation 声明，资格由 Helper 按对端（KCode 主进程）签名 identifier 裁决。
       if (host?.running && host.socketPath) {
         return {
           socketPath: host.socketPath,
@@ -1890,7 +1890,7 @@ export function createLocalServices(options: {
       ) {
         return {
           available: false,
-          reason: "ZCode Computer Use is not enabled (plugin off or not product mode).",
+          reason: "KCode Computer Use is not enabled (plugin off or not product mode).",
         };
       }
       // 懒启动：状态查询绝不拉起 Helper。托管 host 在（如刚完成授权流）→ 全量查询；
@@ -1909,13 +1909,13 @@ export function createLocalServices(options: {
           return {
             available: false,
             reason:
-              "ZCode Computer Use is not running; it will start automatically on first Computer Use use.",
+              "KCode Computer Use is not running; it will start automatically on first Computer Use use.",
             idle: true,
           } satisfies { available: false; reason: string; idle: true };
         }
         // standalone Helper 上直接查权限真值（身份模式，无 token）。
         try {
-          const { callBrokerMethod } = await import("@zcode/zcode-cua/broker/helperHealth");
+          const { callBrokerMethod } = await import("@kcode/kcode-cua/broker/helperHealth");
           const report = await callBrokerMethod<{
             grant_owner: string;
             owner?: { display_name?: string };
@@ -1938,7 +1938,7 @@ export function createLocalServices(options: {
         } catch {
           return {
             available: false,
-            reason: "ZCode Computer Use is starting up; retry in a moment.",
+            reason: "KCode Computer Use is starting up; retry in a moment.",
             idle: true,
           } satisfies { available: false; reason: string; idle: true };
         }
@@ -1948,7 +1948,7 @@ export function createLocalServices(options: {
         if (!helper || !isDefaultCuaProductHelperCurrent(helper)) {
           return {
             available: false,
-            reason: "ZCode Computer Use lifecycle is disposed.",
+            reason: "KCode Computer Use lifecycle is disposed.",
           };
         }
         // Screen Recording 的真值必须来自一个新进程：撤销对已运行的常驻 Helper 不生效，
@@ -1957,7 +1957,7 @@ export function createLocalServices(options: {
         if (!isDefaultCuaProductHelperCurrent(helper)) {
           return {
             available: false,
-            reason: "ZCode Computer Use lifecycle is disposed.",
+            reason: "KCode Computer Use lifecycle is disposed.",
           };
         }
         // 真实 screen-capture 探针：TCC screen_recording === "granted" 只说明系统记录了授权，并不保证
@@ -1972,7 +1972,7 @@ export function createLocalServices(options: {
         if (!isDefaultCuaProductHelperCurrent(helper)) {
           return {
             available: false,
-            reason: "ZCode Computer Use lifecycle is disposed.",
+            reason: "KCode Computer Use lifecycle is disposed.",
           };
         }
         const reportedOwnerDisplayName =
@@ -2016,7 +2016,7 @@ export function createLocalServices(options: {
       ) {
         return {
           ok: false,
-          reason: "ZCode Computer Use is not enabled (plugin off or not product mode).",
+          reason: "KCode Computer Use is not enabled (plugin off or not product mode).",
         };
       }
       // 走 resolver.restart()，让 host 尽可能复用 transport；不得通过 disposeWorkspace
@@ -2029,7 +2029,7 @@ export function createLocalServices(options: {
       if (!resolver) {
         return {
           ok: false,
-          reason: "ZCode Computer Use is not enabled (plugin off or not product mode).",
+          reason: "KCode Computer Use is not enabled (plugin off or not product mode).",
         };
       }
       try {
@@ -2041,14 +2041,14 @@ export function createLocalServices(options: {
         if (!helper || !isDefaultCuaProductHelperCurrent(helper)) {
           return {
             ok: false,
-            reason: "ZCode Computer Use lifecycle is disposed.",
+            reason: "KCode Computer Use lifecycle is disposed.",
           };
         }
         return { ok: true };
       } catch (error) {
         return {
           ok: false,
-          reason: `Failed to restart ZCode Computer Use: ${
+          reason: `Failed to restart KCode Computer Use: ${
             error instanceof Error ? error.message : String(error)
           }`,
         };
@@ -2074,7 +2074,7 @@ export function createLocalServices(options: {
           resolveOffPeakClientConfig: () => codingPlanSubscriptionService.getOffPeakClientConfig(),
           resolveOffPeakTaskService: () => offPeakTaskServiceForAgent,
         };
-  const zcodeAgentService = createZCodeAgentService({
+  const kcodeAgentService = createKCodeAgentService({
     ...(agentAccountProviderConfigSource
       ? { accountProviderConfigSource: agentAccountProviderConfigSource }
       : {}),
@@ -2087,18 +2087,18 @@ export function createLocalServices(options: {
     // 是它自己那些 workspace 的唯一裁决者，灰度开启时远程 workspace 同样提供工作流。
     resolveDynamicWorkflowClientConfig: () =>
       codingPlanSubscriptionService.getDynamicWorkflowClientConfig(),
-    commandResolver: options?.zcodeAgentCommandResolver,
-    presentationSurface: resolveZCodeAgentPresentationSurface({
+    commandResolver: options?.kcodeAgentCommandResolver,
+    presentationSurface: resolveKCodeAgentPresentationSurface({
       runtimeSurface: options?.agentRuntimeContext?.runtimeSurface,
       serviceAuthorityMode: options?.serviceAuthorityMode,
       desktopContextPromptEnabled,
     }),
     onAutomationManualRunRequested: options?.onAutomationManualRunRequested,
     // createLocalServices 虽然暴露了 reporter 注入点，旧装配却没有继续传给
-    // ZCodeAgentProcessManager，导致 host 永远不向 main 上报 Agent spawn/exit，进程监控器
+    // KCodeAgentProcessManager，导致 host 永远不向 main 上报 Agent spawn/exit，进程监控器
     // 因而看不到实际运行的 Agent，也无法验证只读到可写升级是否复用同一进程。
     processLifecycleReporter: options?.processLifecycleReporter,
-    spawnFallbackCwd: options?.zcodeAgentSpawnFallbackCwd,
+    spawnFallbackCwd: options?.kcodeAgentSpawnFallbackCwd,
     // browser-use：host→main 执行桥透传给 agent service 的 onRequest browserExecute 路由。
     browserControlExecutor: options?.browserControlExecutor,
     // 官方 Server MCP 身份头：host 是唯一身份权威，Agent 经反向请求索取。
@@ -2109,13 +2109,13 @@ export function createLocalServices(options: {
       modelSelectionService: providerRuntime.modelSelection,
     }),
     // host 是身份权威边界：provenance/origin 必须在这里再校验一次，不能只依赖 agent
-    // adapter 的 fetch wrapper。判定实现与 CLI 侧共用 @zcode/shared 的同一份，避免分叉。
-    // origin 解析复用 resolveCurrentZCodeEndpointOrigin——与闲时任务同口径（含 settings
+    // adapter 的 fetch wrapper。判定实现与 CLI 侧共用 @kcode/shared 的同一份，避免分叉。
+    // origin 解析复用 resolveCurrentKCodeEndpointOrigin——与闲时任务同口径（含 settings
     // 覆盖），否则会出现"闲时任务能连、官方 MCP 连不上"。
     // dev 开关必须同样传入，否则本地自测会被 host 单方面拒绝。
     officialMcpTrustedOrigins: createOfficialMcpTrustedOriginRegistry({
       devTrustedOriginsRaw: process.env[OFFICIAL_MCP_DEV_TRUSTED_ORIGINS_ENV],
-      resolveZCodeApiOrigin: resolveCurrentZCodeEndpointOrigin,
+      resolveKCodeApiOrigin: resolveCurrentKCodeEndpointOrigin,
     }),
     cuaOperationStateReporter: shouldEnableCuaOperationStateReporter({
       serviceAuthorityMode: options?.serviceAuthorityMode,
@@ -2123,7 +2123,7 @@ export function createLocalServices(options: {
     })
       ? options?.cuaOperationStateReporter
       : undefined,
-    // ZCode 只发布 turn/session 事实；面板 terminal policy 由 producer coordinator 决定。
+    // KCode 只发布 turn/session 事实；面板 terminal policy 由 producer coordinator 决定。
     ...(options?.serviceAuthorityMode === "desktop-local"
       ? {
           onCuaPipSessionLifecycle: (_workspace, event) => {
@@ -2174,7 +2174,7 @@ export function createLocalServices(options: {
         // 它不需要 host——托管态由 host 铸造，懒启动态在此按 spawn 铸造，语义与校验完全一致。
         cuaProductHelperEnv = {
           [BROKER_SOCKET_ENV]: resolveBrokerSocketPath(),
-          [ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: randomBytes(16).toString("hex"),
+          [KCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: randomBytes(16).toString("hex"),
         };
         cuaProductHelperWorkspaceRegistry.setEnabled(context, false);
       } else if (cuaProductHelperHost && helper) {
@@ -2197,7 +2197,7 @@ export function createLocalServices(options: {
           [BROKER_UNAVAILABLE_ENV]: "broker_unavailable: helper lifecycle is disposed",
         };
       }
-      const telemetryEnv = getCapturedZCodeAgentTelemetryEnv();
+      const telemetryEnv = getCapturedKCodeAgentTelemetryEnv();
       const telemetryConfigured = Boolean(
         telemetryEnv.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT,
       );
@@ -2218,9 +2218,9 @@ export function createLocalServices(options: {
         }),
         // 把 host 解析出的权威 origin（含 settings 覆盖）下发给 agent，否则 agent 侧只按
         // env 推导，test env + 自定义端点时两侧信任判定的输入分叉、官方 MCP 整体 fail closed。
-        ...buildAgentEndpointOriginEnv(await resolveCurrentZCodeEndpointOrigin()),
-        // broker 凭据（socket/token）注入 agent spawn env，让内置 zcode-cua plugin 的
-        // computer-use MCP server 经 __zcode-plugin-host 恢复 token 后连上 broker。
+        ...buildAgentEndpointOriginEnv(await resolveCurrentKCodeEndpointOrigin()),
+        // broker 凭据（socket/token）注入 agent spawn env，让内置 kcode-cua plugin 的
+        // computer-use MCP server 经 __kcode-plugin-host 恢复 token 后连上 broker。
         // 上面 cuaProductHelperEnv 已完成代际校验与 unavailable 兜底，取代 staging 侧
         // 直接调用 buildCuaProductHelperAgentEnv 的旧路径。
         ...cuaProductHelperEnv,
@@ -2233,7 +2233,7 @@ export function createLocalServices(options: {
         ...createNodeProviderRuntimePathEnv({
           // Built-in Active 路径按当前 Endpoint 隔离，不能通过同步的固定路径
           // getter 读取；Agent spawn 必须等待本轮 Endpoint Source 完成解析和物化。
-          zcodeBuiltinFilePath: await providerConfigRuntime.resolveZCodeBuiltinActiveFilePath(),
+          kcodeBuiltinFilePath: await providerConfigRuntime.resolveKCodeBuiltinActiveFilePath(),
           personalFilePath: join(resolveAppConfigDir(), PERSONAL_PROVIDER_CONFIG_FILE_NAME),
         }),
       };
@@ -2245,7 +2245,7 @@ export function createLocalServices(options: {
           resolveSessionRuntimePreferences: async (scope) => {
             // 预算已统一，不能把可选远端配置作为本地/手机 shared-host 建会话的前置条件。
             const settings = await settingService.get();
-            const modelContextBudgetStrategy = DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY;
+            const modelContextBudgetStrategy = DEFAULT_KCODE_MODEL_CONTEXT_BUDGET_STRATEGY;
             return {
               askUserQuestionAutoResolutionEnabled:
                 settings.askUserQuestionAutoResolutionEnabled !== false,
@@ -2261,17 +2261,17 @@ export function createLocalServices(options: {
           },
         }),
   });
-  providerConnectivityAgentService = zcodeAgentService;
+  providerConnectivityAgentService = kcodeAgentService;
   // Helper health probe 短暂超时不应在 Computer Use turn 中途回收 Agent。resolver 会把 restart
   // 推迟到下一个 request/turn 边界；若 broker 确实已失效，当前 turn 会自然失败并由下一次请求恢复。
-  hasActiveTurnRef = () => zcodeAgentService.hasActiveCuaOperationTurn();
-  // desktop-continuous UI 直接订阅 zcodeSessionService，绕开 ZCode task adapter 的
+  hasActiveTurnRef = () => kcodeAgentService.hasActiveCuaOperationTurn();
+  // desktop-continuous UI 直接订阅 kcodeSessionService，绕开 KCode task adapter 的
   // mapServiceEvent 路径，导致 task_complete 永远不会写回 sqlite，侧边栏 spinner 不停。
   // 在 services 层装配一个共享的 taskIndexRepo + syncer，session 任意入口都会唤醒
   // shadow 订阅，把 runtime 终态收敛进 sqlite。
   const taskIndexRepo = new TaskIndexRepo();
-  const zcodeTaskIndexSyncer = createZCodeTaskIndexSyncer({
-    agentService: zcodeAgentService,
+  const kcodeTaskIndexSyncer = createKCodeTaskIndexSyncer({
+    agentService: kcodeAgentService,
     taskIndexRepo,
   });
   // The plugin can be toggled at runtime. Do not let a previously created resolver continue
@@ -2291,9 +2291,9 @@ export function createLocalServices(options: {
   });
   const cuaProductMcpServerResolver =
     options?.cuaProductMcpServerResolver ?? defaultCuaProductMcpServerResolver;
-  const zcodeSessionService = createZCodeSessionService({
-    agentService: zcodeAgentService,
-    taskIndexSyncer: zcodeTaskIndexSyncer,
+  const kcodeSessionService = createKCodeSessionService({
+    agentService: kcodeAgentService,
+    taskIndexSyncer: kcodeTaskIndexSyncer,
     cuaProductMcpServerResolver,
   });
   const gitCommitMessageGenerator = new GitCommitMessageGenerator({
@@ -2306,7 +2306,7 @@ export function createLocalServices(options: {
     },
     textGenerator: {
       async generateText(params) {
-        return await zcodeAgentService.generateWorkspaceText({
+        return await kcodeAgentService.generateWorkspaceText({
           workspacePath: params.workspacePath,
           ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
           selection: params.selection,
@@ -2320,11 +2320,11 @@ export function createLocalServices(options: {
   const gitService = createGitService({
     commitMessageGenerator: gitCommitMessageGenerator,
   });
-  // task wrapper 由 ZCode task service adapter 提供；核心 session 状态由 ZCode agent server 维护。
-  const zcodeTaskService = createZCodeTaskServiceAdapter({
-    zcodeAgentService,
+  // task wrapper 由 KCode task service adapter 提供；核心 session 状态由 KCode agent server 维护。
+  const kcodeTaskService = createKCodeTaskServiceAdapter({
+    kcodeAgentService,
     taskIndexRepo,
-    taskIndexSyncer: zcodeTaskIndexSyncer,
+    taskIndexSyncer: kcodeTaskIndexSyncer,
     settingService,
     cuaProductMcpServerResolver,
   });
@@ -2332,8 +2332,8 @@ export function createLocalServices(options: {
     apiClient,
     onProviderLogout: handleOAuthProviderLogout,
   });
-  const zcodeJwtLogoutLogger = createServiceLogger("zcode-jwt-logout");
-  zcodeJwtLogoutHandlerRef.current = (input, headers) => {
+  const kcodeJwtLogoutLogger = createServiceLogger("kcode-jwt-logout");
+  kcodeJwtLogoutHandlerRef.current = (input, headers) => {
     // 条件退出本身已串行去重；不能丢弃等待旧候选期间到来的新凭据 401。
     void oauthService
       .logoutIfCurrentCredentialRequest(input, headers)
@@ -2341,13 +2341,13 @@ export function createLocalServices(options: {
         // 401 分类后可能已完成新登录；只有队列内真正清理的旧会话才广播过期。
         if (invalidated) {
           void broadcastService.send({
-            channel: ZCODE_JWT_INVALID_BROADCAST_CHANNEL,
+            channel: KCODE_JWT_INVALID_BROADCAST_CHANNEL,
             payload: {},
           });
         }
       })
       .catch((error) => {
-        zcodeJwtLogoutLogger.warn("ZCode JWT logout failed", { error });
+        kcodeJwtLogoutLogger.warn("KCode JWT logout failed", { error });
       });
   };
   // Desktop Host 曾从 Settings View 再扫描一次 Account Provider，既绕开
@@ -2369,12 +2369,12 @@ export function createLocalServices(options: {
       if (providers.length !== 1) return null;
       const provider = providers[0]!;
       const config = provider.config;
-      const staticAccess = zcodeProviderAccountAccessSchema.parse(config.access.toJSON());
+      const staticAccess = kcodeProviderAccountAccessSchema.parse(config.access.toJSON());
       const access = await accountRequestAuthService.resolveAccessCurrent(staticAccess);
       if (!access) return null;
       return {
         providerId: provider.providerId,
-        access: zcodeAccountAccessSchema.parse(access),
+        access: kcodeAccountAccessSchema.parse(access),
         ...(config.api?.baseUrl ? { baseURL: config.api.baseUrl } : {}),
       };
     },
@@ -2396,14 +2396,14 @@ export function createLocalServices(options: {
     // 分享运行时始终走真实 API；测试/Mock 场景应在 service 单测或 Web fixture 中显式注入，
     // 不能让开发环境默认生成仅存在于进程内存的 mock-share 链接。
     apiClient,
-    baseUrl: buildRuntimeZCodeApiUrl(process.env, "/api/v1"),
+    baseUrl: buildRuntimeKCodeApiUrl(process.env, "/api/v1"),
     tokenProvider: async (): Promise<string | null> => {
       const activeProvider = await oauthCredentialRepo.getActiveProvider();
       if (!activeProvider) {
         return null;
       }
       const tokenSet = await oauthCredentialRepo.loadTokenSet(activeProvider);
-      return tokenSet?.zcodeJwtToken ?? tokenSet?.accessToken ?? null;
+      return tokenSet?.kcodeJwtToken ?? tokenSet?.accessToken ?? null;
     },
   });
   const conversationShareService: IConversationShareServiceType = isDesktopAttachedRemote
@@ -2411,8 +2411,8 @@ export function createLocalServices(options: {
         message: "Conversation publishing is not available for remote workspaces",
       })
     : new ConversationShareService({
-        zcodeAgentService,
-        zcodeSessionService,
+        kcodeAgentService,
+        kcodeSessionService,
         client: conversationShareClient,
         artifactSource: createLocalConversationShareArtifactSource(),
       });
@@ -2430,9 +2430,9 @@ export function createLocalServices(options: {
     .register(IOnboardingRecordService, onboardingRecordService)
     .register(ICredentialService, credentialService)
     .register(IBroadcastService, broadcastService)
-    .register(IZCodeTaskService, zcodeTaskService)
-    .register(IZCodeAgentService, zcodeAgentService)
-    .register(IZCodeSessionService, zcodeSessionService)
+    .register(IKCodeTaskService, kcodeTaskService)
+    .register(IKCodeAgentService, kcodeAgentService)
+    .register(IKCodeSessionService, kcodeSessionService)
     .register(ICuaPermissionService, cuaPermissionService)
     .register(ICuaPipSessionService, cuaPipSessionService)
     .register(IConversationShareService, conversationShareService)
@@ -2444,7 +2444,7 @@ export function createLocalServices(options: {
         apiClient,
         accountRequestAuthService,
         credentialService,
-        zcodeAgentService,
+        kcodeAgentService,
         officialMcpCredentialSource,
       }),
     )
@@ -2454,8 +2454,8 @@ export function createLocalServices(options: {
       createClientConfigService({
         apiClient,
         resolveRequestContext: async () => ({
-          endpointOrigin: await resolveCurrentZCodeEndpointOrigin(),
-          appVersion: ZCODE_VERSION,
+          endpointOrigin: await resolveCurrentKCodeEndpointOrigin(),
+          appVersion: KCODE_VERSION,
           platform: `${process.platform}-${process.arch}`,
         }),
       }),
@@ -2526,7 +2526,7 @@ export function createLocalServices(options: {
           logger: offPeakLogger,
           requestSchedulerWake: options?.onOffPeakSchedulerWakeRequested,
           stopRunningTask: async (params) => {
-            await zcodeTaskService.stopGeneration({
+            await kcodeTaskService.stopGeneration({
               taskId: params.conversationId,
               workspacePath: params.workspacePath,
               ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
@@ -2537,7 +2537,7 @@ export function createLocalServices(options: {
           },
         });
         offPeakTaskService.startSync();
-        // 回写前向引用，供 zcodeAgentService 的 offPeak/create、offPeak/list 协议 handler 调用。
+        // 回写前向引用，供 kcodeAgentService 的 offPeak/create、offPeak/list 协议 handler 调用。
         offPeakTaskServiceForAgent = offPeakTaskService;
         return offPeakTaskService;
       })(),
@@ -2550,13 +2550,13 @@ export function createLocalServices(options: {
     .register(IPluginSyncService, pluginSyncService)
     .register(IPluginsService, createPluginsService({ isDesktopRuntime: true }))
     // 设置页插件管理薄服务——plugins/* 旧协议词的 host 侧唯一消费点。
-    .register(IPluginManagementService, createPluginManagementService({ zcodeAgentService }))
+    .register(IPluginManagementService, createPluginManagementService({ kcodeAgentService }))
     .register(ISubagentsService, subagentsService)
     .register(ICommandsService, createCommandsService({ isDesktopRuntime: true }))
     .register(
       IHooksService,
       createHooksService({
-        grantWorkspaceHookTrust: (params) => zcodeAgentService.grantWorkspaceHookTrust(params),
+        grantWorkspaceHookTrust: (params) => kcodeAgentService.grantWorkspaceHookTrust(params),
       }),
     )
     .register(IMemoryService, createMemoryService())
@@ -2656,7 +2656,7 @@ export function createTelemetryUserIdLoader(
   };
 }
 
-/** 仅给同一事件账号返回当前 ZCode JWT；不缓存、不修改登录凭据。 */
+/** 仅给同一事件账号返回当前 KCode JWT；不缓存、不修改登录凭据。 */
 export function createTelemetryAuthorizationLoader(
   credentialService: Pick<ICredentialService, "load">,
 ): (userId: string) => Promise<string | null> {
@@ -2668,7 +2668,7 @@ export function createTelemetryAuthorizationLoader(
       const readUserId = async () =>
         readTelemetryOAuthUserId(await credentialService.load(`oauth:${provider}:user_info`));
       if ((await readUserId()) !== userId) return null;
-      const jwt = (await credentialService.load("zcodejwttoken"))?.trim();
+      const jwt = (await credentialService.load("kcodejwttoken"))?.trim();
       // 退出/切账号可能发生在异步读取期间；禁止将旧身份的 token 附到其他账号事件上。
       if (
         (await credentialService.load("oauth:active_provider"))?.trim() !== provider ||
@@ -2684,7 +2684,7 @@ export function createTelemetryAuthorizationLoader(
 
 export function createTelemetryMarketingParamsLoader(
   credentialService: ICredentialService,
-): () => Promise<import("@zcode/shared").OAuthLoginAttribution | null> {
+): () => Promise<import("@kcode/shared").OAuthLoginAttribution | null> {
   // 恢复原因：固定返回 null 会丢掉已保存的渠道归因，数仓应读取 OAuth 的同一份事实。
   const repo = new OAuthCredentialRepo(credentialService);
   return () => repo.loadLoginAttribution();
@@ -2714,9 +2714,9 @@ export function disposeServiceResources(services: ServiceCollection): void {
   // 这里集中调用各服务的本地 disposeAll 钩子，把“退出 app = 回收所有托管资源”落成机械动作。
   const disposableServices = [
     services.getOptional(ITerminalService),
-    services.getOptional(IZCodeTaskService),
-    services.getOptional(IZCodeAgentService),
-    services.getOptional(IZCodeSessionService),
+    services.getOptional(IKCodeTaskService),
+    services.getOptional(IKCodeAgentService),
+    services.getOptional(IKCodeSessionService),
     services.getOptional(IFileWatcherService),
     services.getOptional(IOffPeakTaskService),
   ].filter((service) => service !== undefined);
@@ -2744,12 +2744,12 @@ export function disposeServiceResources(services: ServiceCollection): void {
 
 export async function disposeServiceResourcesAndWait(services: ServiceCollection): Promise<void> {
   // app 关闭时 host 需要等 agent 进程树完成 graceful + force 清理。
-  // 旧的同步 dispose 会在 host 退出时丢掉强杀 timer，导致 zcode-cli/app-server 变成孤儿进程。
+  // 旧的同步 dispose 会在 host 退出时丢掉强杀 timer，导致 kcode-cli/app-server 变成孤儿进程。
   const disposableServices = [
     services.getOptional(ITerminalService),
-    services.getOptional(IZCodeTaskService),
-    services.getOptional(IZCodeAgentService),
-    services.getOptional(IZCodeSessionService),
+    services.getOptional(IKCodeTaskService),
+    services.getOptional(IKCodeAgentService),
+    services.getOptional(IKCodeSessionService),
     services.getOptional(IFileWatcherService),
     services.getOptional(IOffPeakTaskService),
   ].filter((service) => service !== undefined);

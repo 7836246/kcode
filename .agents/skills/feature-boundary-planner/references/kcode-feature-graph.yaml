@@ -1,0 +1,600 @@
+# Maintainer contract: docs/skills/feature-boundary-graph.md
+# Search aliases and IDs first; read only the relevant nodes and one-hop relationships.
+schemaVersion: 1
+graphId: kcode-feature-relationships
+purpose:
+  Curated source discovery seeds, not an exhaustive feature catalog or a product authority. Verify
+  matched nodes and relationships against the current checkout.
+rules:
+  semanticExpansion:
+    Load matched nodes and one meaningful semantic hop; expand only for unresolved owners
+    or callers.
+  driftPolicy:
+    Report missing paths, symbols or changed semantics as graph-drift-candidate; do not infer
+    product rules from reachability.
+  stableIdPolicy:
+    Keep existing IDs when the semantic boundary is unchanged; use aliases for terminology
+    changes.
+  persistencePolicy:
+    Impact-only reports proposed graph changes. Planning or implementation may update
+    verified entries within the requested scope.
+  relationRanks:
+    - must-inspect
+    - should-inspect
+    - conditional
+    - invariant-only
+    - evidence-only
+nodes:
+  - id: capability.model-selection
+    kind: capability
+    label: Model selection
+    aliases:
+      - select model
+      - model switch
+      - model picker
+      - 选择模型
+      - 模型选择
+      - 切换模型
+    codeSeeds:
+      - file: packages/provider/src/facades.ts
+        symbol: ModelSelectionFacade
+      - file: packages/ui/src/hooks/useModelSelectionView.ts
+        symbol: useModelSelectionView
+    invariants:
+      - "Shared model controls do not share commit effects: conversation commands, automation records
+        and Subagent configuration have separate owners."
+  - id: surface.conversation-model-control
+    kind: ui-surface
+    label: Conversation composer model control
+    codeSeeds:
+      - file: packages/ui/src/v4/composer/V4ComposerToolbar.tsx
+        symbol: V4ComposerModelControlsImpl
+      - file: packages/ui/src/v4/SessionPane.tsx
+        symbol: handleSelectModel
+  - id: surface.automation-edit
+    kind: ui-surface
+    label: Automation edit model control
+    codeSeeds:
+      - file: packages/ui/src/settings/AutomationEditView.tsx
+        symbol: AutomationEditView
+      - file: packages/ui/src/settings/AutomationsSection.tsx
+        symbol: handleEditSubmit
+  - id: surface.user-subagent-form
+    kind: ui-surface
+    label: User Subagent form model control
+    codeSeeds:
+      - symbol: SubagentForm
+        file: packages/ui/src/settings/SubagentsSection.tsx
+  - id: surface.builtin-subagent-model
+    kind: ui-surface
+    label: Built-in and plugin Subagent model override
+    codeSeeds:
+      - symbol: SubagentModelOverrideControl
+        file: packages/ui/src/settings/SubagentsSection.tsx
+  - id: shared-ui.model-config-select
+    kind: shared-ui
+    label: ModelConfigSelect
+    codeSeeds:
+      - symbol: ModelConfigSelect
+        file: packages/ui/src/ModelConfigSelect.tsx
+  - id: shared-ui.model-select-groups
+    kind: shared-ui
+    label: Model selection option builder
+    codeSeeds:
+      - symbol: buildRegistryModelSelectGroups
+        file: packages/ui/src/lib/modelSelectionGroups.ts
+  - id: state.renderer-model-selection-read
+    kind: state-owner
+    label: Renderer target-host model selection read lifecycle
+    codeSeeds:
+      - symbol: useModelSelectionServiceView
+        file: packages/ui/src/hooks/useModelSelectionView.ts
+      - symbol: useModelSelectionView
+        file: packages/ui/src/hooks/useModelSelectionView.ts
+  - id: service.host-model-selection
+    kind: service
+    label: Target Workspace Host model selection service
+    codeSeeds:
+      - file: packages/services/src/model-provider/providerFacadeServices.ts
+        symbol: IModelSelectionService
+      - file: packages/ui/src/hooks/useWorkspaceServices.tsx
+        symbol: useWorkspaceServicesResolution
+  - id: capability.automations
+    kind: capability
+    label: Scheduled automations
+    aliases:
+      - automation
+      - scheduled task
+      - cron
+      - 自动化
+      - 定时任务
+    codeSeeds:
+      - file: packages/services/src/session/automationService.ts
+        symbol: AutomationService
+  - id: state.automation-form-draft
+    kind: state-owner
+    label: Automation edit React draft
+    codeSeeds:
+      - symbol: AutomationEditView
+        file: packages/ui/src/settings/AutomationEditView.tsx
+  - id: service.automation
+    kind: service
+    label: Automation service
+    codeSeeds:
+      - symbol: AutomationService
+        file: packages/services/src/session/automationService.ts
+  - id: persistence.automation-record
+    kind: persistence
+    label: Persisted automation record
+    codeSeeds:
+      - file: packages/services/src/session/automationRepo.ts
+        symbol: AutomationRepo
+  - id: capability.subagents
+    kind: capability
+    label: Subagents
+    aliases:
+      - subagent
+      - agent profile
+      - 子代理
+      - 智能体配置
+    codeSeeds:
+      - file: packages/ui/src/settings/SubagentsSection.tsx
+        symbol: SubagentsSection
+      - file: apps/kcode-cli/packages/core/src/tool/handlers/agent.ts
+        symbol: agentHandler
+  - id: state.subagent-form-draft
+    kind: state-owner
+    label: Subagent form draft
+    codeSeeds:
+      - symbol: SubagentForm
+        file: packages/ui/src/settings/SubagentsSection.tsx
+  - id: service.subagents
+    kind: service
+    label: Subagents service
+    codeSeeds:
+      - file: packages/services/src/subagents/subagents.ts
+        symbol: ISubagentsService
+      - file: packages/services/src/subagents/subagentsService.ts
+        symbol: createSubagentsService
+  - id: persistence.subagent-markdown
+    kind: persistence
+    label: User agent Markdown, built-in and plugin agent overrides
+    codeSeeds:
+      - file: packages/services/src/subagents/subagentsService.ts
+        symbol: createSubagentsService
+      - file: packages/services/src/subagents/subagentStorage.ts
+        symbol: resolveSubagentStateFile
+  - id: capability.conversation-runtime
+    kind: capability
+    label: Conversation and session runtime
+    aliases:
+      - conversation
+      - chat
+      - session
+      - turn steer
+      - guide
+      - follow-up queue
+      - 对话
+      - 会话
+      - 引导
+      - 消息队列
+    codeSeeds:
+      - file: apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/v4-gateway.ts
+        symbol: ConversationV4Gateway
+      - file: apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/commands/handlers/session-flow.ts
+        symbol: sendText
+  - id: state.conversation-projection
+    kind: state-owner
+    label: Client conversation projection and pending optimistic overlay
+    codeSeeds:
+      - file: packages/ui/src/v4/conversationProjectionStore.ts
+        symbol: ConversationProjectionStore
+    invariants:
+      - Snapshots replace state; only contiguous deltas apply. Gaps require resync, and pending optimistic
+        commands are not accepted runtime facts.
+  - id: capability.workspace-identity
+    kind: capability
+    label: Workspace identity and remote runtime isolation
+    aliases:
+      - workspace identity
+      - remote workspace
+      - SSH
+      - WSL
+      - Docker
+      - 工作区隔离
+    codeSeeds:
+      - file: packages/ui/src/lib/remoteWorkspaceHistory.ts
+        symbol: buildRemoteWorkspaceIdentity
+      - file: packages/services/src/kcode-agent/kcodeAgentConnectionScope.ts
+        symbol: workspaceKey
+  - id: service.workspace-identity-builder
+    kind: service
+    label: Remote workspace identity builder
+    codeSeeds:
+      - symbol: buildRemoteWorkspaceIdentity
+        file: packages/ui/src/lib/remoteWorkspaceHistory.ts
+  - id: boundary.workspace-key
+    kind: delivery-boundary
+    label: workspaceIdentity fallback isolation key
+    codeSeeds:
+      - file: packages/ui/src/lib/remoteWorkspaceHistory.ts
+        symbol: buildWorkspaceSessionKey
+      - file: packages/services/src/session/taskIndexRepo.ts
+        symbol: workspaceKey
+    invariants:
+      - Use workspaceIdentity?.trim() || workspacePath for isolation; workspacePath remains the execution
+        and display path.
+  - id: persistence.task-index
+    kind: persistence
+    label: Task sqlite index
+    codeSeeds:
+      - symbol: TaskIndexRepo
+        file: packages/services/src/session/taskIndexRepo.ts
+  - id: service.kcode-agent-connection-scope
+    kind: service
+    label: Host-trusted KCode Agent attachment connection scope
+    codeSeeds:
+      - symbol: createKCodeAgentConnectionScope
+        file: packages/services/src/kcode-agent/kcodeAgentConnectionScope.ts
+  - id: boundary.desktop-continuous
+    kind: delivery-boundary
+    label: Desktop continuous delivery
+    codeSeeds:
+      - file: packages/shared/src/kcode-protocol-v4/core.ts
+        symbol: DELIVERY_PROFILES
+      - file: packages/services/src/kcode-agent/kcodeAgentConnectionScope.ts
+        symbol: KCodeAgentV4ClientMode
+  - id: boundary.web-remote-replayable
+    kind: delivery-boundary
+    label: Web remote replayable delivery
+    codeSeeds:
+      - file: packages/shared/src/kcode-protocol-v4/core.ts
+        symbol: DELIVERY_PROFILES
+      - file: packages/services/src/kcode-agent/kcodeAgentConnectionScope.ts
+        symbol: KCodeAgentV4ClientMode
+  - id: capability.composer-trigger-routing
+    kind: capability
+    label: Composer primary and compatibility trigger routing
+    aliases:
+      - composer prefix routing
+      - mention panel routing
+      - "@ and slash picker"
+      - 输入框候选分组
+      - 输入框触发器
+    codeSeeds:
+      - symbol: extractActivePromptInputTrigger
+        file: packages/ui/src/lib/promptInputTriggers.ts
+      - symbol: ChatPromptActionMenu
+        file: packages/ui/src/prompt-editor/ChatPromptActionMenu.tsx
+  - id: surface.composer-at-context-picker
+    kind: ui-surface
+    label: Composer @ context picker (Plugins, files, sessions, Whiteboards)
+    aliases:
+      - "@ context picker"
+      - "@ 面板"
+    codeSeeds:
+      - symbol: MentionPlugin
+        file: packages/ui/src/mentions/MentionPlugin.tsx
+      - symbol: useFileMentionProvider
+        file: packages/ui/src/mentions/providers/fileMentionProvider.ts
+      - symbol: useSessionsMentionProvider
+        file: packages/ui/src/mentions/providers/sessionsMentionProvider.ts
+      - symbol: useWhiteboardMentionProvider
+        file: packages/ui/src/mentions/providers/whiteboardMentionProvider.ts
+  - id: surface.composer-slash-capability-picker
+    kind: ui-surface
+    label: Composer slash picker (commands, Skills, Subagents)
+    aliases:
+      - slash capability picker
+      - / 面板
+    codeSeeds:
+      - symbol: SlashCommandPlugin
+        file: packages/ui/src/SlashCommandPlugin.tsx
+      - symbol: useSlashCommandMentionPanelSections
+        file: packages/ui/src/slashCommandPanelSections.tsx
+      - symbol: buildSlashApplyMentionPayload
+        file: packages/ui/src/lib/slashApplyMentionPayload.ts
+  - id: surface.composer-skill-compatibility-picker
+    kind: ui-surface
+    label: Composer compatible Skill picker ($ and Yen aliases)
+    aliases:
+      - $ Skills picker
+      - $ 面板
+      - ¥ 技能面板
+    codeSeeds:
+      - symbol: MentionPlugin
+        file: packages/ui/src/mentions/MentionPlugin.tsx
+      - symbol: useSkillsMentionProvider
+        file: packages/ui/src/mentions/providers/skillsMentionProvider.ts
+  - id: service.composer-host-file-search
+    kind: service
+    label: Host-owned bounded Composer file search
+    codeSeeds:
+      - symbol: createFileService
+        file: packages/services/src/file/fileService.ts
+  - id: service.conversation-command-inbox
+    kind: service
+    label: CLI serial command admission and idempotency
+    codeSeeds:
+      - file: apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/command-inbox.ts
+        symbol: CommandInbox
+    aliases:
+      - busy input
+      - running input
+      - 命令接纳
+      - 输入队列
+  - id: state.conversation-product-projection
+    kind: state-owner
+    label: CLI authoritative projection of runtime events
+    codeSeeds:
+      - file: apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/product-projection.ts
+        symbol: ProductProjection
+  - id: service.conversation-topic-publisher
+    kind: service
+    label: CLI conversation delta publication and subscription recovery
+    codeSeeds:
+      - file: apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/conversation-topic-publisher.ts
+        symbol: ConversationTopicPublisher
+  - id: state.composer-submission-intent
+    kind: state-owner
+    label: Renderer model intent for the next submission
+    codeSeeds:
+      - file: packages/ui/src/v4/SessionPane.tsx
+        symbol: handleSelectModel
+      - file: packages/ui/src/v4/SessionPane.tsx
+        symbol: createComposerSubmissionConfig
+  - id: service.conversation-submission
+    kind: service
+    label: CLI sendText submission handling
+    codeSeeds:
+      - file: apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/commands/handlers/session-flow.ts
+        symbol: sendText
+  - id: service.runtime-submission-execution
+    kind: service
+    label: Runtime applies the admitted submission selection at execution
+    codeSeeds:
+      - file: apps/kcode-cli/packages/core/src/runtime/methods/turn-model.ts
+        symbol: applySubmissionExecutionState
+edges:
+  - from: capability.model-selection
+    to: surface.conversation-model-control
+    type: renders-in
+    rank: must-inspect
+  - from: surface.conversation-model-control
+    to: shared-ui.model-config-select
+    type: shares-component
+    rank: must-inspect
+  - from: capability.model-selection
+    to: surface.automation-edit
+    type: renders-in
+    rank: must-inspect
+  - from: surface.automation-edit
+    to: shared-ui.model-config-select
+    type: shares-component
+    rank: must-inspect
+  - from: capability.model-selection
+    to: surface.user-subagent-form
+    type: renders-in
+    rank: must-inspect
+  - from: surface.user-subagent-form
+    to: shared-ui.model-config-select
+    type: shares-component
+    rank: must-inspect
+  - from: capability.model-selection
+    to: surface.builtin-subagent-model
+    type: renders-in
+    rank: must-inspect
+  - from: surface.builtin-subagent-model
+    to: shared-ui.model-config-select
+    type: shares-component
+    rank: must-inspect
+  - from: surface.conversation-model-control
+    to: shared-ui.model-select-groups
+    type: options-from
+    rank: should-inspect
+  - from: surface.user-subagent-form
+    to: shared-ui.model-select-groups
+    type: options-from
+    rank: should-inspect
+  - from: surface.builtin-subagent-model
+    to: shared-ui.model-select-groups
+    type: options-from
+    rank: should-inspect
+  - from: capability.model-selection
+    to: service.host-model-selection
+    type: reads-candidates-from
+    rank: must-inspect
+  - from: service.host-model-selection
+    to: state.renderer-model-selection-read
+    type: is-read-through
+    rank: must-inspect
+  - from: state.renderer-model-selection-read
+    to: boundary.workspace-key
+    type: isolated-by
+    rank: must-inspect
+    condition:
+      Read the selected workspace service; remote-waiting remains unavailable and must not use
+      a local fallback.
+  - from: capability.automations
+    to: surface.automation-edit
+    type: renders-in
+    rank: must-inspect
+  - from: surface.automation-edit
+    to: state.automation-form-draft
+    type: owns-draft
+    rank: must-inspect
+  - from: surface.automation-edit
+    to: state.renderer-model-selection-read
+    type: reads-target-options-through
+    rank: should-inspect
+  - from: state.automation-form-draft
+    to: service.automation
+    type: commits-to
+    rank: must-inspect
+    condition:
+      Trace onSubmit through AutomationsSection and the automation management store to the selected
+      service; editing a field alone does not mutate a conversation.
+  - from: service.automation
+    to: persistence.automation-record
+    type: persists-to
+    rank: must-inspect
+  - from: capability.subagents
+    to: surface.user-subagent-form
+    type: renders-in
+    rank: must-inspect
+  - from: capability.subagents
+    to: surface.builtin-subagent-model
+    type: renders-in
+    rank: must-inspect
+  - from: surface.user-subagent-form
+    to: state.subagent-form-draft
+    type: owns-draft
+    rank: must-inspect
+  - from: state.subagent-form-draft
+    to: service.subagents
+    type: commits-to
+    rank: must-inspect
+    condition: The form saves through createAgent or updateAgent.
+  - from: surface.builtin-subagent-model
+    to: service.subagents
+    type: commits-to
+    rank: must-inspect
+    condition: Built-in and plugin overrides use setBuiltInModelOverride and setPluginAgentModelOverride.
+  - from: service.subagents
+    to: persistence.subagent-markdown
+    type: persists-to
+    rank: must-inspect
+    condition:
+      User/workspace definitions use Markdown; built-in/plugin overrides use the agent state
+      file. Neither is a live conversation model switch.
+  - from: capability.conversation-runtime
+    to: service.conversation-command-inbox
+    type: admits-commands-through
+    rank: must-inspect
+  - from: capability.conversation-runtime
+    to: state.conversation-product-projection
+    type: projects-runtime-events-through
+    rank: must-inspect
+  - from: state.conversation-product-projection
+    to: service.conversation-topic-publisher
+    type: publishes-deltas-through
+    rank: must-inspect
+  - from: service.conversation-topic-publisher
+    to: state.conversation-projection
+    type: delivers-snapshot-and-deltas-to
+    rank: must-inspect
+  - from: capability.conversation-runtime
+    to: service.kcode-agent-connection-scope
+    type: attaches-through
+    rank: must-inspect
+  - from: service.conversation-topic-publisher
+    to: boundary.desktop-continuous
+    type: uses-delivery-policy
+    rank: conditional
+    condition: For Desktop continuous attachments.
+  - from: service.kcode-agent-connection-scope
+    to: boundary.desktop-continuous
+    type: injects-trusted-client-mode
+    rank: conditional
+    condition: For Desktop continuous attachments.
+  - from: service.conversation-topic-publisher
+    to: boundary.web-remote-replayable
+    type: uses-delivery-policy
+    rank: conditional
+    condition: For replayable Web remote and mobile attachments.
+  - from: service.kcode-agent-connection-scope
+    to: boundary.web-remote-replayable
+    type: injects-trusted-client-mode
+    rank: conditional
+    condition: For replayable Web remote and mobile attachments.
+  - from: boundary.web-remote-replayable
+    to: boundary.desktop-continuous
+    type: must-remain-isolated-from
+    rank: invariant-only
+  - from: state.conversation-projection
+    to: service.conversation-command-inbox
+    type: must-not-duplicate-admission-of
+    rank: invariant-only
+    condition:
+      The client may display pending optimistic commands; accepted input order and idempotency
+      remain CLI-owned.
+  - from: capability.workspace-identity
+    to: service.workspace-identity-builder
+    type: implemented-by
+    rank: must-inspect
+  - from: service.workspace-identity-builder
+    to: boundary.workspace-key
+    type: supplies-identity-for
+    rank: must-inspect
+  - from: service.kcode-agent-connection-scope
+    to: boundary.workspace-key
+    type: isolated-by
+    rank: must-inspect
+  - from: persistence.task-index
+    to: boundary.workspace-key
+    type: isolated-by
+    rank: must-inspect
+  - from: persistence.task-index
+    to: state.conversation-product-projection
+    type: must-not-replace
+    rank: invariant-only
+    condition: Task index metadata is distinct from canonical conversation content and runtime state.
+  - from: capability.composer-trigger-routing
+    to: surface.composer-at-context-picker
+    type: renders-in
+    rank: must-inspect
+  - from: capability.composer-trigger-routing
+    to: surface.composer-slash-capability-picker
+    type: renders-in
+    rank: must-inspect
+  - from: capability.composer-trigger-routing
+    to: surface.composer-skill-compatibility-picker
+    type: renders-in
+    rank: must-inspect
+  - from: surface.composer-at-context-picker
+    to: service.composer-host-file-search
+    type: options-from
+    rank: conditional
+    condition:
+      Only file candidates use bounded Host file search; other mention providers keep their own
+      option sources.
+  - from: service.composer-host-file-search
+    to: boundary.workspace-key
+    type: isolated-by
+    rank: must-inspect
+  - from: capability.composer-trigger-routing
+    to: capability.conversation-runtime
+    type: preserves-canonical-input-for
+    rank: invariant-only
+    condition:
+      Changing candidate discovery or grouping must preserve the selected item representation
+      submitted to the conversation.
+  - from: surface.conversation-model-control
+    to: state.composer-submission-intent
+    type: edits-draft
+    rank: must-inspect
+    condition:
+      The menu updates the next submission intent even for an existing conversation; it does
+      not immediately switch the running model.
+  - from: state.composer-submission-intent
+    to: service.conversation-submission
+    type: submits-selection-to
+    rank: must-inspect
+    condition: Sending captures modelSelection in the submission; subsequent menu edits affect later sends.
+  - from: service.conversation-submission
+    to: service.conversation-command-inbox
+    type: requires-admission-through
+    rank: must-inspect
+    condition: V4 commands pass through CommandInbox before the gateway dispatches their handlers.
+  - from: service.conversation-submission
+    to: service.runtime-submission-execution
+    type: schedules-selection-for
+    rank: must-inspect
+    condition:
+      CLI applies admitted configuration when execution starts, or when a Guide reaches the next
+      model step.
+  - from: service.runtime-submission-execution
+    to: state.conversation-product-projection
+    type: emits-model-selection-for
+    rank: must-inspect
+    condition: Applied runtime model selection is projected through ModelSelected events.

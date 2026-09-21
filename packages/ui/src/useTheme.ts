@@ -3,8 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 export type Theme = "light" | "dark" | "zai-light" | "zai-dark" | "system";
 export type ResolvedTheme = "light" | "dark";
 
-const STORAGE_KEY = "zcode-theme";
-const BROWSER_THEME_SURFACE_ATTRIBUTE = "data-zcode-browser-theme-surface";
+const STORAGE_KEY = "kcode-theme";
+const BROWSER_THEME_SURFACE_ATTRIBUTE = "data-kcode-browser-theme-surface";
 
 function getSystemTheme(): ResolvedTheme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

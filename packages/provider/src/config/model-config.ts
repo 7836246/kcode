@@ -16,7 +16,7 @@ import {
   type modelPropertiesDataSchema,
   type modelOptionSpecsDataSchema,
   type modelConfigDataSchema,
-} from "@zcode/shared/model-config";
+} from "@kcode/shared/model-config";
 import { validateConfigSchema } from "./schema-validation.js";
 import { clearManualModelConfig } from "./manual-model-config.js";
 import {
@@ -505,7 +505,7 @@ export class ModelConfigRules {
     return undefined;
   }
 
-  toZCodeBuiltinJSON(): BuiltinModelConfigRulesData {
+  toKCodeBuiltinJSON(): BuiltinModelConfigRulesData {
     return builtinModelConfigRulesSchema.parse({
       modelRules: this.#collect("model"),
       modelApiRules: this.#collect("model-api"),
@@ -525,7 +525,7 @@ export class ModelConfigRules {
 
   toJSON() {
     return {
-      ...this.toZCodeBuiltinJSON(),
+      ...this.toKCodeBuiltinJSON(),
       manualProviderModelRules: this.#collect("manual-provider-model"),
     };
   }

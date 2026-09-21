@@ -6,9 +6,9 @@ import type {
   FeedbackListQuery,
   FeedbackListResult,
   FeedbackTicketDetail,
-} from "@zcode/shared";
-import { ServiceChannels } from "@zcode/shared";
-import type { Event } from "@zcode/rpc";
+} from "@kcode/shared";
+import { ServiceChannels } from "@kcode/shared";
+import type { Event } from "@kcode/rpc";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface FeedbackUploadProgress {
@@ -55,7 +55,7 @@ export interface IFeedbackService {
     },
   ): Promise<FeedbackAttachment>;
   attachLogsFromExport(id: string, options?: { full?: boolean }): Promise<FeedbackAttachment>;
-  getDeviceSnapshot(): Promise<import("@zcode/shared").FeedbackDeviceInfo>;
+  getDeviceSnapshot(): Promise<import("@kcode/shared").FeedbackDeviceInfo>;
   prepareCompactLogArchive(options?: { full?: boolean; progressId?: string }): Promise<{
     path: string;
     size: number;

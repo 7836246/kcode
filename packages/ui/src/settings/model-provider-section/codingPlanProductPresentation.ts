@@ -1,4 +1,4 @@
-import type { CodingPlanCardCopyItem, CodingPlanProductPreviewPayment } from "@zcode/shared";
+import type { CodingPlanCardCopyItem, CodingPlanProductPreviewPayment } from "@kcode/shared";
 
 export function normalizeCodingPlanCardCopyItems(items: unknown): CodingPlanCardCopyItem[] {
   if (!Array.isArray(items)) {

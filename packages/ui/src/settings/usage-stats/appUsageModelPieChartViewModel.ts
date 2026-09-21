@@ -1,4 +1,4 @@
-import type { AppUsageSnapshot } from "@zcode/shared";
+import type { AppUsageSnapshot } from "@kcode/shared";
 import type { ChartConfig } from "@/components/ui/chart.js";
 import { getAppUsageModelChartColor } from "@/settings/usage-stats/appUsageChartPalette.js";
 

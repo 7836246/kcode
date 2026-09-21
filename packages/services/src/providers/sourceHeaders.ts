@@ -2,17 +2,17 @@ import { readFileSync } from "node:fs";
 import { version as readOsVersion } from "node:os";
 import { join } from "node:path";
 import {
-  buildZCodeSourceHeadersFromContext,
-  normalizeZCodeSourceHeaderValue,
-  ZCODE_ENV,
-  ZCODE_SOURCE_HEADERS,
-  ZCODE_VERSION,
-} from "@zcode/shared";
+  buildKCodeSourceHeadersFromContext,
+  normalizeKCodeSourceHeaderValue,
+  KCODE_ENV,
+  KCODE_SOURCE_HEADERS,
+  KCODE_VERSION,
+} from "@kcode/shared";
 import { getAppConfigDir } from "../paths.js";
 
-export { ZCODE_SOURCE_HEADERS };
+export { KCODE_SOURCE_HEADERS };
 
-interface ZCodeSourceHeaderOptions {
+interface KCodeSourceHeaderOptions {
   appVersion?: string;
   arch?: string;
   clientLanguage?: string;
@@ -25,7 +25,7 @@ interface ZCodeSourceHeaderOptions {
 let cachedDeviceMid: { stateFile: string; value: string } | null = null;
 
 function normalizePrintableHeaderValue(value: string | undefined): string | undefined {
-  return normalizeZCodeSourceHeaderValue(value);
+  return normalizeKCodeSourceHeaderValue(value);
 }
 
 function resolveClientLanguage(): string {
@@ -62,13 +62,13 @@ function readExistingDeviceMid(): string | undefined {
   }
 }
 
-export function buildZCodeSourceHeaders(
-  options: ZCodeSourceHeaderOptions = {},
+export function buildKCodeSourceHeaders(
+  options: KCodeSourceHeaderOptions = {},
 ): Record<string, string> {
   const platform = options.platform ?? process.platform;
   const arch = options.arch ?? process.arch;
-  const appVersion = normalizePrintableHeaderValue(options.appVersion ?? ZCODE_VERSION);
-  const releaseChannel = normalizePrintableHeaderValue(options.releaseChannel ?? ZCODE_ENV);
+  const appVersion = normalizePrintableHeaderValue(options.appVersion ?? KCODE_VERSION);
+  const releaseChannel = normalizePrintableHeaderValue(options.releaseChannel ?? KCODE_ENV);
   const clientLanguage =
     normalizePrintableHeaderValue(options.clientLanguage) ?? resolveClientLanguage();
   const clientTimezone =
@@ -76,7 +76,7 @@ export function buildZCodeSourceHeaders(
   const osVersion = normalizePrintableHeaderValue(options.osVersion ?? readOsVersion());
   const deviceMid = readExistingDeviceMid();
 
-  return buildZCodeSourceHeadersFromContext({
+  return buildKCodeSourceHeadersFromContext({
     appVersion,
     arch,
     clientLanguage,

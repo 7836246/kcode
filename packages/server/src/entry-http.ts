@@ -1,21 +1,21 @@
-import { createLocalServices, getAppConfigDir } from "@zcode/services/node";
+import { createLocalServices, getAppConfigDir } from "@kcode/services/node";
 import {
-  materializeBundledZCodeBuiltinProviderConfig,
-  readBundledZCodeBuiltinProviderConfig,
-} from "./bundledZCodeBuiltinProviderConfig.js";
+  materializeBundledKCodeBuiltinProviderConfig,
+  readBundledKCodeBuiltinProviderConfig,
+} from "./bundledKCodeBuiltinProviderConfig.js";
 import { createHttpServer } from "./http.js";
 
 async function main(): Promise<void> {
-  const zcodeBuiltinProviderConfigFilePath = await materializeBundledZCodeBuiltinProviderConfig({
+  const kcodeBuiltinProviderConfigFilePath = await materializeBundledKCodeBuiltinProviderConfig({
     environmentConfigRoot: getAppConfigDir(),
-    content: readBundledZCodeBuiltinProviderConfig(),
+    content: readBundledKCodeBuiltinProviderConfig(),
   });
   const port = Number(process.env["PORT"]) || 3030;
-  const host = process.env["ZCODE_SERVER_HOST"]?.trim() || process.env["HOST"]?.trim() || undefined;
-  const staticRoot = process.env["ZCODE_WEB_STATIC_ROOT"]?.trim() || undefined;
-  const authToken = process.env["ZCODE_SERVER_AUTH_TOKEN"]?.trim() || undefined;
+  const host = process.env["KCODE_SERVER_HOST"]?.trim() || process.env["HOST"]?.trim() || undefined;
+  const staticRoot = process.env["KCODE_WEB_STATIC_ROOT"]?.trim() || undefined;
+  const authToken = process.env["KCODE_SERVER_AUTH_TOKEN"]?.trim() || undefined;
   const services = createLocalServices({
-    zcodeBuiltinProviderConfigFilePath,
+    kcodeBuiltinProviderConfigFilePath,
     providerProvisioningTargetEnabled: Boolean(authToken),
   });
 
@@ -27,6 +27,6 @@ async function main(): Promise<void> {
 }
 
 void main().catch((error: unknown) => {
-  console.error("[zcode-server:http] startup failed", error);
+  console.error("[kcode-server:http] startup failed", error);
   process.exitCode = 1;
 });

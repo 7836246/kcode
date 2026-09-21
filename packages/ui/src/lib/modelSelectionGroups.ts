@@ -1,13 +1,14 @@
 import {
-  isZCodeAgentProvider,
+  isBuiltinModelProviderId,
+  isKCodeAgentProvider,
   resolveModelProviderFamilySpecByProviderId,
-  zcodeProviderAccountAccessSchema,
-  type ZCodeProviderAccountAccess,
-  type ZCodeProvider,
-} from "@zcode/shared";
-import type { ModelSelectionView } from "@zcode/services";
+  kcodeProviderAccountAccessSchema,
+  type KCodeProviderAccountAccess,
+  type KCodeProvider,
+} from "@kcode/shared";
+import type { ModelSelectionView } from "@kcode/services";
 import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
-import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/zcodeCustomModelValue.js";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/kcodeCustomModelValue.js";
 import { shouldShowModelVisionBadge } from "@/lib/modelVisionBadge.js";
 
 export interface ModelProviderGroupLabelOptions {
@@ -22,25 +23,28 @@ export interface ModelProviderGroupLabelOptions {
 }
 
 function supportsRegistryApiFormat(
-  selectedProvider: ZCodeProvider,
+  selectedProvider: KCodeProvider,
   apiFormat: string | null | undefined,
 ): boolean {
   if (!apiFormat) return false;
-  // 仅剩 glm（ZCode Agent）provider；三方 CLI 的 api format 差异已随 provider 下线。
-  return isZCodeAgentProvider(selectedProvider);
+  // 仅剩 glm（KCode Agent）provider；三方 CLI 的 api format 差异已随 provider 下线。
+  return isKCodeAgentProvider(selectedProvider);
 }
 
 export function buildRegistryModelSelectGroups(
-  selectedProvider: ZCodeProvider,
+  selectedProvider: KCodeProvider,
   view: ModelSelectionView,
   labels: ModelProviderGroupLabelOptions = {},
 ): ModelSelectGroup[] {
   return view.providers.flatMap((provider) => {
+    if (isBuiltinModelProviderId(provider.providerId)) {
+      return [];
+    }
     if (!supportsRegistryApiFormat(selectedProvider, provider.config.api?.type)) {
       return [];
     }
 
-    const accountAccess = zcodeProviderAccountAccessSchema.safeParse(provider.config.access);
+    const accountAccess = kcodeProviderAccountAccessSchema.safeParse(provider.config.access);
     const accountPresentation = accountAccess.success
       ? getRegistryAccountProviderGroupPresentation(provider.providerId, accountAccess.data, labels)
       : null;
@@ -70,7 +74,7 @@ export function buildRegistryModelSelectGroups(
 
 function getRegistryAccountProviderGroupPresentation(
   providerId: string,
-  access: ZCodeProviderAccountAccess,
+  access: KCodeProviderAccountAccess,
   labels: ModelProviderGroupLabelOptions,
 ): Pick<ModelSelectGroup, "label" | "labelBadge"> {
   const familySpec = resolveModelProviderFamilySpecByProviderId(providerId);

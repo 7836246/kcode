@@ -1,7 +1,7 @@
 import type { McpServerConfig } from "./mcp.js";
 
 export type McpSyncImportStatus = "synced" | "skipped" | "failed";
-export type McpSyncSource = "zcode" | "agents";
+export type McpSyncSource = "kcode" | "agents";
 
 export interface McpSyncCandidate {
   id: string;

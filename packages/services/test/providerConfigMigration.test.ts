@@ -5,7 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { createProviderConfigRuntime } from "../src/model-provider/providerConfigRuntime.js";
-import { readLegacyZCodeConfigProviders } from "../src/model-provider/legacyZCodeConfigProviderReader.js";
+import { readLegacyKCodeConfigProviders } from "../src/model-provider/legacyKCodeConfigProviderReader.js";
 import { getAppConfigDir, setDataBaseDir } from "../src/paths.js";
 
 const legacyConfig = {
@@ -29,7 +29,7 @@ const legacyConfig = {
 };
 
 async function setup() {
-  const dir = await mkdtemp(join(tmpdir(), "zcode-provider-migration-"));
+  const dir = await mkdtemp(join(tmpdir(), "kcode-provider-migration-"));
   setDataBaseDir(dir);
   const configDir = getAppConfigDir();
   await mkdir(configDir, { recursive: true });
@@ -40,15 +40,15 @@ async function setup() {
   let reads = 0;
   const recoveries: unknown[] = [];
   const runtime = createProviderConfigRuntime({
-    zcodeBuiltinFilePath: fileURLToPath(
-      new URL("../../../config/provider/zcode-builtin.json", import.meta.url),
+    kcodeBuiltinFilePath: fileURLToPath(
+      new URL("../../../config/provider/kcode-builtin.json", import.meta.url),
     ),
     personalFilePath: personalPath,
     personalPollingIntervalMs: false,
     watch: false,
     readLegacyProviders: async () => {
       reads += 1;
-      return readLegacyZCodeConfigProviders();
+      return readLegacyKCodeConfigProviders();
     },
     onPersonalConfigRecovery: (event) => recoveries.push(event.error),
   });
@@ -67,7 +67,7 @@ async function setup() {
   };
 }
 
-test("startup migrates published ZCode config into personal config without changing the source", async () => {
+test("startup migrates published KCode config into personal config without changing the source", async () => {
   const fixture = await setup();
   try {
     await fixture.runtime.start();

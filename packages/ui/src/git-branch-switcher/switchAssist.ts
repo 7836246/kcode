@@ -1,5 +1,5 @@
-import type { IGitService } from "@zcode/services";
-import type { GitBranchMutationIssue, GitBranchMutationResult, GitIdentity } from "@zcode/shared";
+import type { IGitService } from "@kcode/services";
+import type { GitBranchMutationIssue, GitBranchMutationResult, GitIdentity } from "@kcode/shared";
 import {
   buildGitBranchCommitPreviewFiles,
   getPrimaryGitBranchIssue,

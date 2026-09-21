@@ -8,6 +8,7 @@ import {
   BIGMODEL_PROVIDER_ID,
   BUILTIN_MODEL_PROVIDER_IDS,
   DesktopCommandIds,
+  isOfficialZhipuProviderTemplateId,
   isStartPlanModelProviderId,
   type BuiltinModelProviderId,
   type ModelConnectivityResult,
@@ -19,15 +20,15 @@ import {
   resolveModelProviderFamilySpecByProviderId,
   resolveProviderFamilyDomainFromOAuthProvider,
   ZAI_PROVIDER_ID,
-} from "@zcode/shared";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+} from "@kcode/shared";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { Button } from "@/components/ui/button.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { useModelProviders } from "@/hooks/useModelProviders.js";
 import { resolveEntitledAccountProviderAccess } from "@/lib/accountProviderAccess.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useServices } from "@/hooks/useServices.js";
-import { useZCodeStore } from "@/store/StoreProvider.js";
+import { useKCodeStore } from "@/store/StoreProvider.js";
 import { logger } from "@/logger.js";
 import {
   PRESET_PROVIDER_SPECS,
@@ -244,7 +245,7 @@ export function ModelProviderSection({
   pendingModelProviderTarget?: SettingsModelProviderTarget;
   onConsumePendingModelProviderTarget?: () => void;
 } = {}) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const confirmDialog = useConfirmDialog();
   const platform = usePlatform();
   const { modelSelectionService, oauthService, credentialService } = useServices();
@@ -383,10 +384,10 @@ export function ModelProviderSection({
   const codingPlanStatusSyncAttemptsRef = useRef(
     new Map<string, "inFlight" | "succeeded" | "failed">(),
   );
-  const requestLoginEntry = useZCodeStore((state) => state.requestLoginEntry);
-  const setUser = useZCodeStore((state) => state.setUser);
-  const oauthError = useZCodeStore((state) => state.oauthError);
-  const setOAuthError = useZCodeStore((state) => state.setOAuthError);
+  const requestLoginEntry = useKCodeStore((state) => state.requestLoginEntry);
+  const setUser = useKCodeStore((state) => state.setUser);
+  const oauthError = useKCodeStore((state) => state.oauthError);
+  const setOAuthError = useKCodeStore((state) => state.setOAuthError);
   const {
     settings: sharedSettings,
     loading: sharedSettingsLoading,
@@ -987,6 +988,10 @@ export function ModelProviderSection({
 
   const handleCreateProvider = useCallback(
     async (input: { templateId?: string; providerName?: string }) => {
+      if (input.templateId && isOfficialZhipuProviderTemplateId(input.templateId)) {
+        // 官方智谱模板已从产品面下架，创建入口不能再走这条路径。
+        throw new Error(intl.formatMessage({ id: "settings.modelProvider.templateCreateFailed" }));
+      }
       setCreatingProvider(true);
       try {
         const created = await createPersonalProvider({ ...input, locale });
@@ -1000,7 +1005,7 @@ export function ModelProviderSection({
         setCreatingProvider(false);
       }
     },
-    [createPersonalProvider, locale],
+    [createPersonalProvider, intl, locale],
   );
 
   const handleReorderProviderIds = useCallback(
@@ -1085,7 +1090,9 @@ export function ModelProviderSection({
       ) : null}
       {templatePickerOpen ? (
         <ProviderTemplatePicker
-          templates={providerTemplates}
+          templates={providerTemplates.filter(
+            (template) => !isOfficialZhipuProviderTemplateId(template.templateId),
+          )}
           creating={creatingProvider}
           onBack={() => setTemplatePickerOpen(false)}
           onCreateFromTemplate={(templateId) => {

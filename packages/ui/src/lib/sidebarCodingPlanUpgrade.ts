@@ -2,7 +2,7 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   type ProviderFamilyDomain,
   type UsageEntitlementSnapshot,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { SidebarUsageCodingPlanProviderId } from "@/lib/sidebarUsageCodingPlanProviderPreference.js";
 
 export function resolveSidebarCodingPlanUpgradeFallbackProviderId(

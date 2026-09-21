@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import type { Locale, SkillScope, ZCodeProvider } from "@zcode/shared";
+import type { Locale, SkillScope, KCodeProvider } from "@kcode/shared";
 import type { MentionCategoryResult, MentionItem } from "@/mentions/mentionTypes.js";
 import { filterMentionItemsWithOptions } from "@/mentions/mentionSearch.js";
 import { buildSkillMentionMarkdown } from "@/mentions/mentionMarkdown.js";
 import { useSkills } from "@/hooks/useSkills.js";
 import { filterSkillsForProvider } from "@/lib/skillSourceFilter.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { resolveSkillDisplayDescription, resolveSkillSourceLabel } from "@/lib/builtinSkillI18n.js";
 
 export function mapSkillsToMentionItemsForTest(
@@ -60,14 +60,14 @@ export function useSkillsMentionProvider(
   workspacePath: string,
   workspaceIdentity: string | undefined,
   sessionId: string | null,
-  provider: ZCodeProvider,
+  provider: KCodeProvider,
   query: string,
   enabled: boolean,
   requireQuery: boolean,
   emptyText: string,
   title: string,
 ): MentionCategoryResult {
-  const { locale } = useZCodeIntl();
+  const { locale } = useKCodeIntl();
   const { skills, loading, error } = useSkills({
     workspacePath,
     workspaceIdentity,

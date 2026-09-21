@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { Hook, HookConfig } from "@zcode/shared";
-import type { IHooksService } from "@zcode/services";
+import type { Hook, HookConfig } from "@kcode/shared";
+import type { IHooksService } from "@kcode/services";
 import { getWorkspaceKey } from "@/lib/workspaceKey.js";
 
 interface HooksStoreState {
@@ -50,26 +50,26 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function buildZCodeHookLocation(
+function buildKCodeHookLocation(
   workspacePath: string,
   storageLevel: "user" | "project" = "user",
 ): Hook["location"] {
   return storageLevel === "project"
     ? {
-        source: "zcode",
+        source: "kcode",
         scope: "project",
         directoryPath: "",
         projectPath: workspacePath,
       }
     : {
-        source: "zcode",
+        source: "kcode",
         scope: "user",
         directoryPath: "",
       };
 }
 
 function isEditableHook(hook: Hook): boolean {
-  return hook.editable ?? (!hook.location || hook.location.source === "zcode");
+  return hook.editable ?? (!hook.location || hook.location.source === "kcode");
 }
 
 function hookFromConfig(config: HookConfig, workspacePath: string): Hook {
@@ -86,7 +86,7 @@ function hookFromConfig(config: HookConfig, workspacePath: string): Hook {
     timeout: config.timeout ?? 60,
     enabled: config.enabled ?? true,
     custom: config.custom,
-    location: buildZCodeHookLocation(workspacePath, config.storageLevel),
+    location: buildKCodeHookLocation(workspacePath, config.storageLevel),
   };
 }
 
@@ -291,12 +291,12 @@ export const useHooksStore = create<HooksStoreState>((set, get) => ({
     const { hooks, workspacePath } = get();
     if (!workspacePath) throw new Error("No workspace path set");
     const source = hooks.find((hook) => hook.id === id);
-    if (!source || source.location?.source === "zcode") throw new Error("Hook is not importable");
+    if (!source || source.location?.source === "kcode") throw new Error("Hook is not importable");
     const imported: Hook = {
       ...source,
       id: `hook-${crypto.randomUUID()}`,
       enabled: true,
-      location: buildZCodeHookLocation(workspacePath, source.location?.scope ?? "user"),
+      location: buildKCodeHookLocation(workspacePath, source.location?.scope ?? "user"),
     };
     await applyHookMutation(get, set, hooksService, [...hooks, imported], id);
   },

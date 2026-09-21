@@ -10,18 +10,18 @@
 // 表单只在打开时挂载——模型清单的订阅也随之只活在打开期间。
 
 import { useCallback, useMemo, useRef, useState, type RefObject } from "react";
-import { completeNewModelSelection } from "@zcode/provider";
-import { ZCODE_AGENT_PROVIDER } from "@zcode/shared";
-import type { CommandAck, WorkflowRunState } from "@zcode/shared/zcode-protocol-v4";
+import { completeNewModelSelection } from "@kcode/provider";
+import { KCODE_AGENT_PROVIDER } from "@kcode/shared";
+import type { CommandAck, WorkflowRunState } from "@kcode/shared/kcode-protocol-v4";
 import { Button } from "@/components/ui/button.js";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTitle } from "@/components/ui/popover.js";
 import { Spinner } from "@/components/ui/spinner.js";
 import { useModelSelectionView } from "@/hooks/useModelSelectionView.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { buildRegistryModelSelectGroups } from "@/lib/modelSelectionGroups.js";
 import { resolveModelThoughtOption } from "@/lib/modelThoughtOption.js";
-import { encodeCustomModelValue } from "@/lib/zcodeCustomModelValue.js";
-import { parseModelPickerValue } from "@/lib/zcodeSessionProjection.js";
+import { encodeCustomModelValue } from "@/lib/kcodeCustomModelValue.js";
+import { parseModelPickerValue } from "@/lib/kcodeSessionProjection.js";
 import { logger } from "@/logger.js";
 import { formatProviderModelLabel } from "@/v4/composer/modelTriggerDisplay.js";
 import { describeWorkflowSubagentModel } from "./subagent-model-label.js";
@@ -137,7 +137,7 @@ function WorkflowRunSettingsForm({
   onClose: () => void;
   run: WorkflowRunState;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const format = useCallback(
     (id: string, values?: Record<string, string | number>) => intl.formatMessage({ id }, values),
     [intl],
@@ -152,7 +152,7 @@ function WorkflowRunSettingsForm({
     () =>
       view === null
         ? []
-        : buildRegistryModelSelectGroups(ZCODE_AGENT_PROVIDER, view, {
+        : buildRegistryModelSelectGroups(KCODE_AGENT_PROVIDER, view, {
             apiKeyLabel: format("settings.modelProvider.apiKey"),
             apiKeyBadgeLabel: format("settings.modelProvider.connectionMode.apiKeyBadge"),
             codingPlanLabel: format("settings.modelProvider.connectionMode.codingPlan"),

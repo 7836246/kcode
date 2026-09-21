@@ -46,8 +46,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { Locale, RemoteTarget, UserInfo, ZCodeTaskMeta } from "@zcode/shared";
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@zcode/shared";
+import type { Locale, RemoteTarget, UserInfo, KCodeTaskMeta } from "@kcode/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@kcode/shared";
 import {
   TID_CONVERSATION_NEW_TASK,
   TID_CONVERSATION_SECTION,
@@ -56,7 +56,7 @@ import {
   TID_PROJECT_SECTION,
   TID_SIDEBAR,
   TID_WORKSPACE_LIST,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { Button } from "@/components/ui/button.js";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
@@ -70,11 +70,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { NewTaskButtonGroup } from "@/NewTaskButtonGroup.js";
-import { selectWorkspaceZCodeState, useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
-import { useZCodeStore } from "@/store/StoreProvider.js";
+import { selectWorkspaceKCodeState, useKCodeSessionStore } from "@/store/kcodeSessionStore.js";
+import { useKCodeStore } from "@/store/StoreProvider.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceReadOnly, isWorkspaceTab, type WorkspaceTabState } from "@/store/tabStore.js";
 import { useWorkspaceTaskLists } from "@/hooks/useWorkspaceTaskLists.js";
@@ -129,7 +129,6 @@ import {
 } from "@/WorkspaceSidebar/taskGroupTogglePresentation.js";
 import { WorkspacePurposeSection } from "@/WorkspaceSidebar/WorkspacePurposeSection.js";
 import { cn } from "@/components/lib/utils.js";
-import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 import {
   resolveWorkspaceDragGlobalIndices,
   resolveWorkspaceDragExpanded,
@@ -171,7 +170,7 @@ interface SidebarFileTreeTarget {
 
 // 流式 task 事件会让 sidebar 父级频繁刷新；缺任务分组时如果传新的 []
 // 会让 memo 的 workspace 行误判 taskItems 变化，穿透到 TaskList/TaskListItem 重渲染。
-const EMPTY_WORKSPACE_TASK_ITEMS: ZCodeTaskMeta[] = [];
+const EMPTY_WORKSPACE_TASK_ITEMS: KCodeTaskMeta[] = [];
 // WorkspaceSidebar 是 memo 组件，默认参数里的 {} 每次调用都会创建新引用；
 // 缺省远程重连日志时必须复用同一个对象，避免浅比较被默认值打穿。
 const EMPTY_RECONNECTING_REMOTE_WORKSPACE_LOGS_BY_WORKSPACE_KEY: Record<
@@ -239,7 +238,6 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
   onCancelRemoteProject: _onCancelRemoteProject,
   onReconnectRemoteWorkspace,
   onLogout,
-  onLogin,
   user,
   reconnectingRemoteWorkspaceKeys,
   remoteWorkspaceErrorByWorkspaceKey,
@@ -291,7 +289,6 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
   onCancelRemoteProject: (sessionId: string) => Promise<void>;
   onReconnectRemoteWorkspace: (workspaceKey: string) => Promise<void>;
   onLogout?: () => void;
-  onLogin?: () => void;
   user?: UserInfo | null;
   reconnectingRemoteWorkspaceKeys: string[];
   remoteWorkspaceErrorByWorkspaceKey: Record<string, string>;
@@ -315,7 +312,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
   pluginStoreActive?: boolean;
   onFileTreeOpenChange?: (open: boolean) => void;
 }) {
-  const { intl, localePreference, setLocalePreference } = useZCodeIntl();
+  const { intl, localePreference, setLocalePreference } = useKCodeIntl();
   const handleTaskRowSelect = useCallback(
     (
       targetWorkspacePath: string,
@@ -335,8 +332,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
     },
     [onSelectTask],
   );
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
-  const bumpTaskListVersion = useZCodeSessionStore((state) => state.bumpTaskListVersion);
+  const bumpTaskListVersion = useKCodeSessionStore((state) => state.bumpTaskListVersion);
   const workspaceIdentity = useTabStore((state) => {
     if (!state.activeTabId) {
       return undefined;
@@ -357,7 +353,7 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
         id: "workspaceSidebar.unavailableLocalDirectory",
       })
     : undefined;
-  const setTheme = useZCodeStore((state) => state.setTheme);
+  const setTheme = useKCodeStore((state) => state.setTheme);
   const commandCenterShortcutLabel = useShortcutCommandLabel("openCommandCenter");
   const tabs = useTabStore((state) => state.tabs);
   const activateTab = useTabStore((state) => state.activateTab);
@@ -755,24 +751,12 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
   const handleOpenAutomationsMain = useCallback(() => {
     onOpenAutomations?.();
   }, [onOpenAutomations]);
-  const handleOpenCodingPlanUpgrade = useCallback(
-    (
-      providerId: string,
-      funnelContext?: import("@/lib/codingPlanFunnelTelemetry.js").CodingPlanFunnelContext,
-    ) => {
-      openCodingPlanUpgrade({
-        providerId,
-        funnelContext,
-      });
-    },
-    [openCodingPlanUpgrade],
-  );
-  const activeTaskId = useZCodeSessionStore(
+  const activeTaskId = useKCodeSessionStore(
     (state) =>
       // Web 远程控制从全局 task 入口进入远端 workspace 时，会先按
       // workspaceIdentity 写入 activeTaskId；如果侧栏仍然只读 path-only 桶，
       // 当前任务高亮会丢失，也会把后续选择误判成未激活。
-      selectWorkspaceZCodeState(state, workspacePath, workspaceIdentity).activeTaskId,
+      selectWorkspaceKCodeState(state, workspacePath, workspaceIdentity).activeTaskId,
   );
 
   useEffect(() => {
@@ -1650,8 +1634,6 @@ export const WorkspaceSidebar = memo(function WorkspaceSidebarComponent({
             onThemeChange={handleThemeChange}
             onSettingsButtonClick={openSettingsTab}
             onUsageClick={openSettingsTab}
-            onUpgradeClick={handleOpenCodingPlanUpgrade}
-            onLogin={onLogin}
             onLogout={onLogout}
             user={user}
             workspacePath={workspacePath}

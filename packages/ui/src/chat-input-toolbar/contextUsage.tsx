@@ -11,9 +11,9 @@ import {
 import {
   TID_CHAT_CONTEXT_USAGE_TRIGGER,
   type CodingPlanResetType,
-  type ZCodeContextUsageBreakdownItem,
-  type ZCodeProvider,
-} from "@zcode/shared";
+  type KCodeContextUsageBreakdownItem,
+  type KCodeProvider,
+} from "@kcode/shared";
 import {
   Context,
   ContextContentBody,
@@ -28,7 +28,7 @@ import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { resolveCodingPlanUsageRemainingState } from "@/CodingPlanUsageRemainingPanel.js";
 import { CodingPlanQuotaResetStatusContent } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetStatus.js";
 import { useCodingPlanQuotaResetUi } from "@/hooks/useCodingPlanQuotaResetUi.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import {
   CODING_PLAN_QUOTA_RESET_AUTOMATIC_PROCESSING_MS,
   CODING_PLAN_QUOTA_RESET_TYPES,
@@ -64,7 +64,7 @@ import {
   shouldDismissContextQuotaResetOpportunityReminder,
 } from "@/chat-input-toolbar/contextQuotaResetOpportunityReminder.js";
 
-type ContextUsageBreakdownSource = ZCodeContextUsageBreakdownItem["source"];
+type ContextUsageBreakdownSource = KCodeContextUsageBreakdownItem["source"];
 
 interface ContextUsageBreakdownSegment {
   chars: number;
@@ -164,7 +164,7 @@ const BREAKDOWN_SOURCE_ORDER: Record<ContextUsageBreakdownSource, number> = {
 };
 
 function buildContextUsageBreakdownSegments(
-  breakdown: readonly ZCodeContextUsageBreakdownItem[] | undefined,
+  breakdown: readonly KCodeContextUsageBreakdownItem[] | undefined,
 ): ContextUsageBreakdownSegment[] {
   const charsBySource = new Map<ContextUsageBreakdownSource, number>();
   for (const item of breakdown ?? []) {
@@ -207,7 +207,7 @@ export function getRenderableTaskUsage<T extends { used: number; size: number }>
     return null;
   }
 
-  // ZCode Protocol 迁移后会单独补齐真实 contextUsed/contextWindow。
+  // KCode Protocol 迁移后会单独补齐真实 contextUsed/contextWindow。
   // used=0 或非法值不代表可展示的上下文占用，避免把初始化/异常兜底渲染成误导性的 0%。
   if (
     !Number.isFinite(taskUsage.used) ||
@@ -221,7 +221,7 @@ export function getRenderableTaskUsage<T extends { used: number; size: number }>
   return taskUsage;
 }
 
-export function getContextCompressionCommand(_provider: ZCodeProvider): string {
+export function getContextCompressionCommand(_provider: KCodeProvider): string {
   return "/compact";
 }
 
@@ -246,10 +246,10 @@ export function ChatContextUsage({
     used: number;
     size: number;
     cache?: { hitRate: number | null };
-    breakdown?: ZCodeContextUsageBreakdownItem[];
+    breakdown?: KCodeContextUsageBreakdownItem[];
   } | null;
-  selectedProvider: ZCodeProvider;
-  intl: ReturnType<typeof useZCodeIntl>["intl"];
+  selectedProvider: KCodeProvider;
+  intl: ReturnType<typeof useKCodeIntl>["intl"];
   locale: string;
   onSendCompressionCommand?: (command: string) => void;
   compressionDisabled?: boolean;

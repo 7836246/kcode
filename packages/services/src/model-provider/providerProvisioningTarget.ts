@@ -1,22 +1,22 @@
 /* eslint-disable max-lines -- Provisioning target keeps transaction and rollback invariants together. */
 import { readFile } from "node:fs/promises";
-import { atomicWritePrivateTextFile, withFileLock } from "@zcode/shared/node";
+import { atomicWritePrivateTextFile, withFileLock } from "@kcode/shared/node";
 import {
   type PersonalProviderConfigRepository,
   type ProviderConfigLayerUpdate,
-} from "@zcode/provider";
-import { decodeProviderConfigFile, encodeProviderConfigFile } from "@zcode/provider-node";
+} from "@kcode/provider";
+import { decodeProviderConfigFile, encodeProviderConfigFile } from "@kcode/provider-node";
 import {
   providerProvisioningEnvelopeSchema,
   providerProvisioningResultSchema,
   isProviderProvisioningAccountCredentialKey,
   type ProviderProvisioningEnvelope,
   type ProviderProvisioningResult,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { ICredentialService } from "../credential/credential.js";
 import type { ISettingService } from "../setting/setting.js";
 import type { ProviderRuntime } from "./providerRuntime.js";
-import type { AccountProviderService } from "@zcode/provider";
+import type { AccountProviderService } from "@kcode/provider";
 import type { IProviderProvisioningTargetService } from "./providerProvisioning.js";
 import {
   PROVIDER_PROVISIONING_OAUTH_CREDENTIAL_KEYS,

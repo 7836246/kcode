@@ -1,4 +1,4 @@
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 
 /**
  * 工具卡卡体顶部的一行元信息：淡色标签 + 等宽值（来源文件名、run id……），可带一句淡色注记。
@@ -52,7 +52,7 @@ export function WorkflowAmendsLine({
   runId: string;
   scriptInherited?: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   return (
     <WorkflowCardMetaLine
       marker="amends"

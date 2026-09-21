@@ -1,4 +1,3 @@
-import { useCodingPlanEntryGate } from "@/settings/CodingPlanEntryButton.js";
 /* eslint-disable max-lines -- footer 套餐徽标、升级入口与 entitlement 探测共用同一份
    provider 选择与 family 过滤上下文，拆文件会让 zai/bigmodel 对称性难以追踪。 */
 import { useEffect, useMemo } from "react";
@@ -6,41 +5,30 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   normalizeProviderFamilyDomain,
   resolveModelProviderFamilyIdByProviderId,
-  TID_SIDEBAR_CODING_PLAN_USAGE_BUTTON,
-} from "@zcode/shared";
-import { BarChart3Icon, RocketIcon } from "lucide-react";
-import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu.js";
+} from "@kcode/shared";
 import {
   resolveCodingPlanUsageRemainingState,
   type CodingPlanUsageAvailableProvider,
 } from "@/CodingPlanUsageRemainingPanel.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useUsageEntitlement } from "@/hooks/useUsageEntitlement.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import {
   resolveEntitledAccountProviderAccess,
   resolveEntitledAccountProviderAccessFingerprint,
 } from "@/lib/accountProviderAccess.js";
 import { buildUsageEntitlementCacheKey } from "@/lib/usageEntitlementCache.js";
-import {
-  isMaxCodingPlanSnapshot,
-  resolveSidebarCodingPlanUpgradeFallbackProviderId,
-} from "@/lib/sidebarCodingPlanUpgrade.js";
-import {
-  createCodingPlanFunnelContext,
-  resolveCodingPlanEntryPlanState,
-  type CodingPlanFunnelContext,
-} from "@/lib/codingPlanFunnelTelemetry.js";
+import { resolveSidebarCodingPlanUpgradeFallbackProviderId } from "@/lib/sidebarCodingPlanUpgrade.js";
+import { type CodingPlanFunnelContext } from "@/lib/codingPlanFunnelTelemetry.js";
 import { type SidebarUsageCodingPlanProviderId } from "@/lib/sidebarUsageCodingPlanProviderPreference.js";
 import { useEnterpriseCodingPlanProducts } from "@/settings/model-provider-section/useEnterpriseCodingPlanProducts.js";
 import {
   buildCodingPlanUsageSources,
   resolveSidebarCurrentCodingPlanUsageSource,
 } from "@/lib/codingPlanUsageSources.js";
-import { selectWorkspaceZCodeState, useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
+import { selectWorkspaceKCodeState, useKCodeSessionStore } from "@/store/kcodeSessionStore.js";
 import { parseCustomProviderIdFromSupplierKey } from "@/lib/modelConfigSync.js";
-import { setPendingSettingsUsageIntent } from "@/lib/settingsNavigation.js";
 import {
   resolveSidebarFooterPlanBadgeLabel,
   resolveSidebarFooterProfilePlanBadge,
@@ -50,8 +38,6 @@ export {
   resolveSidebarFooterPlanBadgeLabel,
   resolveSidebarFooterProfilePlanBadge,
 } from "@/WorkspaceSidebarFooterPlanBadgeHelpers.js";
-
-const TID_SIDEBAR_CODING_PLAN_UPGRADE_BUTTON = "sidebar-coding-plan-upgrade-button";
 
 export function WorkspaceSidebarFooterUsageSummary({
   enabled,
@@ -99,9 +85,9 @@ export function useWorkspaceSidebarFooterUsageSummaryState({
     providerSettingsRead.state.status === "ready" ? providerSettingsRead.state.view : null;
   // 首次读取失败也不能被解释成“已经加载且没有套餐”；只有 Ready 才能消费 Provider 事实。
   const providerSourcesLoading = providerSettingsRead.state.status !== "ready";
-  const selectedSupplierKey = useZCodeSessionStore((state) =>
+  const selectedSupplierKey = useKCodeSessionStore((state) =>
     workspacePath
-      ? selectWorkspaceZCodeState(state, workspacePath, workspaceIdentity).selectedSupplierKey
+      ? selectWorkspaceKCodeState(state, workspacePath, workspaceIdentity).selectedSupplierKey
       : "",
   );
   const availableCodingPlanProviders = useMemo(
@@ -416,9 +402,9 @@ type WorkspaceSidebarFooterUsageSummaryState = ReturnType<
 >;
 
 export function WorkspaceSidebarFooterUsageSummaryContent({
-  state,
-  onUsageClick,
-  onUpgradeClick,
+  state: _state,
+  onUsageClick: _onUsageClick,
+  onUpgradeClick: _onUpgradeClick,
 }: {
   state: WorkspaceSidebarFooterUsageSummaryState;
   onUsageClick?: () => void;
@@ -427,58 +413,8 @@ export function WorkspaceSidebarFooterUsageSummaryContent({
     funnelContext: CodingPlanFunnelContext,
   ) => void;
 }) {
-  const { intl } = useZCodeIntl();
-  const entryGate = useCodingPlanEntryGate();
-  const { providerEntitlements, upgradeTargetProviderId } = state;
-  const upgradeProviderSnapshot =
-    providerEntitlements.find((item) => item.providerId === upgradeTargetProviderId)?.snapshot ??
-    null;
-  const upgradeActionLabelId = isMaxCodingPlanSnapshot(upgradeProviderSnapshot)
-    ? "sidebar.usage.plan.renew"
-    : "sidebar.usage.plan.upgrade";
-
-  return (
-    <>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        data-testid={TID_SIDEBAR_CODING_PLAN_USAGE_BUTTON}
-        onSelect={() => {
-          setPendingSettingsUsageIntent();
-          onUsageClick?.();
-        }}
-      >
-        <BarChart3Icon className="size-4" />
-        {intl.formatMessage({ id: "sidebar.usage.plan.openStats" })}
-      </DropdownMenuItem>
-      {/* 产品要求：升级入口始终显示；未解析出当前套餐时由当前 provider family 决定品牌。 */}
-      <DropdownMenuItem
-        data-testid={TID_SIDEBAR_CODING_PLAN_UPGRADE_BUTTON}
-        disabled={entryGate.status === "loading"}
-        aria-busy={entryGate.status === "loading"}
-        onSelect={() => {
-          if (entryGate.status !== "ready") {
-            entryGate.retry?.();
-            return;
-          }
-          onUpgradeClick?.(
-            upgradeTargetProviderId,
-            createCodingPlanFunnelContext({
-              providerId: upgradeTargetProviderId,
-              upgradeSource: "profile_menu",
-              eventRegion: "app.profile",
-              eventText: intl.formatMessage({ id: upgradeActionLabelId }),
-              entryPlanState: resolveCodingPlanEntryPlanState({
-                snapshot: upgradeProviderSnapshot,
-              }),
-            }),
-          );
-        }}
-      >
-        <RocketIcon className="size-4" />
-        {entryGate.label ?? intl.formatMessage({ id: upgradeActionLabelId })}
-      </DropdownMenuItem>
-    </>
-  );
+  // KCode 不再提供官方智谱套餐用量与升级入口。
+  return null;
 }
 
 export function WorkspaceSidebarFooterPlanBadge({
@@ -486,7 +422,7 @@ export function WorkspaceSidebarFooterPlanBadge({
 }: {
   state: WorkspaceSidebarFooterUsageSummaryState;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const label =
     state.profilePlanBadge?.audience === "team"
       ? intl.formatMessage({ id: "sidebar.usage.plan.audienceTeam" })

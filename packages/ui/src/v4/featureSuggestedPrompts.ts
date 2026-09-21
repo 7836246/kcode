@@ -39,11 +39,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Send me a daily briefing on news I care about",
     },
     prompt: {
-      cn: "帮我设置一个每天上午 9 点运行的定时任务：使用 [@浏览器操作](plugin://browser-use@zcode-plugins-official) 浏览可访问的公开新闻网站，收集过去 24 小时内与 [关注方向] 相关的重要新闻，去重后生成一份简短简报并推送给我。每条写清事件发生时间、新闻发布时间、来源链接和为什么值得关注；没有可信的新消息就如实说明，不要重复昨天的内容。",
-      en: "Set up a scheduled task for 9 a.m. every day. Use [@Browser Use](plugin://browser-use@zcode-plugins-official) to check accessible public news sites for important news about [topic of interest] from the past 24 hours, remove duplicates, and send me a brief digest. Include event and publication times, source links, and why each item matters. Say when there is no credible new item and do not repeat yesterday’s news.",
+      cn: "帮我设置一个每天上午 9 点运行的定时任务：使用 [@浏览器操作](plugin://browser-use@kcode-plugins-official) 浏览可访问的公开新闻网站，收集过去 24 小时内与 [关注方向] 相关的重要新闻，去重后生成一份简短简报并推送给我。每条写清事件发生时间、新闻发布时间、来源链接和为什么值得关注；没有可信的新消息就如实说明，不要重复昨天的内容。",
+      en: "Set up a scheduled task for 9 a.m. every day. Use [@Browser Use](plugin://browser-use@kcode-plugins-official) to check accessible public news sites for important news about [topic of interest] from the past 24 hours, remove duplicates, and send me a brief digest. Include event and publication times, source links, and why each item matters. Say when there is no credible new item and do not repeat yesterday’s news.",
     },
     plugin: {
-      stableId: "browser-use@zcode-plugins-official",
+      stableId: "browser-use@kcode-plugins-official",
       label: { cn: "浏览器操作", en: "Browser Use" },
     },
   },
@@ -57,11 +57,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Find three business stories worth reading today",
     },
     prompt: {
-      cn: "请使用 [@浏览器操作](plugin://browser-use@zcode-plugins-official) 浏览界面新闻等国内公开商业资讯网站，打开文章正文，选出今天最值得职场人阅读的三篇商业文章。每篇告诉我核心信息、推荐理由、发布时间和原文链接。跳过重复报道、付费文章和需要登录的页面；如果合适的不足三篇，就按实际数量推荐。",
-      en: "Use [@Browser Use](plugin://browser-use@zcode-plugins-official) to browse publicly accessible business coverage from The Guardian and other international news sites. Open the full articles and pick three worth reading today. For each, give me the key information, why it is worth my time, the publication time, and the original link. Skip duplicate coverage, paywalled articles, and pages requiring sign-in. Recommend fewer than three if necessary.",
+      cn: "请使用 [@浏览器操作](plugin://browser-use@kcode-plugins-official) 浏览界面新闻等国内公开商业资讯网站，打开文章正文，选出今天最值得职场人阅读的三篇商业文章。每篇告诉我核心信息、推荐理由、发布时间和原文链接。跳过重复报道、付费文章和需要登录的页面；如果合适的不足三篇，就按实际数量推荐。",
+      en: "Use [@Browser Use](plugin://browser-use@kcode-plugins-official) to browse publicly accessible business coverage from The Guardian and other international news sites. Open the full articles and pick three worth reading today. For each, give me the key information, why it is worth my time, the publication time, and the original link. Skip duplicate coverage, paywalled articles, and pages requiring sign-in. Recommend fewer than three if necessary.",
     },
     plugin: {
-      stableId: "browser-use@zcode-plugins-official",
+      stableId: "browser-use@kcode-plugins-official",
       label: { cn: "浏览器操作", en: "Browser Use" },
     },
   },
@@ -75,11 +75,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Find practical articles I can use at work",
     },
     prompt: {
-      cn: "请使用 [@浏览器操作](plugin://browser-use@zcode-plugins-official) 查看人人都是产品经理的公开文章，从最近发布的内容中挑三篇对日常办公、沟通协作或提升工作效率有具体帮助的文章。打开正文后，分别说明适合谁读、有什么可借鉴的做法、应用时要注意什么，并附原文链接。不要只根据标题推荐，也不要选择需要登录或付费才能读的内容。",
-      en: "Use [@Browser Use](plugin://browser-use@zcode-plugins-official) to read recent, publicly accessible articles from Microsoft WorkLab and Atlassian Team Playbook. Pick three with concrete ideas for everyday work or collaboration. Read each page before explaining who it helps, what I could try, what to watch out for, and where to read the original. Do not recommend from titles alone or include pages that require sign-in or payment.",
+      cn: "请使用 [@浏览器操作](plugin://browser-use@kcode-plugins-official) 查看人人都是产品经理的公开文章，从最近发布的内容中挑三篇对日常办公、沟通协作或提升工作效率有具体帮助的文章。打开正文后，分别说明适合谁读、有什么可借鉴的做法、应用时要注意什么，并附原文链接。不要只根据标题推荐，也不要选择需要登录或付费才能读的内容。",
+      en: "Use [@Browser Use](plugin://browser-use@kcode-plugins-official) to read recent, publicly accessible articles from Microsoft WorkLab and Atlassian Team Playbook. Pick three with concrete ideas for everyday work or collaboration. Read each page before explaining who it helps, what I could try, what to watch out for, and where to read the original. Do not recommend from titles alone or include pages that require sign-in or payment.",
     },
     plugin: {
-      stableId: "browser-use@zcode-plugins-official",
+      stableId: "browser-use@kcode-plugins-official",
       label: { cn: "浏览器操作", en: "Browser Use" },
     },
   },
@@ -93,11 +93,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Explain the latest economic data in plain language",
     },
     prompt: {
-      cn: "请使用 [@浏览器操作](plugin://browser-use@zcode-plugins-official) 查看国家统计局公开数据中最近一次发布的主要经济信息。选出与消费、就业或企业经营相关的三项，说明统计时间、数据变化和普通办公人员为什么可能需要关注，附官方原文链接。把数据事实与自己的解读分开；如果本周没有新数据，就明确写出实际发布日期。",
-      en: "Use [@Browser Use](plugin://browser-use@zcode-plugins-official) to review the latest publicly released OECD economic data. Choose three indicators relevant to consumers, employment, or business activity. Explain the reporting period, what changed, and why someone working in an office might care, with links to the original OECD releases. Separate reported facts from your interpretation and state the actual release dates if there is nothing new this week.",
+      cn: "请使用 [@浏览器操作](plugin://browser-use@kcode-plugins-official) 查看国家统计局公开数据中最近一次发布的主要经济信息。选出与消费、就业或企业经营相关的三项，说明统计时间、数据变化和普通办公人员为什么可能需要关注，附官方原文链接。把数据事实与自己的解读分开；如果本周没有新数据，就明确写出实际发布日期。",
+      en: "Use [@Browser Use](plugin://browser-use@kcode-plugins-official) to review the latest publicly released OECD economic data. Choose three indicators relevant to consumers, employment, or business activity. Explain the reporting period, what changed, and why someone working in an office might care, with links to the original OECD releases. Separate reported facts from your interpretation and state the actual release dates if there is nothing new this week.",
     },
     plugin: {
-      stableId: "browser-use@zcode-plugins-official",
+      stableId: "browser-use@kcode-plugins-official",
       label: { cn: "浏览器操作", en: "Browser Use" },
     },
   },
@@ -111,11 +111,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Create a presentation I can share",
     },
     prompt: {
-      cn: "请使用 [@演示文档](plugin://presentations@zcode-plugins-official) 帮我围绕 [主题] 做一份可以直接分享的演示文稿。先用公开资料补齐背景，形成清晰的核心观点和叙事结构，再生成带标题、关键结论和来源的幻灯片。不要编造事实，未确定的内容请标注。",
-      en: "Use [@Presentations](plugin://presentations@zcode-plugins-official) to create a shareable presentation about [topic]. Research public background, develop a clear argument and narrative, and produce slides with titles, conclusions, and sources. Label uncertain claims instead of inventing facts.",
+      cn: "请使用 [@演示文档](plugin://presentations@kcode-plugins-official) 帮我围绕 [主题] 做一份可以直接分享的演示文稿。先用公开资料补齐背景，形成清晰的核心观点和叙事结构，再生成带标题、关键结论和来源的幻灯片。不要编造事实，未确定的内容请标注。",
+      en: "Use [@Presentations](plugin://presentations@kcode-plugins-official) to create a shareable presentation about [topic]. Research public background, develop a clear argument and narrative, and produce slides with titles, conclusions, and sources. Label uncertain claims instead of inventing facts.",
     },
     plugin: {
-      stableId: "presentations@zcode-plugins-official",
+      stableId: "presentations@kcode-plugins-official",
       label: { cn: "演示文档", en: "Presentations" },
     },
   },
@@ -128,29 +128,29 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Review yesterday’s work and plan today automatically",
     },
     prompt: {
-      cn: "帮我设置一个每个工作日上午 9 点运行的定时任务：使用 [@飞书 CLI](plugin://lark-cli@zcode-plugins-official) 读取我昨天的飞书日程、任务和我可访问的工作记录，生成简短的昨日日报，并整理今天最值得先做的三件事。只写有记录依据的内容；如果插件未启用或缺少访问权限，先告诉我需要完成什么配置。",
-      en: "Set up a scheduled task for 9 a.m. every workday. Use [@Lark CLI](plugin://lark-cli@zcode-plugins-official) to read my accessible calendar events, tasks, and work records from yesterday. Give me a brief daily report and the three most important things to do today. Only include claims supported by those records; tell me what to connect if access is missing.",
+      cn: "帮我设置一个每个工作日上午 9 点运行的定时任务：使用 [@飞书 CLI](plugin://lark-cli@kcode-plugins-official) 读取我昨天的飞书日程、任务和我可访问的工作记录，生成简短的昨日日报，并整理今天最值得先做的三件事。只写有记录依据的内容；如果插件未启用或缺少访问权限，先告诉我需要完成什么配置。",
+      en: "Set up a scheduled task for 9 a.m. every workday. Use [@Lark CLI](plugin://lark-cli@kcode-plugins-official) to read my accessible calendar events, tasks, and work records from yesterday. Give me a brief daily report and the three most important things to do today. Only include claims supported by those records; tell me what to connect if access is missing.",
     },
     plugin: {
-      stableId: "lark-cli@zcode-plugins-official",
+      stableId: "lark-cli@kcode-plugins-official",
       label: { cn: "飞书 CLI", en: "Lark CLI" },
     },
   },
   {
     id: "feature-recvvsS2usyGu7",
     mode: "office",
-    iconUrl: `${ASSETS}/zcode-cua/icon.png`,
+    iconUrl: `${ASSETS}/kcode-cua/icon.png`,
     iconStyle: "plugin",
     label: {
       cn: "帮我设置一个闲时任务，体验网站的完整用户旅程",
       en: "Review a website’s complete first-time user journey",
     },
     prompt: {
-      cn: "帮我设置一个闲时任务，使用 [@电脑控制](plugin://computer-use@zcode-plugins-official) 打开 [目标网站]，像第一次来的用户一样实际操作。请选出这个网站最核心的一条公开用户旅程，从首页走到完成任务前的最后一步，记录每一步的页面、困惑点和无法继续的地方，并附关键截图。最后给我一份详细的用户体验报告，按影响程度列出问题、依据和具体改进建议。不要注册、付款或提交真实信息；遇到登录限制就说明未覆盖的步骤。如果还没有选择本地项目，先让我选择一个用于保存报告。",
-      en: "Set up an idle-time task using [@Computer Use](plugin://computer-use@zcode-plugins-official) to open [target website] and act like a first-time user. Follow its main public journey from the home page to the step before final submission, documenting each step, confusion, blockers, and key screenshots. Produce a detailed UX report with evidence and prioritized improvements. Do not register, pay, or submit real information. If no local project is selected, ask me to choose one for the report.",
+      cn: "帮我设置一个闲时任务，使用 [@电脑控制](plugin://computer-use@kcode-plugins-official) 打开 [目标网站]，像第一次来的用户一样实际操作。请选出这个网站最核心的一条公开用户旅程，从首页走到完成任务前的最后一步，记录每一步的页面、困惑点和无法继续的地方，并附关键截图。最后给我一份详细的用户体验报告，按影响程度列出问题、依据和具体改进建议。不要注册、付款或提交真实信息；遇到登录限制就说明未覆盖的步骤。如果还没有选择本地项目，先让我选择一个用于保存报告。",
+      en: "Set up an idle-time task using [@Computer Use](plugin://computer-use@kcode-plugins-official) to open [target website] and act like a first-time user. Follow its main public journey from the home page to the step before final submission, documenting each step, confusion, blockers, and key screenshots. Produce a detailed UX report with evidence and prioritized improvements. Do not register, pay, or submit real information. If no local project is selected, ask me to choose one for the report.",
     },
     plugin: {
-      stableId: "computer-use@zcode-plugins-official",
+      stableId: "computer-use@kcode-plugins-official",
       label: { cn: "电脑控制", en: "Computer Use" },
     },
   },
@@ -177,11 +177,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Create a sourced PDF research report on a topic",
     },
     prompt: {
-      cn: "请使用 [@PDF](plugin://pdf@zcode-plugins-official)，围绕 [调研主题] 生成一份可以分享的 PDF 研究报告。先查找近期公开可信的资料，再整理背景、关键事实、不同观点和仍待验证的问题；重要数字标明时间与来源，文末附参考链接。缺少可靠依据的内容请明确标注，不要编造。",
-      en: "Use [@PDF](plugin://pdf@zcode-plugins-official) to create a shareable PDF research report on [research topic]. Find recent credible public sources, then cover the background, key facts, differing views, and open questions. Date and source important figures and include references. Mark claims without reliable evidence instead of inventing them.",
+      cn: "请使用 [@PDF](plugin://pdf@kcode-plugins-official)，围绕 [调研主题] 生成一份可以分享的 PDF 研究报告。先查找近期公开可信的资料，再整理背景、关键事实、不同观点和仍待验证的问题；重要数字标明时间与来源，文末附参考链接。缺少可靠依据的内容请明确标注，不要编造。",
+      en: "Use [@PDF](plugin://pdf@kcode-plugins-official) to create a shareable PDF research report on [research topic]. Find recent credible public sources, then cover the background, key facts, differing views, and open questions. Date and source important figures and include references. Mark claims without reliable evidence instead of inventing them.",
     },
     plugin: {
-      stableId: "pdf@zcode-plugins-official",
+      stableId: "pdf@kcode-plugins-official",
       label: { cn: "PDF", en: "PDF" },
     },
   },
@@ -194,11 +194,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Summarize this week and prepare next week’s priorities",
     },
     prompt: {
-      cn: "帮我设置一个每周五下午 5 点运行的定时任务：使用 [@飞书 CLI](plugin://lark-cli@zcode-plugins-official) 读取我本周可访问的飞书日程、任务和工作记录，整理已完成、仍在推进和需要我决定的事项，再列出下周建议优先处理的三件事。没有记录依据的进展不要补写；如果插件或权限未就绪，先提示我配置。",
-      en: "Set up a scheduled task for 5 p.m. every Friday. Use [@Lark CLI](plugin://lark-cli@zcode-plugins-official) to review my accessible calendar, tasks, and work records for the week. Summarize what was completed, what is ongoing, and what needs my decision, then suggest three priorities for next week. Do not invent progress that the records do not support.",
+      cn: "帮我设置一个每周五下午 5 点运行的定时任务：使用 [@飞书 CLI](plugin://lark-cli@kcode-plugins-official) 读取我本周可访问的飞书日程、任务和工作记录，整理已完成、仍在推进和需要我决定的事项，再列出下周建议优先处理的三件事。没有记录依据的进展不要补写；如果插件或权限未就绪，先提示我配置。",
+      en: "Set up a scheduled task for 5 p.m. every Friday. Use [@Lark CLI](plugin://lark-cli@kcode-plugins-official) to review my accessible calendar, tasks, and work records for the week. Summarize what was completed, what is ongoing, and what needs my decision, then suggest three priorities for next week. Do not invent progress that the records do not support.",
     },
     plugin: {
-      stableId: "lark-cli@zcode-plugins-official",
+      stableId: "lark-cli@kcode-plugins-official",
       label: { cn: "飞书 CLI", en: "Lark CLI" },
     },
   },
@@ -212,11 +212,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Create an editable project proposal",
     },
     prompt: {
-      cn: "请使用 [@Word文档](plugin://documents@zcode-plugins-official)，围绕 [项目主题] 生成一份可编辑的 Word 项目方案。写清目标用户与问题、方案选择、主要工作、里程碑、风险和待确认事项。缺少业务背景时先采用明确标注的合理假设，并在文末列出最需要我补充的三项信息；不要编造内部数据。",
-      en: "Use [@Documents](plugin://documents@zcode-plugins-official) to create an editable Word proposal for [project topic]. Cover users and their problem, options, work plan, milestones, risks, and open decisions. When business context is missing, label reasonable assumptions and list the three most useful details for me to add. Do not invent internal data.",
+      cn: "请使用 [@Word文档](plugin://documents@kcode-plugins-official)，围绕 [项目主题] 生成一份可编辑的 Word 项目方案。写清目标用户与问题、方案选择、主要工作、里程碑、风险和待确认事项。缺少业务背景时先采用明确标注的合理假设，并在文末列出最需要我补充的三项信息；不要编造内部数据。",
+      en: "Use [@Documents](plugin://documents@kcode-plugins-official) to create an editable Word proposal for [project topic]. Cover users and their problem, options, work plan, milestones, risks, and open decisions. When business context is missing, label reasonable assumptions and list the three most useful details for me to add. Do not invent internal data.",
     },
     plugin: {
-      stableId: "documents@zcode-plugins-official",
+      stableId: "documents@kcode-plugins-official",
       label: { cn: "Word文档", en: "Documents" },
     },
   },
@@ -230,11 +230,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Create a ready-to-use monthly income and expense tracker",
     },
     prompt: {
-      cn: "请使用 [@电子表格](plugin://spreadsheets@zcode-plugins-official) 生成一份可以直接开始记账的 Excel 月度收支表。每条记录能填写日期、收支类型、分类、金额和备注；提供常用分类、按月和分类自动汇总，以及收入、支出和结余。放几条明确标为示例的数据让我看懂怎么填，正式汇总不要把示例计入真实收支。无需先问我收入或消费明细。",
-      en: "Use [@Spreadsheets](plugin://spreadsheets@zcode-plugins-official) to create an editable Excel monthly income and expense tracker I can start using right away. Let each entry capture its date, income or expense type, category, amount, and note. Include common categories and automatic monthly and category totals, including income, expenses, and balance. Add a few clearly marked example entries to show how it works, but exclude them from real totals. Do not ask for my financial details before creating the template.",
+      cn: "请使用 [@电子表格](plugin://spreadsheets@kcode-plugins-official) 生成一份可以直接开始记账的 Excel 月度收支表。每条记录能填写日期、收支类型、分类、金额和备注；提供常用分类、按月和分类自动汇总，以及收入、支出和结余。放几条明确标为示例的数据让我看懂怎么填，正式汇总不要把示例计入真实收支。无需先问我收入或消费明细。",
+      en: "Use [@Spreadsheets](plugin://spreadsheets@kcode-plugins-official) to create an editable Excel monthly income and expense tracker I can start using right away. Let each entry capture its date, income or expense type, category, amount, and note. Include common categories and automatic monthly and category totals, including income, expenses, and balance. Add a few clearly marked example entries to show how it works, but exclude them from real totals. Do not ask for my financial details before creating the template.",
     },
     plugin: {
-      stableId: "spreadsheets@zcode-plugins-official",
+      stableId: "spreadsheets@kcode-plugins-official",
       label: { cn: "电子表格", en: "Spreadsheets" },
     },
   },
@@ -254,18 +254,18 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
   {
     id: "feature-recvvsPdvclWR1",
     mode: "office",
-    iconUrl: `${ASSETS}/zcode-cua/icon.png`,
+    iconUrl: `${ASSETS}/kcode-cua/icon.png`,
     iconStyle: "plugin",
     label: {
       cn: "帮我把下载文件夹里的截图按月份批量归档",
       en: "File my downloaded screenshots by month",
     },
     prompt: {
-      cn: "请使用 [@电脑控制](plugin://computer-use@zcode-plugins-official) 打开这台电脑的文件管理软件，把下载文件夹里的截图按月份分类，先给我看会移动哪些文件、分别放到哪里；我确认后再批量归档。不要处理其他图片或删除文件。",
-      en: "Use [@Computer Use](plugin://computer-use@zcode-plugins-official) to open this computer’s file manager and sort screenshots in Downloads by month. Show me which files would move and where; after I approve, file them in batches. Leave other images alone and do not delete files.",
+      cn: "请使用 [@电脑控制](plugin://computer-use@kcode-plugins-official) 打开这台电脑的文件管理软件，把下载文件夹里的截图按月份分类，先给我看会移动哪些文件、分别放到哪里；我确认后再批量归档。不要处理其他图片或删除文件。",
+      en: "Use [@Computer Use](plugin://computer-use@kcode-plugins-official) to open this computer’s file manager and sort screenshots in Downloads by month. Show me which files would move and where; after I approve, file them in batches. Leave other images alone and do not delete files.",
     },
     plugin: {
-      stableId: "computer-use@zcode-plugins-official",
+      stableId: "computer-use@kcode-plugins-official",
       label: { cn: "电脑控制", en: "Computer Use" },
     },
   },
@@ -279,11 +279,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "See what has changed in an industry with Wind",
     },
     prompt: {
-      cn: "我想了解 [目标行业] 最近三个月发生了什么变化。请使用已连接的 [@Wind 万得](plugin://wind@zcode-plugins-official) 数据，梳理最值得关注的行业指标、重要事件和研究观点，说明变化方向、数据截至日期及来源，最后给我一份能继续追查的行业速览。若 Wind 未连接或没有对应数据，先说明缺口，不要用别的来源冒充 Wind。",
-      en: "I want to understand changes in [target industry] over the past three months. Use connected [@Wind](plugin://wind@zcode-plugins-official) data to review key indicators, major events, and research views. Explain the direction of change, data dates, and sources in a concise industry brief. If Wind is unavailable, describe the gap rather than substituting another source without saying so.",
+      cn: "我想了解 [目标行业] 最近三个月发生了什么变化。请使用已连接的 [@Wind 万得](plugin://wind@kcode-plugins-official) 数据，梳理最值得关注的行业指标、重要事件和研究观点，说明变化方向、数据截至日期及来源，最后给我一份能继续追查的行业速览。若 Wind 未连接或没有对应数据，先说明缺口，不要用别的来源冒充 Wind。",
+      en: "I want to understand changes in [target industry] over the past three months. Use connected [@Wind](plugin://wind@kcode-plugins-official) data to review key indicators, major events, and research views. Explain the direction of change, data dates, and sources in a concise industry brief. If Wind is unavailable, describe the gap rather than substituting another source without saying so.",
     },
     plugin: {
-      stableId: "wind@zcode-plugins-official",
+      stableId: "wind@kcode-plugins-official",
       label: { cn: "Wind 万得", en: "Wind" },
     },
   },
@@ -297,11 +297,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Review a company’s operating and market performance",
     },
     prompt: {
-      cn: "帮我研究 [目标公司] 近四个季度的经营变化。请使用已连接的 [@Wind 万得](plugin://wind@zcode-plugins-official) 数据，整理收入、利润、现金流等能查到的关键指标；如果它是上市公司，再补充近一年的市场表现和可比公司。标清数据期间、口径与来源，把事实、分析和未确认的问题分开。",
-      en: "Research [target company] over the past four quarters using connected [@Wind](plugin://wind@zcode-plugins-official) data. Summarize available revenue, profit, and cash-flow metrics. If it is listed, add one year of market performance and relevant peers. State periods, definitions, and sources; separate facts, analysis, and open questions.",
+      cn: "帮我研究 [目标公司] 近四个季度的经营变化。请使用已连接的 [@Wind 万得](plugin://wind@kcode-plugins-official) 数据，整理收入、利润、现金流等能查到的关键指标；如果它是上市公司，再补充近一年的市场表现和可比公司。标清数据期间、口径与来源，把事实、分析和未确认的问题分开。",
+      en: "Research [target company] over the past four quarters using connected [@Wind](plugin://wind@kcode-plugins-official) data. Summarize available revenue, profit, and cash-flow metrics. If it is listed, add one year of market performance and relevant peers. State periods, definitions, and sources; separate facts, analysis, and open questions.",
     },
     plugin: {
-      stableId: "wind@zcode-plugins-official",
+      stableId: "wind@kcode-plugins-official",
       label: { cn: "Wind 万得", en: "Wind" },
     },
   },
@@ -315,11 +315,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Compare leading companies in an industry",
     },
     prompt: {
-      cn: "我想快速看懂 [目标行业] 的主要公司。请使用已连接的 [@同花顺](plugin://hexin@zcode-plugins-official) 数据，选取三到五家有代表性的公司，对比最近四个季度的增长、盈利、现金流和能查到的估值指标，解释差异与异常项。每组数字标明期间、口径和来源；没有数据的指标留空，不要给买卖建议。",
-      en: "Help me understand the main companies in [target industry]. Use connected [@RoyalFlush iFinD](plugin://hexin@zcode-plugins-official) data to compare three to five representative companies on recent growth, profitability, cash flow, and available valuation metrics. Explain differences and anomalies, show dates and sources, leave missing values blank, and avoid buy or sell advice.",
+      cn: "我想快速看懂 [目标行业] 的主要公司。请使用已连接的 [@同花顺](plugin://hexin@kcode-plugins-official) 数据，选取三到五家有代表性的公司，对比最近四个季度的增长、盈利、现金流和能查到的估值指标，解释差异与异常项。每组数字标明期间、口径和来源；没有数据的指标留空，不要给买卖建议。",
+      en: "Help me understand the main companies in [target industry]. Use connected [@RoyalFlush iFinD](plugin://hexin@kcode-plugins-official) data to compare three to five representative companies on recent growth, profitability, cash flow, and available valuation metrics. Explain differences and anomalies, show dates and sources, leave missing values blank, and avoid buy or sell advice.",
     },
     plugin: {
-      stableId: "hexin@zcode-plugins-official",
+      stableId: "hexin@kcode-plugins-official",
       label: { cn: "同花顺", en: "RoyalFlush iFinD" },
     },
   },
@@ -333,11 +333,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Summarize a company’s important recent filings",
     },
     prompt: {
-      cn: "帮我查看 [目标公司] 最近九十天有哪些值得关注的公告。请使用已连接的 [@同花顺](plugin://hexin@zcode-plugins-official)，按时间梳理公告中的主要事实、相关金额或指标，以及可能影响后续判断的待核实问题。附公告日期和原文入口；不要把推测写成公司已确认的计划。",
-      en: "Use connected [@RoyalFlush iFinD](plugin://hexin@zcode-plugins-official) to review [target company] announcements from the past 90 days. Build a timeline of important facts, figures, and questions to verify, with filing dates and original links. Do not present speculation as confirmed company plans.",
+      cn: "帮我查看 [目标公司] 最近九十天有哪些值得关注的公告。请使用已连接的 [@同花顺](plugin://hexin@kcode-plugins-official)，按时间梳理公告中的主要事实、相关金额或指标，以及可能影响后续判断的待核实问题。附公告日期和原文入口；不要把推测写成公司已确认的计划。",
+      en: "Use connected [@RoyalFlush iFinD](plugin://hexin@kcode-plugins-official) to review [target company] announcements from the past 90 days. Build a timeline of important facts, figures, and questions to verify, with filing dates and original links. Do not present speculation as confirmed company plans.",
     },
     plugin: {
-      stableId: "hexin@zcode-plugins-official",
+      stableId: "hexin@kcode-plugins-official",
       label: { cn: "同花顺", en: "RoyalFlush iFinD" },
     },
   },
@@ -351,11 +351,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Check a company’s ownership and business risks",
     },
     prompt: {
-      cn: "我想先了解 [目标企业] 是否值得进一步接触。请使用已连接的 [@天眼查](plugin://tianyancha@zcode-plugins-official)，核对企业当前登记状态、主要股东与实际控制人、对外投资，以及可查到的经营和司法风险。整理成简短尽调清单，标明信息更新日期与来源；同名企业先核对主体，风险记录不要直接等同于违法结论。",
-      en: "Use connected [@Tianyancha](plugin://tianyancha@zcode-plugins-official) to review [target company] before I contact it. Verify the legal entity, registration status, key shareholders, controlling parties, investments, and available business or legal risk records. Provide a concise due-diligence checklist with source dates. Do not treat a risk record alone as proof of wrongdoing.",
+      cn: "我想先了解 [目标企业] 是否值得进一步接触。请使用已连接的 [@天眼查](plugin://tianyancha@kcode-plugins-official)，核对企业当前登记状态、主要股东与实际控制人、对外投资，以及可查到的经营和司法风险。整理成简短尽调清单，标明信息更新日期与来源；同名企业先核对主体，风险记录不要直接等同于违法结论。",
+      en: "Use connected [@Tianyancha](plugin://tianyancha@kcode-plugins-official) to review [target company] before I contact it. Verify the legal entity, registration status, key shareholders, controlling parties, investments, and available business or legal risk records. Provide a concise due-diligence checklist with source dates. Do not treat a risk record alone as proof of wrongdoing.",
     },
     plugin: {
-      stableId: "tianyancha@zcode-plugins-official",
+      stableId: "tianyancha@kcode-plugins-official",
       label: { cn: "天眼查", en: "Tianyancha" },
     },
   },
@@ -369,11 +369,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Map a company’s related entities and key people",
     },
     prompt: {
-      cn: "帮我梳理 [目标企业] 的股东、对外投资、分支机构和关键人员之间的关系。请使用已连接的 [@天眼查](plugin://tianyancha@zcode-plugins-official)，先确认企业主体，再把直接关系和间接关系分开，给我一份关系清单，说明每条关系的依据、更新时间及仍需人工核实的地方。",
-      en: "Use connected [@Tianyancha](plugin://tianyancha@zcode-plugins-official) to map shareholders, investments, branches, and key people for [target company]. Verify the legal entity first, distinguish direct from indirect links, and provide a relationship list with evidence, update dates, and points requiring manual confirmation.",
+      cn: "帮我梳理 [目标企业] 的股东、对外投资、分支机构和关键人员之间的关系。请使用已连接的 [@天眼查](plugin://tianyancha@kcode-plugins-official)，先确认企业主体，再把直接关系和间接关系分开，给我一份关系清单，说明每条关系的依据、更新时间及仍需人工核实的地方。",
+      en: "Use connected [@Tianyancha](plugin://tianyancha@kcode-plugins-official) to map shareholders, investments, branches, and key people for [target company]. Verify the legal entity first, distinguish direct from indirect links, and provide a relationship list with evidence, update dates, and points requiring manual confirmation.",
     },
     plugin: {
-      stableId: "tianyancha@zcode-plugins-official",
+      stableId: "tianyancha@kcode-plugins-official",
       label: { cn: "天眼查", en: "Tianyancha" },
     },
   },
@@ -387,8 +387,8 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Research a company across three data sources",
     },
     prompt: {
-      cn: "我想全面了解 [目标企业]。请结合我已连接的 [@Wind 万得](plugin://wind@zcode-plugins-official)、[@同花顺](plugin://hexin@zcode-plugins-official) 和 [@天眼查](plugin://tianyancha@zcode-plugins-official)，分别核对经营与市场数据、近期公告及企业关系和风险，再整理一份简短研究报告。相互矛盾的数据请列出口径和时间差，不要强行合并；缺少某个数据源就说明未覆盖的部分。",
-      en: "Help me understand [target company]. Cross-check connected [@Wind](plugin://wind@zcode-plugins-official), [@RoyalFlush iFinD](plugin://hexin@zcode-plugins-official), and [@Tianyancha](plugin://tianyancha@zcode-plugins-official) for operating and market data, recent filings, company relationships, and risks. Write a concise report, preserve conflicting figures with their dates and definitions, and say which sources were unavailable.",
+      cn: "我想全面了解 [目标企业]。请结合我已连接的 [@Wind 万得](plugin://wind@kcode-plugins-official)、[@同花顺](plugin://hexin@kcode-plugins-official) 和 [@天眼查](plugin://tianyancha@kcode-plugins-official)，分别核对经营与市场数据、近期公告及企业关系和风险，再整理一份简短研究报告。相互矛盾的数据请列出口径和时间差，不要强行合并；缺少某个数据源就说明未覆盖的部分。",
+      en: "Help me understand [target company]. Cross-check connected [@Wind](plugin://wind@kcode-plugins-official), [@RoyalFlush iFinD](plugin://hexin@kcode-plugins-official), and [@Tianyancha](plugin://tianyancha@kcode-plugins-official) for operating and market data, recent filings, company relationships, and risks. Write a concise report, preserve conflicting figures with their dates and definitions, and say which sources were unavailable.",
     },
   },
   {
@@ -510,11 +510,11 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
       en: "Check a deployed website for obvious problems",
     },
     prompt: {
-      cn: "请使用 [@浏览器操作](plugin://browser-use@zcode-plugins-official) 打开 [测试地址]，像首次访问的用户一样检查首页导航、主要入口和一个无需登录即可完成的流程。找出无法打开的页面、失效操作或明显的内容与布局错误，附复现步骤、页面地址和截图。不要注册、付款或提交真实信息；登录后的部分标为未覆盖。",
-      en: "Use [@Browser Use](plugin://browser-use@zcode-plugins-official) to open [test URL] and check its navigation, main entry points, and one flow available without signing in. Report broken pages, controls, content, or layout with reproduction steps, URLs, and screenshots. Do not register, pay, or submit real information; mark signed-in areas as not covered.",
+      cn: "请使用 [@浏览器操作](plugin://browser-use@kcode-plugins-official) 打开 [测试地址]，像首次访问的用户一样检查首页导航、主要入口和一个无需登录即可完成的流程。找出无法打开的页面、失效操作或明显的内容与布局错误，附复现步骤、页面地址和截图。不要注册、付款或提交真实信息；登录后的部分标为未覆盖。",
+      en: "Use [@Browser Use](plugin://browser-use@kcode-plugins-official) to open [test URL] and check its navigation, main entry points, and one flow available without signing in. Report broken pages, controls, content, or layout with reproduction steps, URLs, and screenshots. Do not register, pay, or submit real information; mark signed-in areas as not covered.",
     },
     plugin: {
-      stableId: "browser-use@zcode-plugins-official",
+      stableId: "browser-use@kcode-plugins-official",
       label: { cn: "浏览器操作", en: "Browser Use" },
     },
   },

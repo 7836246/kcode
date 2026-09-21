@@ -1,46 +1,32 @@
-import {
-  BUILTIN_PROVIDER_TEMPLATE_IDS,
-  type AppSettings,
-  type Locale,
-  type ProviderFamilyDomain,
-} from "@zcode/shared";
-import type { ModelSelectionView } from "@zcode/services";
-import { encodeCustomModelValue } from "@/lib/zcodeCustomModelValue.js";
+import { isOfficialZhipuProviderTemplateId, type AppSettings } from "@kcode/shared";
+import { isApiKeyAccess } from "@kcode/provider";
+import type { ModelSelectionView, ProviderSettingsView } from "@kcode/services";
+import { encodeCustomModelValue } from "@/lib/kcodeCustomModelValue.js";
 
-export type ApiKeyProviderChoice = "zai" | "bigmodel";
+export type LoginApiKeyTemplate = ProviderSettingsView["providerTemplates"][number];
 
-export function resolveLoginApiKeyDefaultProvider(locale: Locale): ApiKeyProviderChoice {
-  return locale === "zh-CN" ? "bigmodel" : "zai";
+export function listLoginApiKeyTemplates(
+  templates: readonly LoginApiKeyTemplate[] | null | undefined,
+): LoginApiKeyTemplate[] {
+  return (templates ?? []).filter(
+    (template) =>
+      !isOfficialZhipuProviderTemplateId(template.templateId) &&
+      isApiKeyAccess(template.config.access),
+  );
 }
 
-export function resolveLoginApiKeyTemplateId(
-  choice: ApiKeyProviderChoice,
-): "zai-api" | "bigmodel-api" {
-  return choice === "zai"
-    ? BUILTIN_PROVIDER_TEMPLATE_IDS.zai
-    : BUILTIN_PROVIDER_TEMPLATE_IDS.bigmodel;
+export function resolveLoginApiKeyDefaultTemplateId(
+  templates: readonly LoginApiKeyTemplate[],
+): string | null {
+  return templates[0]?.templateId ?? null;
 }
 
-export function resolveLoginApiKeyProviderLabel(choice: ApiKeyProviderChoice): string {
-  // Welcome Screen API Key 错误提示需要使用 BigModel 品牌固定写法。
-  return choice === "zai" ? "Z.ai" : "BigModel";
-}
-
-function resolveLoginApiKeyProviderFamilyDomain(
-  choice: ApiKeyProviderChoice,
-): ProviderFamilyDomain {
-  return choice;
-}
-
-export function buildLoginApiKeySkipSettings(
-  choice: ApiKeyProviderChoice,
-  now: number,
-): Pick<
+export function buildLoginApiKeySkipSettings(now: number): Pick<
   AppSettings,
-  "providerFamilyDomain" | "providerFamilyDomainUpdatedAt" | "providerFamilyDomainMigrated"
+  "providerFamilyDomainUpdatedAt" | "providerFamilyDomainMigrated"
 > {
+  // 跳过只表示用户确认先不配供应商，不能再写入智谱 family domain。
   return {
-    providerFamilyDomain: resolveLoginApiKeyProviderFamilyDomain(choice),
     providerFamilyDomainUpdatedAt: now,
     providerFamilyDomainMigrated: true,
   };

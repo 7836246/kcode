@@ -2,8 +2,8 @@ import type {
   CommandPayloadMap,
   CommandType,
   WorkspaceHookReviewRequestPayload,
-} from "@zcode/shared/zcode-protocol-v4";
-import type { Hook } from "@zcode/shared";
+} from "@kcode/shared/kcode-protocol-v4";
+import type { Hook } from "@kcode/shared";
 import {
   findWorkspaceHookCommandBinding,
   findWorkspaceHookReviewBindingForItem,

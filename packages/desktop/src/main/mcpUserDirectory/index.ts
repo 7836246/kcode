@@ -14,7 +14,7 @@ import type {
   SettingsDirectorySource,
   NativeMcpServerRecord,
   SaveCliMcpToUserDirectoryRequest,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { McpConfigKeyName } from "./types.js";
 import { isRecord, readJsonObject, writeTextAtomic } from "./utils.js";
 import { migrateLegacyCommonMcp } from "./legacy.js";
@@ -34,11 +34,11 @@ interface DirectoryMcpDescriptor {
   configKeyName: McpConfigKeyName;
 }
 
-const ZCODE_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
-  source: "zcodeagentmcp",
-  directorySource: "zcode",
-  userConfigDirSegments: [".zcode", "cli"],
-  workspaceConfigDirSegments: [".zcode"],
+const KCODE_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
+  source: "kcodeagentmcp",
+  directorySource: "kcode",
+  userConfigDirSegments: [".kcode", "cli"],
+  workspaceConfigDirSegments: [".kcode"],
   fileName: "config.json",
   format: "json",
   configKeyName: "mcp.servers",
@@ -50,7 +50,7 @@ const ENABLED_KEY = "enabled";
 const LEGACY_ENABLE_KEY = "enable";
 
 const AGENTS_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
-  source: "zcodeagentmcp",
+  source: "kcodeagentmcp",
   directorySource: "agents",
   userConfigDirSegments: [".agents"],
   workspaceConfigDirSegments: [".agents"],
@@ -65,7 +65,7 @@ function resolveUserHomeDir(): string {
 }
 
 const DIRECTORY_MCP_DESCRIPTORS: readonly DirectoryMcpDescriptor[] = [
-  ZCODE_MCP_DESCRIPTOR,
+  KCODE_MCP_DESCRIPTOR,
   AGENTS_MCP_DESCRIPTOR,
 ];
 
@@ -86,7 +86,7 @@ function buildDirectoryConfigPath(
 }
 
 function getUserCliConfigPath(): string {
-  return buildDirectoryConfigPath(ZCODE_MCP_DESCRIPTOR, "user");
+  return buildDirectoryConfigPath(KCODE_MCP_DESCRIPTOR, "user");
 }
 
 function buildDirectoryMcpLocation(
@@ -335,26 +335,26 @@ async function readDirectoryServersFromPreferredSources(
   scope: Exclude<McpScope, "common">,
   workspacePath?: string,
 ): Promise<NativeMcpServerRecord[]> {
-  const zcodeServers = await readDirectoryServersFromFile(
-    ZCODE_MCP_DESCRIPTOR,
+  const kcodeServers = await readDirectoryServersFromFile(
+    KCODE_MCP_DESCRIPTOR,
     scope,
     workspacePath,
   );
-  // `.zcode` 是强优先级来源；只要读到 MCP server，同 scope 的 `.agents` 就不再参与。
-  if (zcodeServers.length > 0) {
-    return zcodeServers;
+  // `.kcode` 是强优先级来源；只要读到 MCP server，同 scope 的 `.agents` 就不再参与。
+  if (kcodeServers.length > 0) {
+    return kcodeServers;
   }
   return readDirectoryServersFromFile(AGENTS_MCP_DESCRIPTOR, scope, workspacePath);
 }
 
-async function writeZCodeServersToFile(
+async function writeKCodeServersToFile(
   scope: Exclude<McpScope, "common">,
   servers: Record<string, Record<string, unknown>>,
   workspacePath?: string,
 ): Promise<void> {
-  const filePath = buildDirectoryConfigPath(ZCODE_MCP_DESCRIPTOR, scope, workspacePath);
+  const filePath = buildDirectoryConfigPath(KCODE_MCP_DESCRIPTOR, scope, workspacePath);
   const current = (await readJsonObject(filePath)) ?? {};
-  const next = writeServerMapToJson(current, ZCODE_MCP_DESCRIPTOR.configKeyName, servers);
+  const next = writeServerMapToJson(current, KCODE_MCP_DESCRIPTOR.configKeyName, servers);
   await writeTextAtomic(filePath, `${JSON.stringify(next, null, 2)}\n`);
 }
 
@@ -363,7 +363,7 @@ export async function loadCliMcpFromUserDirectory(
 ): Promise<LoadCliMcpFromUserDirectoryResult> {
   const servers: NativeMcpServerRecord[] = [];
 
-  // 去掉其他 provider 后，ZCode Agent 只按目录约定读取；先 workspace，再 user。
+  // 去掉其他 provider 后，KCode Agent 只按目录约定读取；先 workspace，再 user。
   if (request?.workspacePath) {
     servers.push(
       ...(await readDirectoryServersFromPreferredSources("workspace", request.workspacePath)),
@@ -385,7 +385,7 @@ export async function saveCliMcpToUserDirectory(
     const scope: Exclude<McpScope, "common"> = payload.projectPath ? "workspace" : "user";
     const location =
       payload.location ??
-      buildDirectoryMcpLocation(ZCODE_MCP_DESCRIPTOR, scope, payload.projectPath);
+      buildDirectoryMcpLocation(KCODE_MCP_DESCRIPTOR, scope, payload.projectPath);
     await writeServerEnabledToFile(
       findDescriptorByLocation(location),
       location,
@@ -398,7 +398,7 @@ export async function saveCliMcpToUserDirectory(
 
   const scope: Exclude<McpScope, "common"> = payload.projectPath ? "workspace" : "user";
   const existingServers = await readDirectoryServersFromFile(
-    ZCODE_MCP_DESCRIPTOR,
+    KCODE_MCP_DESCRIPTOR,
     scope,
     payload.projectPath,
   );
@@ -415,5 +415,5 @@ export async function saveCliMcpToUserDirectory(
     delete nextServers[payload.name];
   }
 
-  await writeZCodeServersToFile(scope, nextServers, payload.projectPath);
+  await writeKCodeServersToFile(scope, nextServers, payload.projectPath);
 }

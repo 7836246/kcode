@@ -17,7 +17,7 @@ export type DynamicWorkflowMode = (typeof DYNAMIC_WORKFLOW_MODES)[number];
  *   - 打包 production：删除继承值，永不写入。
  * 没有 main 的 Web/server Host 直接读进程环境（运维/开发者设置）。
  */
-export const ZCODE_DYNAMIC_WORKFLOW_MODE_ENV = "ZCODE_DYNAMIC_WORKFLOW_MODE";
+export const KCODE_DYNAMIC_WORKFLOW_MODE_ENV = "KCODE_DYNAMIC_WORKFLOW_MODE";
 
 /** 服务端缺省、格式非法或请求失败时的取值：fail-closed，与闲时任务灰度一致。 */
 export const DEFAULT_DYNAMIC_WORKFLOW_MODE: DynamicWorkflowMode = "disabled";
@@ -64,7 +64,7 @@ export function resolveDynamicWorkflowClientConfig(input: {
   remote: unknown;
   env?: Record<string, string | undefined>;
 }): DynamicWorkflowClientConfig {
-  const override = normalizeDynamicWorkflowMode(input.env?.[ZCODE_DYNAMIC_WORKFLOW_MODE_ENV]);
+  const override = normalizeDynamicWorkflowMode(input.env?.[KCODE_DYNAMIC_WORKFLOW_MODE_ENV]);
   if (override) return createDynamicWorkflowClientConfig(override, "override");
   const remoteMode = normalizeDynamicWorkflowMode(
     typeof input.remote === "object" && input.remote !== null

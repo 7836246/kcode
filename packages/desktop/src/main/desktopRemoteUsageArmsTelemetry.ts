@@ -6,7 +6,7 @@ import type {
   RemoteUsageRemoteKind,
   RemoteUsageResult,
   RemoteWorkspaceConnectTrigger,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import {
   dispatchFinalArmsCustomEvent,
   type FinalArmsCustomEventE2EController,

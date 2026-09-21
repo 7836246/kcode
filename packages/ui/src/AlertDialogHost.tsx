@@ -9,11 +9,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog.js";
 import { cn } from "@/components/lib/utils.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useAlertDialogStore } from "@/store/alertDialogStore.js";
 
 export function AlertDialogHost() {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const pendingRequest = useAlertDialogStore((state) => state.pendingRequest);
   const settleAlert = useAlertDialogStore((state) => state.settleAlert);
 

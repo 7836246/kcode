@@ -1,21 +1,21 @@
-import type { IRemoteBackend, RemoteUploadOptions } from "@zcode/server/remote";
-import { quotePosixPathArg } from "@zcode/server/remote/posixShell.js";
-import type { TraceId, ZCodePromptAttachment } from "@zcode/shared";
+import type { IRemoteBackend, RemoteUploadOptions } from "@kcode/server/remote";
+import { quotePosixPathArg } from "@kcode/server/remote/posixShell.js";
+import type { TraceId, KCodePromptAttachment } from "@kcode/shared";
 import { randomUUID } from "node:crypto";
 
-const REMOTE_PROMPT_ATTACHMENT_ROOT = "~/.zcode/tmp/prompt-attachments";
-const REMOTE_PROMPT_ATTACHMENT_RELATIVE_ROOT = ".zcode/tmp/prompt-attachments";
+const REMOTE_PROMPT_ATTACHMENT_ROOT = "~/.kcode/tmp/prompt-attachments";
+const REMOTE_PROMPT_ATTACHMENT_RELATIVE_ROOT = ".kcode/tmp/prompt-attachments";
 
 interface RemotePromptAttachmentMaterializeInput {
   taskId?: string;
   content: string;
   traceId: TraceId | string;
-  attachments?: ZCodePromptAttachment[];
+  attachments?: KCodePromptAttachment[];
 }
 
 interface RemotePromptAttachmentMaterializeResult {
   content: string;
-  attachments?: ZCodePromptAttachment[];
+  attachments?: KCodePromptAttachment[];
   uploadedCount: number;
 }
 
@@ -32,7 +32,7 @@ export async function materializeRemotePromptAttachments(
   }
 
   const replacements = new Map<string, string>();
-  const nextAttachments: ZCodePromptAttachment[] = [];
+  const nextAttachments: KCodePromptAttachment[] = [];
   let remoteRootPromise: Promise<string> | undefined;
   let uploadedCount = 0;
   let changed = false;
@@ -88,7 +88,7 @@ export async function materializeRemotePromptAttachments(
     nextAttachments.push({
       ...attachment,
       localPath: remotePath,
-    } as ZCodePromptAttachment);
+    } as KCodePromptAttachment);
     replacements.set(localPath, remotePath);
     uploadedCount += 1;
     changed = true;
@@ -222,7 +222,7 @@ async function waitForRemoteCommand(
   });
 }
 
-function getAttachmentLocalPath(attachment: ZCodePromptAttachment): string | undefined {
+function getAttachmentLocalPath(attachment: KCodePromptAttachment): string | undefined {
   const localPath = attachment.localPath?.trim();
   return localPath ? attachment.localPath : undefined;
 }
@@ -353,7 +353,7 @@ function createRemotePromptAttachmentServiceProxy<T extends object>(
           traceId,
           content,
           attachments: Array.isArray((params as { attachments?: unknown }).attachments)
-            ? (params as { attachments?: ZCodePromptAttachment[] }).attachments
+            ? (params as { attachments?: KCodePromptAttachment[] }).attachments
             : undefined,
         });
         const nextParams: Record<string, unknown> = {

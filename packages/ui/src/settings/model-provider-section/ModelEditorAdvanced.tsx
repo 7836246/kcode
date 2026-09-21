@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ChevronRightIcon } from "lucide-react";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type { ProviderModelDraftCommitResult } from "@/settings/model-provider-section/ProviderModelMetadata.js";
 
 type ErrorField = Extract<ProviderModelDraftCommitResult, { status: "invalid" }>["field"];
@@ -22,7 +22,7 @@ export function ModelEditorAdvanced({
   validationAttempt: number;
   children: ReactNode;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const ref = useRef<HTMLDivElement>(null);
   const contentId = useId();
   const [expanded, setExpanded] = useState(false);

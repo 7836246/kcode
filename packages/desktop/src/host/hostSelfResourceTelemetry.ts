@@ -7,11 +7,11 @@
  * 进程内因此仍然只有一个遥测定时器；任何一步失败只丢当前样本，Host 服务不受影响。
  */
 
-import { HostResponseTypes } from "@zcode/shared";
+import { HostResponseTypes } from "@kcode/shared";
 import {
   createNodeSelfResourceSampler,
   type NodeSelfResourceSamplerOptions,
-} from "@zcode/shared/node";
+} from "@kcode/shared/node";
 import {
   startHostMemoryDiagnosticsLog,
   type StartHostMemoryDiagnosticsLogOptions,

@@ -1,4 +1,4 @@
-# ZCode Design System
+# KCode Design System
 
 Portable design system for AI-assisted UI work in this repository.
 
@@ -19,7 +19,7 @@ Treat violations of this section as design-system defects, not stylistic prefere
 
 ## Product Character
 
-ZCode is a desktop-first and web-compatible AI workspace. The interface should feel calm, dense, and operational rather than decorative.
+KCode is a desktop-first and web-compatible AI workspace. The interface should feel calm, dense, and operational rather than decorative.
 
 Design for:
 
@@ -60,7 +60,7 @@ Default light and dark CSS variables still exist as fallback foundations, but ne
 - **Accent Surface**: `--color-accent`
   Use for weak emphasis blocks, selected highlights, and low-intensity branded surfaces.
 - **Background**: `--color-background`
-  Default page and app workspace background.
+  Default page and app workspace background. Light theme uses ChatGPT / Codex white (`#ffffff`); sidebar chrome stays near-white (`#fafafa`).
 - **Background Alt**: `--color-background-alt`
   Alternate page region background when the layout needs a soft separation.
 - **Header / Panel / Sidebar**: `--color-header`, `--color-panel`, `--color-sidebar`
@@ -176,7 +176,8 @@ The dynamic-workflow timeline draws with a feature-scoped token family:
 - Never replace semantic tokens with ad hoc values like `text-white/60`, `border-white/10`, or arbitrary neutral alpha fills.
 
 - `DesktopWindowFrame` uses `bg-background-alt` on macOS desktop. Windows, Linux, and Web keep `bg-background-win-alt`; child surface colors remain independent.
-- Linux desktop uses a `16px` outer window-shell radius around the `12px` workspace panels and their `4px` outer inset. Keep the shell radius and compositor clip path equal; maximized windows use `0px`.
+- Desktop conversation, terminal, Side Pane, and settings content frames use a `16px` (`rounded-2xl`) radius with a `4px` inset on all sides, including the gap between the sidebar and the content card. These layout frames do not count toward nested content radius levels.
+- Linux desktop uses a `20px` outer window-shell radius around the `16px` workspace panels and their `4px` outer inset so the arcs stay concentric. Keep the shell radius and compositor clip path equal; maximized windows use `0px`.
 
 ## Typography
 
@@ -297,6 +298,8 @@ Radius follows the nesting of visible rounded containers, not component importan
 The following explicit exceptions may retain `rounded-2xl`; do not extend them to other components based only on size or importance:
 
 - **Main chat input shell**: the actual `ChatPromptEditor` input shell may use `rounded-2xl`. Its drag overlay matches the shell because it covers the same surface, rather than introducing a nested container.
+- **Desktop content frames**: workspace conversation / terminal / Side Pane frames and the settings content card may use `rounded-2xl`. They are layout frames and do not force nested cards down a level.
+- **Settings sidebar nav rows**: selected and hover pills may use `rounded-2xl` so they match the ChatGPT-style rail.
 - **Conversation status floating panel**: the shared shell may retain `rounded-2xl` across collapsed and expanded presentations.
 - **Toast**: the independent notification shell may retain `rounded-2xl`.
 - **Brand icon backplates**: welcome-screen brand art and plugin-detail icons may retain `rounded-2xl` as part of their icon shape. This is not a general exception for icon buttons or content cards.
@@ -460,7 +463,7 @@ Overlay rules:
 
 ## Elevation and Depth
 
-ZCode should use restrained depth. Layer primarily through background contrast, borders, and radius before relying on heavy shadows.
+KCode should use restrained depth. Layer primarily through background contrast, borders, and radius before relying on heavy shadows.
 
 Recommended elevation levels:
 
@@ -484,7 +487,7 @@ Depth rules:
 
 ## Workspace layout
 
-Desktop and wide Web workspace content uses independent conversation, bottom terminal, and Side Pane frames. The conversation frame contains WorkspaceHeader and conversation; the optional terminal has its own frame below it, and Side Pane owns its tab bar. Frames use their own background and border, with 4px resizable gaps matching the macOS outer inset. Resize handles keep a transparent 4px hit area and show a 2px tertiary foreground (`foreground-subtlest/50`) line on hover, focus or drag. The indicator extends along the panel edge, inset by the panel radius at both ends, with rounded ends and no mask. Layout frames do not count toward content radius levels. Mobile remote control retains its single-column and drawer presentation.
+Desktop and wide Web workspace content uses independent conversation, bottom terminal, and Side Pane frames. The conversation frame contains WorkspaceHeader and conversation; the optional terminal has its own frame below it, and Side Pane owns its tab bar. Frames use their own background and border, with 4px resizable gaps matching the outer inset, including the gap between the sidebar and the content card. Resize handles keep a transparent 4px hit area and show a 2px tertiary foreground (`foreground-subtlest/50`) line on hover, focus or drag. The indicator extends along the panel edge, inset by the panel radius at both ends, with rounded ends and no mask. Layout frames do not count toward content radius levels. Mobile remote control retains its single-column and drawer presentation.
 
 ## Responsive Behavior
 

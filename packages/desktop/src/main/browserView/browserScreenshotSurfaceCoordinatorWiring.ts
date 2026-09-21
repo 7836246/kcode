@@ -1,4 +1,4 @@
-import { PlatformChannels } from "@zcode/shared";
+import { PlatformChannels } from "@kcode/shared";
 import { DesktopBrowserScreenshotActivityController } from "./browserScreenshotActivityController.js";
 import { DesktopBrowserScreenshotSurfaceCoordinator } from "./browserScreenshotSurfaceCoordinator.js";
 

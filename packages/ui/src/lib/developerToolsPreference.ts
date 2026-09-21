@@ -1,6 +1,6 @@
 export const DEVELOPER_TOOLS_STORAGE_KEYS = [
-  "zcode:developer-tools:enabled",
-  "zcode:token-debug:enabled",
+  "kcode:developer-tools:enabled",
+  "kcode:token-debug:enabled",
 ] as const;
 
 const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);

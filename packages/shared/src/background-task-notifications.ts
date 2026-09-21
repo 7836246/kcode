@@ -1,8 +1,8 @@
-import type { ZCodeMessageWithParts } from "./zcode-protocol-legacy-types.js";
-import { textFromZCodeMessageParts } from "./zcode-protocol-legacy-types.js";
-import type { ZCodeStreamEvent } from "./zcode-task-types-core.js";
+import type { KCodeMessageWithParts } from "./kcode-protocol-legacy-types.js";
+import { textFromKCodeMessageParts } from "./kcode-protocol-legacy-types.js";
+import type { KCodeStreamEvent } from "./kcode-task-types-core.js";
 
-export interface ZCodeBackgroundTaskNotificationInfo {
+export interface KCodeBackgroundTaskNotificationInfo {
   error?: string;
   outputFile?: string;
   result?: string;
@@ -11,9 +11,9 @@ export interface ZCodeBackgroundTaskNotificationInfo {
   taskId?: string;
 }
 
-export function parseZCodeBackgroundTaskNotificationText(
+export function parseKCodeBackgroundTaskNotificationText(
   text: string | undefined,
-): { notification: ZCodeBackgroundTaskNotificationInfo; toolUseId: string } | null {
+): { notification: KCodeBackgroundTaskNotificationInfo; toolUseId: string } | null {
   const trimmed = text?.trim();
   if (!trimmed?.startsWith("<task-notification>")) {
     return null;
@@ -35,16 +35,16 @@ export function parseZCodeBackgroundTaskNotificationText(
   };
 }
 
-export function collectZCodeBackgroundTaskNotificationsByToolUseId(
-  messages: readonly ZCodeMessageWithParts[],
-): Map<string, ZCodeBackgroundTaskNotificationInfo> {
-  const notifications = new Map<string, ZCodeBackgroundTaskNotificationInfo>();
+export function collectKCodeBackgroundTaskNotificationsByToolUseId(
+  messages: readonly KCodeMessageWithParts[],
+): Map<string, KCodeBackgroundTaskNotificationInfo> {
+  const notifications = new Map<string, KCodeBackgroundTaskNotificationInfo>();
   for (const message of messages) {
     if (message.info.role !== "user") {
       continue;
     }
-    const parsed = parseZCodeBackgroundTaskNotificationText(
-      textFromZCodeMessageParts(message.parts),
+    const parsed = parseKCodeBackgroundTaskNotificationText(
+      textFromKCodeMessageParts(message.parts),
     );
     if (!parsed) {
       continue;
@@ -54,10 +54,10 @@ export function collectZCodeBackgroundTaskNotificationsByToolUseId(
   return notifications;
 }
 
-export function zcodeBackgroundTaskNotificationToolUpdateStatus(
+export function kcodeBackgroundTaskNotificationToolUpdateStatus(
   status: string | undefined,
 ): Extract<
-  Extract<ZCodeStreamEvent, { type: "tool_call_update" }>["status"],
+  Extract<KCodeStreamEvent, { type: "tool_call_update" }>["status"],
   "completed" | "failed" | "stopped"
 > {
   if (status === "failed" || status === "lost") {
@@ -70,22 +70,22 @@ export function zcodeBackgroundTaskNotificationToolUpdateStatus(
   return "completed";
 }
 
-export function attachZCodeBackgroundTaskNotificationToRaw(
+export function attachKCodeBackgroundTaskNotificationToRaw(
   raw: unknown,
-  notification: ZCodeBackgroundTaskNotificationInfo | undefined,
+  notification: KCodeBackgroundTaskNotificationInfo | undefined,
 ): unknown {
   if (!notification) {
     return raw;
   }
   const record = asPlainRecord(raw);
   const meta = asPlainRecord(record._meta);
-  const zcode = asPlainRecord(meta.zcode);
+  const kcode = asPlainRecord(meta.kcode);
   return {
     ...record,
     _meta: {
       ...meta,
-      zcode: {
-        ...zcode,
+      kcode: {
+        ...kcode,
         taskNotification: notification,
       },
     },

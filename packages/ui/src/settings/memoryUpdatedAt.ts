@@ -1,4 +1,4 @@
-import type { Locale } from "@zcode/shared";
+import type { Locale } from "@kcode/shared";
 import type { IntlInstance } from "@/i18n/IntlProvider.js";
 
 const MINUTE_MS = 60_000;

@@ -1,4 +1,4 @@
-import type { BrowserViewScreenshotSurfacePreparePayload } from "@zcode/shared";
+import type { BrowserViewScreenshotSurfacePreparePayload } from "@kcode/shared";
 import type { CSSProperties } from "react";
 import { UnifiedBrowserView } from "@/browser-use/UnifiedBrowserView.js";
 import { cn } from "@/components/lib/utils.js";

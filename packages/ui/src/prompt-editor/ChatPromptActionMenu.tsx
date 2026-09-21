@@ -1,3 +1,4 @@
+import { TID_CHAT_MODE_SELECT_ITEM, testId } from "@kcode/shared";
 import { ContextMentionOptionContent } from "@/mentions/components/ContextMentionOptionContent.js";
 import { useFileMentionProvider } from "@/mentions/providers/fileMentionProvider.js";
 import { useSessionsMentionProvider } from "@/mentions/providers/sessionsMentionProvider.js";
@@ -9,7 +10,15 @@ import { getSessionMentionWorkspaceScope } from "@/mentions/mentionPanelRouting.
 import { useChatViewActiveTaskProvider } from "@/v4/activeTaskProvider.js";
 import { useMemo, useRef, useState, type MutableRefObject } from "react";
 import type { EditorState } from "lexical";
-import { GoalIcon, Info, PaperclipIcon, PlusIcon, Workflow } from "lucide-react";
+import {
+  CheckIcon,
+  GoalIcon,
+  Info,
+  LightbulbIcon,
+  PaperclipIcon,
+  PlusIcon,
+  Workflow,
+} from "lucide-react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { Button } from "@/components/ui/button.js";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover.js";
@@ -17,7 +26,7 @@ import { buildSlashApplyMentionPayload } from "@/lib/slashApplyMentionPayload.js
 import { useSlashCommands } from "@/hooks/useSlashCommands.js";
 import { normalizeSlashCommandValue } from "@/slashCommandHelpers.js";
 import type { LexicalChatInputHandle } from "@/LexicalChatInput.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { MentionPanel, type MentionPanelSection } from "@/mentions/components/MentionPanel.js";
 import { PluginMentionOptionContent } from "@/mentions/components/PluginMentionOptionContent.js";
 import { usePluginsMentionProvider } from "@/mentions/providers/pluginsMentionProvider.js";
@@ -31,10 +40,12 @@ const QUICK_COMMANDS = {
   workflow: { id: "add-workflow", labelId: "chat.composer.addWorkflow", Icon: Workflow },
 } as const;
 type QuickCommand = keyof typeof QUICK_COMMANDS;
+type AddMenuAction = { kind: "attach" } | { kind: "plan" } | { kind: "command"; command: QuickCommand };
 
 export function ChatPromptActionMenu({
   actionMenuTitle,
   attachmentAction,
+  planAction,
   disabled,
   disabledReason,
   inputApiRef,
@@ -52,6 +63,11 @@ export function ChatPromptActionMenu({
     testId?: string;
     menuItemTestId?: string;
   };
+  /** Codex Learn 风格：添加菜单里的计划开关，不插入 mention。 */
+  planAction?: {
+    enabled: boolean;
+    onToggle: (enabled: boolean) => void;
+  };
   disabled?: boolean;
   disabledReason?: string;
   inputApiRef: MutableRefObject<LexicalChatInputHandle | null>;
@@ -62,7 +78,7 @@ export function ChatPromptActionMenu({
   showPlugins: boolean;
   excludedSlashCommandNames?: readonly string[];
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [open, setOpen] = useState(false);
   const [quickCommands, setQuickCommands] = useState<QuickCommand[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -117,12 +133,13 @@ export function ChatPromptActionMenu({
     })),
   );
   const mentionItems = [...plugins.items, ...contextGroups.flatMap((group) => group.items)];
-  const attachmentCount = attachmentAction ? 1 : 0;
-  const options = [
-    ...(attachmentAction ? [{ disabled: false }] : []),
-    ...quickCommands.map(() => ({ disabled: false })),
-    ...mentionItems,
+  const addActions: AddMenuAction[] = [
+    ...(attachmentAction ? ([{ kind: "attach" }] as const) : []),
+    ...(planAction ? ([{ kind: "plan" }] as const) : []),
+    ...quickCommands.map((command) => ({ kind: "command" as const, command })),
   ];
+  const options = [...addActions.map(() => ({ disabled: false })), ...mentionItems];
+  const planLabel = intl.formatMessage({ id: "mode.label.glm.plan" });
   const sections: MentionPanelSection[] = [
     {
       id: "add",
@@ -144,6 +161,29 @@ export function ChatPromptActionMenu({
                     >
                       {attachmentAction.label}
                     </span>
+                  </>
+                ),
+              },
+            ]
+          : []),
+        ...(planAction
+          ? [
+              {
+                id: "add-plan",
+                label: planLabel,
+                description: "",
+                content: (
+                  <>
+                    <LightbulbIcon className="size-4 shrink-0" />
+                    <span
+                      className="min-w-0 flex-1 truncate text-ui-base font-medium"
+                      data-testid={testId(TID_CHAT_MODE_SELECT_ITEM, "plan")}
+                    >
+                      {planLabel}
+                    </span>
+                    {planAction.enabled ? (
+                      <CheckIcon className="ml-auto size-4 shrink-0 text-foreground-subtle" />
+                    ) : null}
                   </>
                 ),
               },
@@ -195,12 +235,19 @@ export function ChatPromptActionMenu({
 
   const selectOption = (index: number) => {
     if (disabled || !options[index] || options[index].disabled) return;
-    setOpen(false);
-    if (attachmentAction && index === 0) {
-      attachmentAction.onSelect();
+    const addAction = addActions[index];
+    if (addAction?.kind === "attach") {
+      setOpen(false);
+      attachmentAction?.onSelect();
       return;
     }
-    const command = quickCommands[index - attachmentCount];
+    if (addAction?.kind === "plan") {
+      setOpen(false);
+      planAction?.onToggle(!(planAction.enabled));
+      return;
+    }
+    setOpen(false);
+    const command = addAction?.kind === "command" ? addAction.command : undefined;
     const item = command
       ? buildSlashApplyMentionPayload({
           id: `slash:${command}`,
@@ -209,7 +256,7 @@ export function ChatPromptActionMenu({
           label: `/${command}`,
           description: "",
         })
-      : mentionItems[index - attachmentCount - quickCommands.length];
+      : mentionItems[index - addActions.length];
     if (!item) return;
     restoreEditorFocusRef.current = true;
     inputApiRef.current?.insertMention(item, selectionStateRef.current);

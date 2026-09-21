@@ -7,7 +7,7 @@ index 6d3fc0792a237a90ab5f1d0a7a4bc20434ee1981..ef4f93163d649848ea1ca58f7f623f8d
                    };
                  }
 +                if (part.mediaType.startsWith("video/")) {
-+                  // zcode patch: video/* file part -> OpenAI-compatible video_url content part.
++                  // kcode patch: video/* file part -> OpenAI-compatible video_url content part.
 +                  // Video bytes are serialized as a base64 data URL.
 +                  return {
 +                    type: "video_url",
@@ -29,7 +29,7 @@ index 499fd17e4c9ac77352789c1f1f69ed32809218a4..759273c1a5035dfb699753164dd79b0d
                    };
                  }
 +                if (part.mediaType.startsWith("video/")) {
-+                  // zcode patch: video/* file part -> OpenAI-compatible video_url content part.
++                  // kcode patch: video/* file part -> OpenAI-compatible video_url content part.
 +                  // Video bytes are serialized as a base64 data URL.
 +                  return {
 +                    type: "video_url",

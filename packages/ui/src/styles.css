@@ -34,7 +34,7 @@
  */
 
 /*
- * styles.css 是从 @zcode/ui 包里被 web/desktop 间接引入的，Tailwind v4 在这种工作区场景下
+ * styles.css 是从 @kcode/ui 包里被 web/desktop 间接引入的，Tailwind v4 在这种工作区场景下
  * 仅靠 source(".") 不能稳定把 UI 包里的 TSX 组件都加入扫描，像 Select 这类新组件用到的
  * bg-popover、shadow-md、overflow-x-hidden 等 utility 会直接缺席，页面就只剩下一部分“碰巧命中”的通用类。
  * 这里显式补一条 @source，让 Tailwind 始终扫描 UI 包源码，避免下拉框、菜单这类组件渲染成半残状态。
@@ -461,9 +461,11 @@ body {
 .theme-zai-light {
   --animated-gradient-text-strong: rgba(13, 13, 13, 1);
   --animated-gradient-text-soft: rgba(13, 13, 13, 0.22);
-  --color-background: #f8f8f8;
-  --color-background-win-alt: #ececee;
-  --color-background-alt: color-mix(in oklab, var(--color-background) 70%, transparent);
+  /* ChatGPT / Codex 浅色是纯白，不是暖米色。 */
+  --color-background: #ffffff;
+  --color-background-win-alt: #fafafa;
+  /* 70% 白叠在 macOS vibrancy 上会把侧栏压成一块暗灰；近白实色才能贴上内容区。 */
+  --color-background-alt: #fafafa;
   --color-brand: #000000;
   --color-trajectory-user: #2563eb;
   --color-trajectory-assistant: #0f766e;
@@ -482,7 +484,7 @@ body {
   --color-selected: rgba(13, 13, 13, 0.05);
   --color-header: #ffffff;
   --color-panel: #ffffff;
-  --color-sidebar: #f0f0f0;
+  --color-sidebar: #fafafa;
   --color-surface: rgba(13, 13, 13, 0.03);
   --color-surface-hover: rgba(13, 13, 13, 0.05);
   --color-card: #ffffff;
@@ -490,7 +492,7 @@ body {
   --color-card-border: var(--color-border);
   --color-popover: #ffffff;
   --color-popover-foreground: var(--color-foreground);
-  --color-popover-header: #f8f8f8;
+  --color-popover-header: #ffffff;
   --color-popover-border: var(--color-border);
   --color-input: #ffffff;
   --color-input-focused: var(--color-input);
@@ -537,11 +539,11 @@ body {
   --color-usage-heatmap-2: color-mix(in oklab, #0b7fff 36%, var(--color-surface));
   --color-usage-heatmap-3: color-mix(in oklab, #0b7fff 58%, var(--color-surface));
   --color-usage-heatmap-4: color-mix(in oklab, #0066dd 82%, var(--color-surface));
-  --color-tab: #f0f0f0;
+  --color-tab: #fafafa;
   --color-tab-active: #ffffff;
   --color-tab-border: var(--color-border);
   --color-menu: #ffffff;
-  --color-menu-hover: #f0f0f0;
+  --color-menu-hover: #f4f4f4;
   --color-primary: #000000;
   --color-primary-foreground: #ffffff;
   --color-secondary: #e6e6e6;
@@ -576,7 +578,7 @@ body {
   --color-git-ignored: var(--color-foreground-subtlest);
   --color-git-descendant: #e07b00;
   --color-toast: #ffffff;
-  --color-tooltip: #f0f0f0;
+  --color-tooltip: #f4f4f4;
   --color-tooltip-foreground: #0d0d0d;
   --color-tooltip-tag: #e6e6e6;
   --color-tooltip-tag-foreground: #5c5c5c;
@@ -800,11 +802,11 @@ body {
  * 会命中上面的全局滚动条样式，在幻灯片内部露出滚动条。幻灯片内容不存在用户滚动交互，
  * 这里整体隐藏渲染表面内部的原生滚动条。
  */
-[data-zcode-pptx-render-surface] * {
+[data-kcode-pptx-render-surface] * {
   scrollbar-width: none;
 }
 
-[data-zcode-pptx-render-surface] *::-webkit-scrollbar {
+[data-kcode-pptx-render-surface] *::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
@@ -897,7 +899,7 @@ body {
   }
 }
 
-@keyframes zcode-stream-text-in {
+@keyframes kcode-stream-text-in {
   0% {
     opacity: 0;
   }
@@ -907,7 +909,7 @@ body {
   }
 }
 
-@keyframes zcode-draft-prompt-waterfall {
+@keyframes kcode-draft-prompt-waterfall {
   from {
     opacity: 0;
     clip-path: inset(0 0 100% 0);
@@ -921,13 +923,13 @@ body {
   }
 }
 
-.zcode-draft-prompt-waterfall {
-  animation: zcode-draft-prompt-waterfall 260ms cubic-bezier(0.22, 1, 0.36, 1)
-    var(--zcode-draft-prompt-waterfall-delay, 0ms) both;
+.kcode-draft-prompt-waterfall {
+  animation: kcode-draft-prompt-waterfall 260ms cubic-bezier(0.22, 1, 0.36, 1)
+    var(--kcode-draft-prompt-waterfall-delay, 0ms) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zcode-draft-prompt-waterfall {
+  .kcode-draft-prompt-waterfall {
     animation: none;
   }
 }
@@ -960,7 +962,7 @@ body {
   }
 }
 
-@keyframes zcode-stream-marker-in {
+@keyframes kcode-stream-marker-in {
   0% {
     color: transparent;
   }
@@ -970,35 +972,35 @@ body {
   }
 }
 
-[data-zcode-stream-animate="true"] {
-  animation: zcode-stream-text-in 900ms cubic-bezier(0.16, 1, 0.3, 1)
-    var(--zcode-stream-animation-delay, 0ms) both;
+[data-kcode-stream-animate="true"] {
+  animation: kcode-stream-text-in 900ms cubic-bezier(0.16, 1, 0.3, 1)
+    var(--kcode-stream-animation-delay, 0ms) both;
   will-change: opacity;
 }
 
-[data-zcode-stream-marker-animate="true"]::marker {
-  animation: zcode-stream-marker-in 900ms cubic-bezier(0.16, 1, 0.3, 1)
-    var(--zcode-stream-animation-delay, 0ms) both;
+[data-kcode-stream-marker-animate="true"]::marker {
+  animation: kcode-stream-marker-in 900ms cubic-bezier(0.16, 1, 0.3, 1)
+    var(--kcode-stream-animation-delay, 0ms) both;
 }
 
-[data-zcode-tool-stream-animate="true"],
-[data-zcode-chat-loading-animate="true"] {
-  animation: zcode-stream-text-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+[data-kcode-tool-stream-animate="true"],
+[data-kcode-chat-loading-animate="true"] {
+  animation: kcode-stream-text-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: opacity;
 }
 
 /*  Radix Collapsible 在测量 closed 高度时会写入 inline animation-name:none。
    assistant 历史区自动结束收起需要在延迟卸载期间继续播放高度动画，
    所以这里用 !important 覆盖 Radix 的 inline style，只作用于显式标记的收起窗口。 */
-[data-zcode-collapsible-animate-close="true"][data-state="closed"] {
-  animation: zcode-collapsible-up 300ms ease-in-out forwards !important;
+[data-kcode-collapsible-animate-close="true"][data-state="closed"] {
+  animation: kcode-collapsible-up 300ms ease-in-out forwards !important;
 }
 
-[data-zcode-collapsible-animate-close="true"][data-state="closed"] > * {
-  animation: zcode-collapsible-fade-out 300ms ease-in-out forwards !important;
+[data-kcode-collapsible-animate-close="true"][data-state="closed"] > * {
+  animation: kcode-collapsible-fade-out 300ms ease-in-out forwards !important;
 }
 
-@keyframes zcode-collapsible-up {
+@keyframes kcode-collapsible-up {
   from {
     height: var(--radix-collapsible-content-height);
   }
@@ -1008,7 +1010,7 @@ body {
   }
 }
 
-@keyframes zcode-collapsible-fade-out {
+@keyframes kcode-collapsible-fade-out {
   from {
     opacity: 1;
   }
@@ -1019,28 +1021,28 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-zcode-stream-animate="true"],
-  [data-zcode-stream-marker-animate="true"]::marker,
-  [data-zcode-tool-stream-animate="true"],
-  [data-zcode-chat-loading-animate="true"],
-  [data-zcode-collapsible-animate-close="true"][data-state="closed"],
-  [data-zcode-collapsible-animate-close="true"][data-state="closed"] > * {
+  [data-kcode-stream-animate="true"],
+  [data-kcode-stream-marker-animate="true"]::marker,
+  [data-kcode-tool-stream-animate="true"],
+  [data-kcode-chat-loading-animate="true"],
+  [data-kcode-collapsible-animate-close="true"][data-state="closed"],
+  [data-kcode-collapsible-animate-close="true"][data-state="closed"] > * {
     animation: none;
   }
 }
 
 /* 点赞/点踩选中时的反馈动画：参考微信/X 的做法，只做图标回弹 + 细小粒子飞散两段，
    粒子用 box-shadow 画在 ::after 上且跟随 currentColor，零额外 DOM、不引入新颜色。 */
-.zcode-reaction-burst {
+.kcode-reaction-burst {
   position: relative;
   display: inline-flex;
 }
 
-.zcode-reaction-burst > svg {
-  animation: zcode-reaction-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+.kcode-reaction-burst > svg {
+  animation: kcode-reaction-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.zcode-reaction-burst::after {
+.kcode-reaction-burst::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -1052,14 +1054,14 @@ body {
   background: transparent;
   opacity: 0;
   pointer-events: none;
-  animation: zcode-reaction-particles 560ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards;
+  animation: kcode-reaction-particles 560ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards;
 }
 
-.animate-zcode-alarm-ring {
-  animation: zcode-alarm-ring 600ms ease-in-out infinite;
+.animate-kcode-alarm-ring {
+  animation: kcode-alarm-ring 600ms ease-in-out infinite;
 }
 
-@keyframes zcode-alarm-ring {
+@keyframes kcode-alarm-ring {
   0%,
   100% {
     transform: rotate(-10deg);
@@ -1070,7 +1072,7 @@ body {
   }
 }
 
-@keyframes zcode-reaction-pop {
+@keyframes kcode-reaction-pop {
   0% {
     transform: scale(0);
   }
@@ -1088,7 +1090,7 @@ body {
   }
 }
 
-@keyframes zcode-reaction-particles {
+@keyframes kcode-reaction-particles {
   0% {
     opacity: 0;
     box-shadow:
@@ -1117,8 +1119,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zcode-reaction-burst > svg,
-  .zcode-reaction-burst::after {
+  .kcode-reaction-burst > svg,
+  .kcode-reaction-burst::after {
     animation: none;
   }
 }
@@ -1136,24 +1138,24 @@ body {
   }
 }
 
-@keyframes zcode-task-interaction-countdown {
+@keyframes kcode-task-interaction-countdown {
   from {
-    transform: scaleX(var(--zcode-interaction-progress, 1));
+    transform: scaleX(var(--kcode-interaction-progress, 1));
   }
   to {
     transform: scaleX(0);
   }
 }
 
-.zcode-task-interaction-countdown-fill {
-  animation: zcode-task-interaction-countdown var(--zcode-interaction-remaining-ms, 240000ms) linear
+.kcode-task-interaction-countdown-fill {
+  animation: kcode-task-interaction-countdown var(--kcode-interaction-remaining-ms, 240000ms) linear
     forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zcode-task-interaction-countdown-fill {
+  .kcode-task-interaction-countdown-fill {
     animation: none;
-    transform: scaleX(var(--zcode-interaction-progress, 1));
+    transform: scaleX(var(--kcode-interaction-progress, 1));
   }
 }
 
@@ -1161,12 +1163,12 @@ body {
   animation: workspace-remote-connecting-breathe 1.8s ease-in-out infinite;
 }
 
-.zcode-update-charge-progress [data-slot="progress-indicator"] {
+.kcode-update-charge-progress [data-slot="progress-indicator"] {
   position: relative;
   overflow: hidden;
 }
 
-.zcode-update-charge-progress [data-slot="progress-indicator"]::after {
+.kcode-update-charge-progress [data-slot="progress-indicator"]::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -1179,11 +1181,11 @@ body {
     color-mix(in oklab, var(--color-primary-foreground) 62%, transparent),
     transparent
   );
-  animation: zcode-update-charge-sweep 1.15s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: kcode-update-charge-sweep 1.15s cubic-bezier(0.65, 0, 0.35, 1) infinite;
   transform: translateX(-120%);
 }
 
-@keyframes zcode-update-charge-sweep {
+@keyframes kcode-update-charge-sweep {
   0% {
     opacity: 0.35;
     transform: translateX(-120%);
@@ -1200,7 +1202,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zcode-update-charge-progress [data-slot="progress-indicator"]::after {
+  .kcode-update-charge-progress [data-slot="progress-indicator"]::after {
     animation: none;
     opacity: 0.2;
     transform: none;

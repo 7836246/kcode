@@ -7,8 +7,8 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import type { ZCodeElicitationQuestion, ZCodeElicitationRequest } from "@zcode/shared";
-import type { InteractionAutoResolution } from "@zcode/shared/zcode-protocol-v4";
+import type { KCodeElicitationQuestion, KCodeElicitationRequest } from "@kcode/shared";
+import type { InteractionAutoResolution } from "@kcode/shared/kcode-protocol-v4";
 import { CheckIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
@@ -16,11 +16,11 @@ import { cn } from "@/components/lib/utils.js";
 import { Textarea } from "@/components/ui/textarea.js";
 import { InteractionRequestOriginBadge } from "@/InteractionRequestOriginBadge.js";
 import { isImeComposingKeyEvent } from "@/lib/imeComposition.js";
-import type { ElicitationFormDraft } from "@/store/zcodeSessionStoreTypes.js";
-import { useZCodeIntl } from "./i18n/IntlProvider.js";
+import type { ElicitationFormDraft } from "@/store/kcodeSessionStoreTypes.js";
+import { useKCodeIntl } from "./i18n/IntlProvider.js";
 
 interface ElicitationDialogProps {
-  request: ZCodeElicitationRequest;
+  request: KCodeElicitationRequest;
   autoResolution?: InteractionAutoResolution;
   onRespond: (
     requestId: string,
@@ -98,7 +98,7 @@ function useElicitationCountdownSeconds(autoResolution: InteractionAutoResolutio
   return getElicitationCountdownSeconds(autoResolution, clockNow);
 }
 
-interface NormalizedElicitationQuestion extends ZCodeElicitationQuestion {
+interface NormalizedElicitationQuestion extends KCodeElicitationQuestion {
   key: string;
 }
 
@@ -158,7 +158,7 @@ function resolveElicitationCustomInputKeyAction(event: {
 }
 
 function normalizeElicitationQuestions(
-  request: ZCodeElicitationRequest,
+  request: KCodeElicitationRequest,
 ): NormalizedElicitationQuestion[] {
   const sourceQuestions =
     request.questions && request.questions.length > 0
@@ -189,7 +189,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isPlanApprovalElicitationRequest(request: ZCodeElicitationRequest): boolean {
+function isPlanApprovalElicitationRequest(request: KCodeElicitationRequest): boolean {
   const schema = request.schema;
   return (
     isRecord(schema) && schema.interaction === "plan_approval" && schema.toolName === "ExitPlanMode"
@@ -198,7 +198,7 @@ function isPlanApprovalElicitationRequest(request: ZCodeElicitationRequest): boo
 
 function createInitialElicitationDrafts(
   questions: readonly NormalizedElicitationQuestion[],
-  request: ZCodeElicitationRequest,
+  request: KCodeElicitationRequest,
 ): DraftState {
   return Object.fromEntries(
     questions.map((question, index) => {
@@ -213,7 +213,7 @@ function createInitialElicitationDrafts(
 }
 
 function normalizeInitialQuestionIndex(
-  request: ZCodeElicitationRequest,
+  request: KCodeElicitationRequest,
   questions: readonly NormalizedElicitationQuestion[],
 ) {
   if (questions.length === 0) {
@@ -344,7 +344,7 @@ function ElicitationDialogContent({
   initialFormDraft,
   onFormDraftChange,
 }: ElicitationDialogProps) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const questions = useMemo(() => normalizeElicitationQuestions(request), [request]);
   const [questionIndex, setQuestionIndex] = useState(
     () => initialFormDraft?.questionIndex ?? normalizeInitialQuestionIndex(request, questions),

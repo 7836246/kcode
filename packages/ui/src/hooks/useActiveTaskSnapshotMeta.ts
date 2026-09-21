@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import type { ZCodeTaskMeta } from "@zcode/shared";
-import { useZCodeSessionService } from "@/hooks/useZCodeSessionService.js";
-import { zcodeSessionSnapshotToTaskMeta } from "@/lib/zcodeSessionProjection.js";
+import type { KCodeTaskMeta } from "@kcode/shared";
+import { useKCodeSessionService } from "@/hooks/useKCodeSessionService.js";
+import { kcodeSessionSnapshotToTaskMeta } from "@/lib/kcodeSessionProjection.js";
 
 function resolveImmediateActiveTaskSnapshotMeta(
-  previousSnapshotMeta: ZCodeTaskMeta | null,
+  previousSnapshotMeta: KCodeTaskMeta | null,
   taskId: string | null,
-  taskMetaFromLists?: ZCodeTaskMeta | null,
+  taskMetaFromLists?: KCodeTaskMeta | null,
 ) {
   if (!taskId || taskMetaFromLists) {
     return null;
@@ -32,14 +32,14 @@ export function useActiveTaskSnapshotMeta(
   taskId: string | null,
   preferredRemoteSessionId?: string | null,
   workspaceIdentity?: string,
-  taskMetaFromLists?: ZCodeTaskMeta | null,
+  taskMetaFromLists?: KCodeTaskMeta | null,
 ) {
-  const zcodeSessionService = useZCodeSessionService(
+  const kcodeSessionService = useKCodeSessionService(
     workspacePath,
     preferredRemoteSessionId,
     workspaceIdentity,
   );
-  const [snapshotMeta, setSnapshotMeta] = useState<ZCodeTaskMeta | null>(null);
+  const [snapshotMeta, setSnapshotMeta] = useState<KCodeTaskMeta | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,8 +60,8 @@ export function useActiveTaskSnapshotMeta(
       };
     }
 
-    void zcodeSessionService
-      // active header 只需要 session meta/标题兜底，走 ZCode Protocol 的轻量读取，
+    void kcodeSessionService
+      // active header 只需要 session meta/标题兜底，走 KCode Protocol 的轻量读取，
       // 避免继续经 legacy snapshot 把大任务消息整包拉回 UI。
       .readSession({
         workspacePath,
@@ -73,7 +73,7 @@ export function useActiveTaskSnapshotMeta(
         if (cancelled) {
           return;
         }
-        setSnapshotMeta(zcodeSessionSnapshotToTaskMeta(snapshot));
+        setSnapshotMeta(kcodeSessionSnapshotToTaskMeta(snapshot));
       })
       .catch(() => {
         if (cancelled) {
@@ -85,7 +85,7 @@ export function useActiveTaskSnapshotMeta(
     return () => {
       cancelled = true;
     };
-  }, [zcodeSessionService, taskId, taskMetaFromLists, workspaceIdentity, workspacePath]);
+  }, [kcodeSessionService, taskId, taskMetaFromLists, workspaceIdentity, workspacePath]);
 
   return snapshotMeta;
 }

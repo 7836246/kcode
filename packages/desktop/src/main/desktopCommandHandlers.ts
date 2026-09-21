@@ -4,23 +4,23 @@ import { join } from "node:path";
 import { app, BrowserWindow, dialog, session, shell } from "electron";
 import type { MessageBoxOptions } from "electron";
 import {
-  DEFAULT_ZCODE_ENDPOINT_ORIGIN,
+  DEFAULT_KCODE_ENDPOINT_ORIGIN,
   DesktopCommandIds,
   PlatformChannels,
   type AppSettings,
   type DesktopCommandId,
   type Locale,
-  resolveRuntimeZCodeEndpointOrigin,
-  ZCODE_ENV,
-  ZCODE_PRODUCT_FLAVOR,
-  buildZCodeEndpointUrls,
+  resolveRuntimeKCodeEndpointOrigin,
+  KCODE_ENV,
+  KCODE_PRODUCT_FLAVOR,
+  buildKCodeEndpointUrls,
   getCommunityUrlFromConfigs,
   getFeedbackUrlFromConfig,
   resolveHelpAppConfig,
-  normalizeZCodeEndpointOrigin,
-  resolveZCodeEndpointOrigin,
-} from "@zcode/shared";
-import { readZCodeStdioTapDevState, setZCodeStdioTapDevEnabled } from "@zcode/services/node";
+  normalizeKCodeEndpointOrigin,
+  resolveKCodeEndpointOrigin,
+} from "@kcode/shared";
+import { readKCodeStdioTapDevState, setKCodeStdioTapDevEnabled } from "@kcode/services/node";
 import { showAboutDialog } from "./about.js";
 import { checkForUpdateMenuClick } from "./autoUpdater.js";
 import { exportLogs } from "./exportLogs.js";
@@ -38,10 +38,10 @@ import {
 } from "./desktopZoom.js";
 
 export const HELP_TOGGLE_DEV_TOOLS_MENU_ID = "help.toggle-dev-tools";
-export const HELP_TOGGLE_ZCODE_STDIO_TAP_MENU_ID = "help.toggle-zcode-stdio-tap";
-const ZCODE_ENDPOINT_PROMPT_WIDTH = 460;
-const ZCODE_ENDPOINT_PROMPT_HEIGHT = 210;
-const CODING_PLAN_WEBVIEW_PARTITION = "persist:zcode-coding-plan";
+export const HELP_TOGGLE_KCODE_STDIO_TAP_MENU_ID = "help.toggle-kcode-stdio-tap";
+const KCODE_ENDPOINT_PROMPT_WIDTH = 460;
+const KCODE_ENDPOINT_PROMPT_HEIGHT = 210;
+const CODING_PLAN_WEBVIEW_PARTITION = "persist:kcode-coding-plan";
 
 function resolveTargetWindow(senderWindow?: BrowserWindow | null) {
   if (senderWindow && !senderWindow.isDestroyed()) {
@@ -93,7 +93,7 @@ async function clearAllDataAndRelaunch(options: {
     title: "Clear All Data",
     message: "确定要清除所有数据吗？",
     detail:
-      "将删除 ~/.zcode/v2（配置、凭据、日志）和浏览器缓存（localStorage）。操作不可恢复，清除后应用将自动重启。",
+      "将删除 ~/.kcode/v2（配置、凭据、日志）和浏览器缓存（localStorage）。操作不可恢复，清除后应用将自动重启。",
   });
   if (response !== 1) {
     return;
@@ -102,9 +102,9 @@ async function clearAllDataAndRelaunch(options: {
   const { rm } = await import("node:fs/promises");
   try {
     await rm(options.credentialsDir, { recursive: true, force: true });
-    options.logger.info("[clear-all-data] deleted ~/.zcode/v2");
+    options.logger.info("[clear-all-data] deleted ~/.kcode/v2");
   } catch (error) {
-    options.logger.error("[clear-all-data] failed to delete ~/.zcode/v2:", error);
+    options.logger.error("[clear-all-data] failed to delete ~/.kcode/v2:", error);
   }
 
   for (const win of BrowserWindow.getAllWindows()) {
@@ -284,11 +284,11 @@ async function openCommunity(
   await shell.openExternal(communityUrl);
 }
 
-async function promptCustomZCodeEndpoint(
+async function promptCustomKCodeEndpoint(
   targetWindow: BrowserWindow | null | undefined,
   currentValue: string,
 ): Promise<string | undefined> {
-  return showZCodeEndpointPromptWindow({
+  return showKCodeEndpointPromptWindow({
     currentValue,
     parentWindow: targetWindow && !targetWindow.isDestroyed() ? targetWindow : undefined,
   });
@@ -302,13 +302,13 @@ function escapeHtmlAttribute(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function buildZCodeEndpointPromptHtml(currentValue: string): string {
+function buildKCodeEndpointPromptHtml(currentValue: string): string {
   const value = escapeHtmlAttribute(currentValue);
   return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>ZCode Endpoint</title>
+    <title>KCode Endpoint</title>
     <style>
       :root { color-scheme: light dark; }
       body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -321,7 +321,7 @@ function buildZCodeEndpointPromptHtml(currentValue: string): string {
   </head>
   <body>
     <form id="form">
-      <label for="endpoint">ZCode endpoint origin</label>
+      <label for="endpoint">KCode endpoint origin</label>
       <input id="endpoint" value="${value}" placeholder="https://endpoint.example.com" spellcheck="false" />
       <div class="hint">Use an http or https origin, for example https://endpoint.example.com.</div>
       <div class="actions">
@@ -331,13 +331,13 @@ function buildZCodeEndpointPromptHtml(currentValue: string): string {
     </form>
     <script>
       const input = document.getElementById("endpoint");
-      const submit = (value) => { document.title = "zcode-endpoint-submit:" + encodeURIComponent(value); };
+      const submit = (value) => { document.title = "kcode-endpoint-submit:" + encodeURIComponent(value); };
       document.getElementById("form").addEventListener("submit", (event) => {
         event.preventDefault();
         submit(input.value);
       });
       document.getElementById("cancel").addEventListener("click", () => {
-        document.title = "zcode-endpoint-cancel";
+        document.title = "kcode-endpoint-cancel";
       });
       input.focus();
       input.select();
@@ -346,21 +346,21 @@ function buildZCodeEndpointPromptHtml(currentValue: string): string {
 </html>`;
 }
 
-function showZCodeEndpointPromptWindow(options: {
+function showKCodeEndpointPromptWindow(options: {
   currentValue: string;
   parentWindow?: BrowserWindow;
 }): Promise<string | undefined> {
   return new Promise((resolve) => {
     let settled = false;
     const promptWindow = new BrowserWindow({
-      width: ZCODE_ENDPOINT_PROMPT_WIDTH,
-      height: ZCODE_ENDPOINT_PROMPT_HEIGHT,
+      width: KCODE_ENDPOINT_PROMPT_WIDTH,
+      height: KCODE_ENDPOINT_PROMPT_HEIGHT,
       parent: options.parentWindow,
       modal: Boolean(options.parentWindow),
       resizable: false,
       minimizable: false,
       maximizable: false,
-      title: "ZCode Endpoint",
+      title: "KCode Endpoint",
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -381,40 +381,40 @@ function showZCodeEndpointPromptWindow(options: {
 
     promptWindow.on("closed", () => finish(undefined));
     promptWindow.on("page-title-updated", (event, title) => {
-      if (title === "zcode-endpoint-cancel") {
+      if (title === "kcode-endpoint-cancel") {
         event.preventDefault();
         finish(undefined);
         return;
       }
-      if (!title.startsWith("zcode-endpoint-submit:")) {
+      if (!title.startsWith("kcode-endpoint-submit:")) {
         return;
       }
       event.preventDefault();
-      finish(decodeURIComponent(title.slice("zcode-endpoint-submit:".length)));
+      finish(decodeURIComponent(title.slice("kcode-endpoint-submit:".length)));
     });
 
     // Electron 菜单命令在主进程触发，调用 renderer 的 window.prompt 可能被禁用或没有焦点，表现为点击无反应。
     // 这里改为主进程创建受控 modal 输入窗，确保 Custom... 始终有可见交互入口。
     void promptWindow.loadURL(
       `data:text/html;charset=utf-8,${encodeURIComponent(
-        buildZCodeEndpointPromptHtml(options.currentValue),
+        buildKCodeEndpointPromptHtml(options.currentValue),
       )}`,
     );
   });
 }
 
-async function setZCodeEndpointOverride(options: {
+async function setKCodeEndpointOverride(options: {
   value: string | undefined;
-  settingService: { update(patch: { zcodeEndpointOrigin?: string | undefined }): Promise<void> };
-  onZCodeEndpointChanged: () => Promise<void> | void;
+  settingService: { update(patch: { kcodeEndpointOrigin?: string | undefined }): Promise<void> };
+  onKCodeEndpointChanged: () => Promise<void> | void;
   logger: { warn: (...args: unknown[]) => void };
 }) {
-  if (ZCODE_ENV === "production") {
+  if (KCODE_ENV === "production") {
     return;
   }
-  const normalized = options.value ? normalizeZCodeEndpointOrigin(options.value) : undefined;
-  await options.settingService.update({ zcodeEndpointOrigin: normalized });
-  await options.onZCodeEndpointChanged();
+  const normalized = options.value ? normalizeKCodeEndpointOrigin(options.value) : undefined;
+  await options.settingService.update({ kcodeEndpointOrigin: normalized });
+  await options.onKCodeEndpointChanged();
 }
 
 async function persistDesktopZoomLevel(options: {
@@ -431,13 +431,13 @@ async function persistDesktopZoomLevel(options: {
   }
 }
 
-function toggleZCodeStdioTapDevProxy(options: {
+function toggleKCodeStdioTapDevProxy(options: {
   logger: { info: (...args: unknown[]) => void };
-  updateZCodeStdioTapDevMenuState: () => void;
+  updateKCodeStdioTapDevMenuState: () => void;
 }) {
-  const current = readZCodeStdioTapDevState();
-  const next = setZCodeStdioTapDevEnabled(!current.enabled);
-  options.updateZCodeStdioTapDevMenuState();
+  const current = readKCodeStdioTapDevState();
+  const next = setKCodeStdioTapDevEnabled(!current.enabled);
+  options.updateKCodeStdioTapDevMenuState();
   options.logger.info("[stdio-tap] dev proxy toggled", {
     enabled: next.enabled,
     visible: next.visible,
@@ -447,30 +447,30 @@ function toggleZCodeStdioTapDevProxy(options: {
 
 function resolveChangelogUrl(
   locale: Locale,
-  endpointOrigin = DEFAULT_ZCODE_ENDPOINT_ORIGIN,
+  endpointOrigin = DEFAULT_KCODE_ENDPOINT_ORIGIN,
 ): string {
   // 帮助菜单里的外链以前只有固定英文地址，切到中文界面后仍会落到英文 changelog。
   // 这里统一收口到主进程按当前应用语言分流，避免菜单模板里手写分支后续再出现多处不一致。
-  const origin = buildZCodeEndpointUrls(endpointOrigin).origin;
+  const origin = buildKCodeEndpointUrls(endpointOrigin).origin;
   return locale === "zh-CN" ? `${origin}/cn/changelog` : `${origin}/en/changelog`;
 }
 
 export async function openChangelog(
   locale: Locale,
-  endpointOrigin = DEFAULT_ZCODE_ENDPOINT_ORIGIN,
+  endpointOrigin = DEFAULT_KCODE_ENDPOINT_ORIGIN,
 ) {
   await shell.openExternal(resolveChangelogUrl(locale, endpointOrigin));
 }
 
-async function resolveCurrentZCodeEndpointOrigin(settingService: {
-  get(): Promise<{ zcodeEndpointOrigin?: string }>;
+async function resolveCurrentKCodeEndpointOrigin(settingService: {
+  get(): Promise<{ kcodeEndpointOrigin?: string }>;
   envBaseOrigin?: string | null;
 }): Promise<string> {
   const settings = await settingService.get();
-  return resolveZCodeEndpointOrigin({
-    env: ZCODE_ENV,
+  return resolveKCodeEndpointOrigin({
+    env: KCODE_ENV,
     envBaseOrigin: settingService.envBaseOrigin,
-    overrideOrigin: settings.zcodeEndpointOrigin,
+    overrideOrigin: settings.kcodeEndpointOrigin,
   });
 }
 
@@ -483,17 +483,17 @@ export async function executeDesktopCommand(options: {
     warn: (...args: unknown[]) => void;
     error: (...args: unknown[]) => void;
   };
-  updateZCodeStdioTapDevMenuState: () => void;
+  updateKCodeStdioTapDevMenuState: () => void;
   onDesktopZoomChanged?: (zoomLevel: number) => Promise<void> | void;
-  onZCodeEndpointChanged: () => Promise<void> | void;
+  onKCodeEndpointChanged: () => Promise<void> | void;
   onRelaunchApp: () => Promise<void>;
   settingService: {
-    get(): Promise<Pick<AppSettings, "zcodeEndpointOrigin" | "desktopZoomLevel">>;
+    get(): Promise<Pick<AppSettings, "kcodeEndpointOrigin" | "desktopZoomLevel">>;
     update(
-      patch: Partial<Pick<AppSettings, "zcodeEndpointOrigin" | "desktopZoomLevel">>,
+      patch: Partial<Pick<AppSettings, "kcodeEndpointOrigin" | "desktopZoomLevel">>,
     ): Promise<void>;
   };
-  zcodeEndpointEnvBaseOrigin?: string | null;
+  kcodeEndpointEnvBaseOrigin?: string | null;
   credentialsDir: string;
   currentApplicationLocale: Locale;
 }) {
@@ -582,15 +582,15 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.OpenChangelog:
       await openChangelog(
         options.currentApplicationLocale,
-        await resolveCurrentZCodeEndpointOrigin({
+        await resolveCurrentKCodeEndpointOrigin({
           ...options.settingService,
-          envBaseOrigin: options.zcodeEndpointEnvBaseOrigin,
+          envBaseOrigin: options.kcodeEndpointEnvBaseOrigin,
         }),
       );
       return;
     case DesktopCommandIds.CheckForUpdates:
       // 按产品身份而不是后端环境放行：生产后端的 Preview 同样没有更新器。
-      if (ZCODE_PRODUCT_FLAVOR === "production") {
+      if (KCODE_PRODUCT_FLAVOR === "production") {
         checkForUpdateMenuClick(targetWindow);
       } else {
         options.logger.info("[auto-update] Preview 已禁用手动更新检查");
@@ -618,57 +618,57 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.OpenResourceManager:
       openResourceManager();
       return;
-    case DesktopCommandIds.ToggleZCodeStdioTapDevProxy:
-      toggleZCodeStdioTapDevProxy({
+    case DesktopCommandIds.ToggleKCodeStdioTapDevProxy:
+      toggleKCodeStdioTapDevProxy({
         logger: options.logger,
-        updateZCodeStdioTapDevMenuState: options.updateZCodeStdioTapDevMenuState,
+        updateKCodeStdioTapDevMenuState: options.updateKCodeStdioTapDevMenuState,
       });
       return;
-    case DesktopCommandIds.SetZCodeEndpointProduction:
-      await setZCodeEndpointOverride({
-        value: DEFAULT_ZCODE_ENDPOINT_ORIGIN,
+    case DesktopCommandIds.SetKCodeEndpointProduction:
+      await setKCodeEndpointOverride({
+        value: DEFAULT_KCODE_ENDPOINT_ORIGIN,
         settingService: options.settingService,
-        onZCodeEndpointChanged: options.onZCodeEndpointChanged,
+        onKCodeEndpointChanged: options.onKCodeEndpointChanged,
         logger: options.logger,
       });
       return;
-    case DesktopCommandIds.SetZCodeEndpointTest:
-      await setZCodeEndpointOverride({
-        value: options.zcodeEndpointEnvBaseOrigin ?? resolveRuntimeZCodeEndpointOrigin(),
+    case DesktopCommandIds.SetKCodeEndpointTest:
+      await setKCodeEndpointOverride({
+        value: options.kcodeEndpointEnvBaseOrigin ?? resolveRuntimeKCodeEndpointOrigin(),
         settingService: options.settingService,
-        onZCodeEndpointChanged: options.onZCodeEndpointChanged,
+        onKCodeEndpointChanged: options.onKCodeEndpointChanged,
         logger: options.logger,
       });
       return;
-    case DesktopCommandIds.SetZCodeEndpointCustom: {
+    case DesktopCommandIds.SetKCodeEndpointCustom: {
       const current =
-        (await options.settingService.get()).zcodeEndpointOrigin ?? DEFAULT_ZCODE_ENDPOINT_ORIGIN;
-      const value = await promptCustomZCodeEndpoint(targetWindow, current);
+        (await options.settingService.get()).kcodeEndpointOrigin ?? DEFAULT_KCODE_ENDPOINT_ORIGIN;
+      const value = await promptCustomKCodeEndpoint(targetWindow, current);
       if (!value) {
         return;
       }
       try {
-        await setZCodeEndpointOverride({
+        await setKCodeEndpointOverride({
           value,
           settingService: options.settingService,
-          onZCodeEndpointChanged: options.onZCodeEndpointChanged,
+          onKCodeEndpointChanged: options.onKCodeEndpointChanged,
           logger: options.logger,
         });
       } catch (error) {
         await showMessageBoxWithOptionalParent(targetWindow, {
           type: "error",
-          title: "ZCode Endpoint",
+          title: "KCode Endpoint",
           message: "Endpoint 无效",
           detail: error instanceof Error ? error.message : String(error),
         });
       }
       return;
     }
-    case DesktopCommandIds.ResetZCodeEndpoint:
-      await setZCodeEndpointOverride({
+    case DesktopCommandIds.ResetKCodeEndpoint:
+      await setKCodeEndpointOverride({
         value: undefined,
         settingService: options.settingService,
-        onZCodeEndpointChanged: options.onZCodeEndpointChanged,
+        onKCodeEndpointChanged: options.onKCodeEndpointChanged,
         logger: options.logger,
       });
       return;

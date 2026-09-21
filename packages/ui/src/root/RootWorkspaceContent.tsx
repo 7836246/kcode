@@ -6,7 +6,7 @@ import { logger } from "@/logger.js";
 import { WorkspaceSettingsLayer } from "@/root/WorkspaceSettingsLayer.js";
 import type { AppProps } from "@/app-shell/types.js";
 import type { RootProps } from "@/root/types.js";
-import type { IFeedbackService, IServiceAccessor } from "@zcode/services";
+import type { IFeedbackService, IServiceAccessor } from "@kcode/services";
 import { ConversationTelemetryWorkspaceAttachment } from "@/v4/telemetry/ConversationTelemetryAttachment.js";
 
 const StableWorkspaceApp = memo(App);
@@ -35,7 +35,6 @@ interface RootWorkspaceContentProps {
   allowRemoteWorkspace: NonNullable<RootProps["allowRemoteWorkspace"]>;
   handleBackFromSettings: () => void;
   handleLogout?: () => void;
-  onLogin?: () => void;
   user: AppProps["user"];
   reconnectingRemoteWorkspaceKeys: AppProps["reconnectingRemoteWorkspaceKeys"];
   remoteWorkspaceErrorByWorkspaceKey: AppProps["remoteWorkspaceErrorByWorkspaceKey"];
@@ -73,7 +72,6 @@ export function RootWorkspaceContent({
   allowRemoteWorkspace,
   handleBackFromSettings,
   handleLogout,
-  onLogin,
   user,
   reconnectingRemoteWorkspaceKeys,
   remoteWorkspaceErrorByWorkspaceKey,
@@ -144,7 +142,6 @@ export function RootWorkspaceContent({
                 onCancelRemoteProject={handleCancelRemoteProject}
                 onReconnectRemoteWorkspace={handleReconnectRemoteWorkspace}
                 onLogout={handleLogout}
-                onLogin={onLogin}
                 user={user}
                 reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
                 remoteWorkspaceErrorByWorkspaceKey={remoteWorkspaceErrorByWorkspaceKey}
@@ -196,7 +193,6 @@ export function RootWorkspaceContent({
             onCreateTask={handleCreateTask}
             onOpenWorkspace={handleOpenWorkspace}
             allowOpenWorkspace={allowOpenWorkspace}
-            onLogin={onLogin}
             onLogout={handleLogout}
             user={user}
           />

@@ -1,7 +1,7 @@
-import { resolveExecutionState, type ModelSelection } from "@zcode/shared";
-import { submissionModeSchema, type SubmissionMode } from "@zcode/shared/zcode-protocol-v4";
-import type { ModelSelectionView } from "@zcode/services";
-import { validateModelSelectionOptions } from "@zcode/provider";
+import { resolveExecutionState, type ModelSelection } from "@kcode/shared";
+import { submissionModeSchema, type SubmissionMode } from "@kcode/shared/kcode-protocol-v4";
+import type { ModelSelectionView } from "@kcode/services";
+import { validateModelSelectionOptions } from "@kcode/provider";
 
 export interface ComposerSubmissionConfig {
   modelSelection: ModelSelection;

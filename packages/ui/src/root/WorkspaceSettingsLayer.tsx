@@ -15,7 +15,6 @@ export function WorkspaceSettingsLayer({
   onCreateTask,
   onOpenWorkspace,
   allowOpenWorkspace,
-  onLogin,
   onLogout,
   user,
 }: WorkspaceSettingsLayerProps) {
@@ -40,7 +39,6 @@ export function WorkspaceSettingsLayer({
             onCreateTask={onCreateTask}
             onOpenWorkspace={onOpenWorkspace}
             allowOpenWorkspace={allowOpenWorkspace}
-            onLogin={onLogin}
             onLogout={onLogout}
             user={user}
           />
@@ -56,7 +54,6 @@ export function WorkspaceSettingsLayer({
           onCreateTask={onCreateTask}
           onOpenWorkspace={onOpenWorkspace}
           allowOpenWorkspace={allowOpenWorkspace}
-          onLogin={onLogin}
           onLogout={onLogout}
           user={user}
         />

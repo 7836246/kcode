@@ -1,11 +1,11 @@
-import { Emitter } from "@zcode/rpc";
-import type { IRemoteBackend } from "@zcode/server/remote";
+import { Emitter } from "@kcode/rpc";
+import type { IRemoteBackend } from "@kcode/server/remote";
 import type {
   IPromptAttachmentTransferService,
   PromptAttachmentStageResult,
   PromptAttachmentTransferProgress,
-} from "@zcode/services";
-import type { ZCodePromptAttachment } from "@zcode/shared";
+} from "@kcode/services";
+import type { KCodePromptAttachment } from "@kcode/shared";
 import {
   cleanupRemotePromptAttachment,
   cleanupStaleRemotePromptAttachments,
@@ -75,13 +75,13 @@ export function createRemotePromptAttachmentTransferService(
       let lastPercent = -1;
       let lastEmittedAt = 0;
       let lastUploadedBytes = 0;
-      const attachment: ZCodePromptAttachment = {
+      const attachment: KCodePromptAttachment = {
         kind: params.mime.startsWith("image/") ? "image" : "file",
         filename: params.fileName,
         localPath: params.localPath,
         mimeType: params.mime,
         sizeBytes: params.sizeBytes ?? 0,
-      } as ZCodePromptAttachment;
+      } as KCodePromptAttachment;
       const workspaceKey = params.workspaceIdentity?.trim() || params.workspacePath;
       try {
         const materialized = await materializeRemotePromptAttachments(

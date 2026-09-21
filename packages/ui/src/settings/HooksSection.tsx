@@ -1,14 +1,14 @@
 /* eslint-disable max-lines -- Hooks 页面聚合 Scope、插件投影、搜索与配置写入流程。 */
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import type { Hook, HookConfig, ZCodeInstalledPluginSummary, ZCodePluginInfo } from "@zcode/shared";
+import type { Hook, HookConfig, KCodeInstalledPluginSummary, KCodePluginInfo } from "@kcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js";
-import { useZCodeSessionService } from "@/hooks/useZCodeSessionService.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
-import { invalidateDeferredDraftSessionForRuntimeChange } from "@/lib/zcodeDraftSkillInvalidation.js";
+import { useKCodeSessionService } from "@/hooks/useKCodeSessionService.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
+import { invalidateDeferredDraftSessionForRuntimeChange } from "@/lib/kcodeDraftSkillInvalidation.js";
 import { useHooksStore } from "@/store/hooksStore.js";
 import { usePluginManagementStore } from "@/store/pluginManagementStore.js";
 import { HookForm } from "./HookForm.js";
@@ -44,19 +44,19 @@ interface HooksSectionProps {
 function isEditableHook(hook: Hook): boolean {
   // workspace-hook-trust：运行时 discovery 会下发 editable 标志（工作区 Hook 在
   // runtime 侧不可直接改配置），优先尊重；本地 Settings 发现路径无该标志时回退旧规则。
-  return hook.editable ?? (!hook.location || hook.location.source === "zcode");
+  return hook.editable ?? (!hook.location || hook.location.source === "kcode");
 }
 
-// workspace-hook-trust：editable=false 且 source=zcode 的行是「上游/祖先 zcode.json
+// workspace-hook-trust：editable=false 且 source=kcode 的行是「上游/祖先 kcode.json
 // 里的只读工作区 Hook」。它们不是外部格式兼容导入源，塞进 Legacy 会让 Import 按钮
-// 必然失败（importHook 拒绝 source=zcode），也违反「只读但可逐条 Trust」的约定。
+// 必然失败（importHook 拒绝 source=kcode），也违反「只读但可逐条 Trust」的约定。
 // 这类行应留在 Installed 分组，由信任状态门控 Switch，走行内 Trust 流程。
-function isReadOnlyZCodeHook(hook: Hook): boolean {
-  return hook.editable === false && (hook.location?.source ?? "zcode") === "zcode";
+function isReadOnlyKCodeHook(hook: Hook): boolean {
+  return hook.editable === false && (hook.location?.source ?? "kcode") === "kcode";
 }
 
 function isInCompatibilitySection(hook: Hook): boolean {
-  return !isEditableHook(hook) && !isReadOnlyZCodeHook(hook);
+  return !isEditableHook(hook) && !isReadOnlyKCodeHook(hook);
 }
 
 /**
@@ -107,8 +107,8 @@ function resolveLatestReviewScopeTarget(
 }
 
 function buildPluginHookRows(
-  plugins: readonly Pick<ZCodePluginInfo, "enabled" | "hookDetails" | "id" | "name">[],
-  installedPlugins: readonly Pick<ZCodeInstalledPluginSummary, "id" | "scope">[],
+  plugins: readonly Pick<KCodePluginInfo, "enabled" | "hookDetails" | "id" | "name">[],
+  installedPlugins: readonly Pick<KCodeInstalledPluginSummary, "id" | "scope">[],
   scopeMetadataKnown: boolean,
 ): PluginHookRow[] {
   const scopeByPluginId = new Map(
@@ -138,7 +138,7 @@ function filterPluginHooksByScope(
 }
 
 export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionProps) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const confirmDialog = useConfirmDialog();
   const hooksState = useHooksStore();
   const plugins = usePluginManagementStore((state) => state.plugins);
@@ -186,7 +186,7 @@ export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionP
   // Scope 切到另一个远程 workspace 后，路径已切换但 hooks/plugin 服务仍来自
   // 当前激活 workspace。这里让服务 host 与 target 身份同源，等待连接时不发送越界 RPC。
   const { hooksService, pluginManagementService } = targetServiceResolution.services;
-  const zcodeSessionService = useZCodeSessionService(
+  const kcodeSessionService = useKCodeSessionService(
     targetWorkspacePath ?? undefined,
     undefined,
     targetWorkspaceIdentity,
@@ -207,7 +207,7 @@ export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionP
     () =>
       hooksState.hooks.filter(
         (hook) =>
-          (isEditableHook(hook) || isReadOnlyZCodeHook(hook)) &&
+          (isEditableHook(hook) || isReadOnlyKCodeHook(hook)) &&
           (hook.location?.scope ?? "user") === activeScope,
       ),
     [activeScope, hooksState.hooks],
@@ -356,10 +356,10 @@ export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionP
         reason,
         workspaceIdentity: targetWorkspaceIdentity,
         workspacePath: targetWorkspacePath,
-        zcodeSessionService,
+        kcodeSessionService,
       });
     },
-    [targetWorkspaceIdentity, targetWorkspacePath, zcodeSessionService],
+    [targetWorkspaceIdentity, targetWorkspacePath, kcodeSessionService],
   );
 
   const handleSaveHook = useCallback(

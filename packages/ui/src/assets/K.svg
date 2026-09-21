@@ -1,0 +1,17 @@
+<svg width="240" height="288" viewBox="0 0 50 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M2 1.16H14.2V22.4L33.6 1.16H46.2L21.2 26.57L46.2 51.97H33.6L14.2 31.1V51.97H2V1.16Z"
+    stroke="url(#kempty-stroke)"
+    stroke-width="1.15"
+    stroke-linejoin="miter"
+    stroke-miterlimit="2.2"
+    opacity="0.7"
+  />
+  <defs>
+    <linearGradient id="kempty-stroke" x1="24" y1="1" x2="24" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D4D4D4" stop-opacity="0.72"/>
+      <stop offset="0.55" stop-color="#A3A3A3" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#737373" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+</svg>

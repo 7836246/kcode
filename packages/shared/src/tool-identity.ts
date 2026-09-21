@@ -1,4 +1,4 @@
-export const ZCODE_KNOWN_TOOL_NAMES = [
+export const KCODE_KNOWN_TOOL_NAMES = [
   "Read",
   "Write",
   "Edit",
@@ -36,9 +36,9 @@ export const ZCODE_KNOWN_TOOL_NAMES = [
   "submit_result",
 ] as const;
 
-export type ZCodeKnownToolName = (typeof ZCODE_KNOWN_TOOL_NAMES)[number];
+export type KCodeKnownToolName = (typeof KCODE_KNOWN_TOOL_NAMES)[number];
 
-export type ZCodeToolFamily =
+export type KCodeToolFamily =
   | "file-read"
   | "file-write"
   | "shell"
@@ -54,7 +54,7 @@ export type ZCodeToolFamily =
   | "node-repl"
   | "workflow";
 
-const TOOL_FAMILY_BY_NAME: Record<ZCodeKnownToolName, ZCodeToolFamily> = {
+const TOOL_FAMILY_BY_NAME: Record<KCodeKnownToolName, KCodeToolFamily> = {
   Read: "file-read",
   Write: "file-write",
   Edit: "file-write",
@@ -91,13 +91,13 @@ const TOOL_FAMILY_BY_NAME: Record<ZCodeKnownToolName, ZCodeToolFamily> = {
   submit_result: "workflow",
 };
 
-const TOOL_NAME_BY_LOWER = new Map<string, ZCodeKnownToolName>(
-  ZCODE_KNOWN_TOOL_NAMES.map((toolName) => [toolName.toLowerCase(), toolName]),
+const TOOL_NAME_BY_LOWER = new Map<string, KCodeKnownToolName>(
+  KCODE_KNOWN_TOOL_NAMES.map((toolName) => [toolName.toLowerCase(), toolName]),
 );
 
-export function normalizeZCodeToolName(
+export function normalizeKCodeToolName(
   value: string | null | undefined,
-): ZCodeKnownToolName | null {
+): KCodeKnownToolName | null {
   const normalized = value?.trim();
   if (!normalized) {
     return null;
@@ -106,20 +106,20 @@ export function normalizeZCodeToolName(
   return TOOL_NAME_BY_LOWER.get(normalized.toLowerCase()) ?? null;
 }
 
-export function getZCodeToolFamilyForName(
+export function getKCodeToolFamilyForName(
   value: string | null | undefined,
-): ZCodeToolFamily | null {
-  const toolName = normalizeZCodeToolName(value);
+): KCodeToolFamily | null {
+  const toolName = normalizeKCodeToolName(value);
   return toolName ? TOOL_FAMILY_BY_NAME[toolName] : null;
 }
 
-export function isZCodeToolFamily(
+export function isKCodeToolFamily(
   value: string | null | undefined,
-  family: ZCodeToolFamily,
+  family: KCodeToolFamily,
 ): boolean {
-  return getZCodeToolFamilyForName(value) === family;
+  return getKCodeToolFamilyForName(value) === family;
 }
 
-export function isZCodeFileContentWriteToolName(value: string | null | undefined): boolean {
-  return normalizeZCodeToolName(value) === "Write";
+export function isKCodeFileContentWriteToolName(value: string | null | undefined): boolean {
+  return normalizeKCodeToolName(value) === "Write";
 }

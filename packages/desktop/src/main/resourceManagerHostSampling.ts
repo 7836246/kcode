@@ -4,7 +4,7 @@ import {
   HostMessageTypes,
   type HostResourceUsageProcess,
   type HostResourceUsageSnapshotResultResponse,
-} from "@zcode/shared";
+} from "@kcode/shared";
 
 /**
  * 资源管理器 main → Host 采样 fan-out。

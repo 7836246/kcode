@@ -89,14 +89,14 @@ export const ServiceChannels = {
   CuaPipSession: "cua-pip-session",
   /** 跨窗口广播 */
   Broadcast: "broadcast",
-  /** ZCode task wrapper 服务 */
-  ZCodeTask: "zcode-task",
+  /** KCode task wrapper 服务 */
+  KCodeTask: "kcode-task",
   /** 窗口 Host 聚合 workspace/task 投影与列表写路由 */
   WindowController: "window-controller",
-  /** ZCode Protocol agent 服务 */
-  ZCodeAgent: "zcode-agent",
-  /** ZCode session 应用服务 */
-  ZCodeSession: "zcode-session",
+  /** KCode Protocol agent 服务 */
+  KCodeAgent: "kcode-agent",
+  /** KCode session 应用服务 */
+  KCodeSession: "kcode-session",
   /** 会话分享发布、预览与 continuation API 编排 */
   ConversationShare: "conversation-share",
   /** 文件系统监视服务 */
@@ -114,7 +114,7 @@ export const ServiceChannels = {
   /** Coding Plan 订阅购买服务 */
   CodingPlanSubscription: "coding-plan-subscription",
   ClientConfig: "client-config",
-  /** ZCode 客户端场景配置服务 */
+  /** KCode 客户端场景配置服务 */
   ClientScenes: "client-scenes",
   /** Skills 管理服务 */
   Skills: "skills",
@@ -126,7 +126,7 @@ export const ServiceChannels = {
   PluginSync: "plugin-sync",
   /** 插件管理服务 */
   Plugins: "plugins",
-  /** 设置页插件管理服务（UI 平台能力面收敛，不再直触 zcodeAgentService） */
+  /** 设置页插件管理服务（UI 平台能力面收敛，不再直触 kcodeAgentService） */
   PluginManagement: "plugin-management",
   /** Subagents 管理服务 */
   Subagents: "subagents",
@@ -157,270 +157,270 @@ export type ServiceChannelName = (typeof ServiceChannels)[keyof typeof ServiceCh
 /** Electron IPC 频道名。仅在 preload ↔ main 之间使用。 */
 export const PlatformChannels = {
   /** 打开系统目录选择框 */
-  SelectDirectory: "zcode:select-directory",
+  SelectDirectory: "kcode:select-directory",
   /** 打开系统文件选择框 */
-  SelectFile: "zcode:select-file",
+  SelectFile: "kcode:select-file",
   /** 打开系统多文件选择框 */
-  SelectFiles: "zcode:select-files",
-  /** Renderer → Main：写入宿主 ~/.zcode 临时文本附件 */
-  CreateTempTextAttachment: "zcode:create-temp-text-attachment",
+  SelectFiles: "kcode:select-files",
+  /** Renderer → Main：写入宿主 ~/.kcode 临时文本附件 */
+  CreateTempTextAttachment: "kcode:create-temp-text-attachment",
   /** Renderer → Main：通过原生另存为对话框保存文件 */
-  SaveFile: "zcode:save-file",
+  SaveFile: "kcode:save-file",
   /** Renderer → Main：用 Chromium 打印引擎把当前页面 print 媒体版面导出为 PDF */
-  PrintToPdf: "zcode:print-to-pdf",
+  PrintToPdf: "kcode:print-to-pdf",
   /** Main → Renderer：转发远程连接过程日志 */
-  RemoteConnectionLog: "zcode:remote-connection-log",
+  RemoteConnectionLog: "kcode:remote-connection-log",
   /** Main → Renderer：远程 workspace session 已关闭 */
-  RemoteSessionClosed: "zcode:remote-session-closed",
+  RemoteSessionClosed: "kcode:remote-session-closed",
   /** 检查目录是否已在其他窗口打开，如果是则激活该窗口 */
-  ActivateOrSetWorkspace: "zcode:activate-or-set-workspace",
+  ActivateOrSetWorkspace: "kcode:activate-or-set-workspace",
   /** 建立 SSH 远程连接 */
-  ConnectRemote: "zcode:connect-remote",
+  ConnectRemote: "kcode:connect-remote",
   /** 取消当前窗口正在进行中的远程连接 */
-  CancelPendingRemoteConnection: "zcode:cancel-pending-remote-connection",
+  CancelPendingRemoteConnection: "kcode:cancel-pending-remote-connection",
   /** Renderer → Main：绑定远程 logical session 的 canonical workspace context */
-  BindRemoteWorkspaceSessionContext: "zcode:bind-remote-workspace-session-context",
+  BindRemoteWorkspaceSessionContext: "kcode:bind-remote-workspace-session-context",
   /** 释放当前窗口里的远程 session */
-  DisposeRemoteSession: "zcode:dispose-remote-session",
+  DisposeRemoteSession: "kcode:dispose-remote-session",
   /** Renderer → Main：检查本机 Docker daemon 是否可用 */
-  IsDockerAvailable: "zcode:is-docker-available",
+  IsDockerAvailable: "kcode:is-docker-available",
   /** Renderer → Main：列出本机可用的 WSL 发行版 */
-  ListWSLDistros: "zcode:list-wsl-distros",
+  ListWSLDistros: "kcode:list-wsl-distros",
   /** Renderer → Main：列出当前可连接的 Docker 容器 */
-  ListDockerContainers: "zcode:list-docker-containers",
+  ListDockerContainers: "kcode:list-docker-containers",
   /** Renderer → Main：列出 SSH config 里可用于快速填表的 alias */
-  ListSSHConfigAliases: "zcode:list-ssh-config-aliases",
+  ListSSHConfigAliases: "kcode:list-ssh-config-aliases",
   /** Renderer → Main：从用户目录加载 CLI MCP 配置 */
-  LoadMcpFromUserDirectory: "zcode:load-mcp-from-user-directory",
+  LoadMcpFromUserDirectory: "kcode:load-mcp-from-user-directory",
   /** Renderer → Main：保存 CLI MCP 配置到用户目录 */
-  SaveMcpToUserDirectory: "zcode:save-mcp-to-user-directory",
+  SaveMcpToUserDirectory: "kcode:save-mcp-to-user-directory",
   /** Renderer 日志转发到 main 进程统一存储 */
-  Log: "zcode:log",
+  Log: "kcode:log",
   /** Renderer → Main：同步当前窗口所有 tab 的 workspace 路径 */
-  SyncWindowTabs: "zcode:sync-window-tabs",
+  SyncWindowTabs: "kcode:sync-window-tabs",
   /** Renderer → Main：同步当前窗口的未读 task 数 */
-  SyncWindowUnreadCount: "zcode:sync-window-unread-count",
+  SyncWindowUnreadCount: "kcode:sync-window-unread-count",
   /** Renderer → Main：当前窗口 active task，只更新 Main 的临时焦点映射。 */
-  SyncActiveTaskSession: "zcode:sync-active-task-session",
+  SyncActiveTaskSession: "kcode:sync-active-task-session",
   /** Renderer → Main：同步 main 进程需即时感知的应用设置 */
-  SyncAppSettings: "zcode:sync-app-settings",
+  SyncAppSettings: "kcode:sync-app-settings",
   /** Renderer → Main：快捷键设置页录制态开关；true = main 暂时摘除可配置菜单 accelerator */
-  SetShortcutRecordingActive: "zcode:set-shortcut-recording-active",
+  SetShortcutRecordingActive: "kcode:set-shortcut-recording-active",
   /** Main → Renderer：聚焦到指定 workspace 路径的 tab */
-  FocusTab: "zcode:focus-tab",
+  FocusTab: "kcode:focus-tab",
   /** Main → Renderer：菜单触发新建 tab */
-  NewTab: "zcode:new-tab",
+  NewTab: "kcode:new-tab",
   /** Main → Renderer：菜单或快捷键请求关闭当前上下文 */
-  CloseActiveContextRequest: "zcode:close-active-context-request",
+  CloseActiveContextRequest: "kcode:close-active-context-request",
   /** Main → Renderer：内置 webview 请求打开新的浏览器 tab */
-  OpenBrowserUrl: "zcode:open-browser-url",
+  OpenBrowserUrl: "kcode:open-browser-url",
   /** Main → Renderer：agent 首次 browser 命令建好受控 view，通知 renderer 自动开 browser-use tab */
-  BrowserViewReady: "zcode:browser-view-ready",
+  BrowserViewReady: "kcode:browser-view-ready",
   /** Main → Renderer：agent 正在操作某个 browser-use tab，renderer 临时显示状态图标 */
-  BrowserViewOperation: "zcode:browser-view-operation",
+  BrowserViewOperation: "kcode:browser-view-operation",
   /** Main → Renderer：browser visibility capability 显示/隐藏 IAB 右侧面板 */
-  BrowserViewVisibility: "zcode:browser-view-visibility",
+  BrowserViewVisibility: "kcode:browser-view-visibility",
   /** Main → Renderer：Agent 设置/重置目标 tab viewport */
-  BrowserViewViewportChanged: "zcode:browser-view-viewport-changed",
+  BrowserViewViewportChanged: "kcode:browser-view-viewport-changed",
   /** Main → Renderer：截图前请求 owner renderer 准备后台 guest 合成表面。 */
-  BrowserViewScreenshotSurfacePrepare: "zcode:browser-view-screenshot-surface-prepare",
+  BrowserViewScreenshotSurfacePrepare: "kcode:browser-view-screenshot-surface-prepare",
   /** Renderer → Main：目标 guest 连续两个 animation frame 的 viewport 已稳定。 */
-  BrowserViewScreenshotSurfaceReady: "zcode:browser-view-screenshot-surface-ready",
+  BrowserViewScreenshotSurfaceReady: "kcode:browser-view-screenshot-surface-ready",
   /** Main → Renderer：截图结束或准备失败，释放临时后台合成层。 */
-  BrowserViewScreenshotSurfaceRelease: "zcode:browser-view-screenshot-surface-release",
+  BrowserViewScreenshotSurfaceRelease: "kcode:browser-view-screenshot-surface-release",
   /** Main → Renderer：agent close 命令 detach 受控 guest 后，通知 renderer 卸载对应 tab */
-  BrowserViewCloseTab: "zcode:browser-view-close-tab",
+  BrowserViewCloseTab: "kcode:browser-view-close-tab",
   /** Main → Renderer：预算淘汰时卸载 guest，但保留 logical tab shell。 */
-  BrowserViewSuspend: "zcode:browser-view-suspend",
+  BrowserViewSuspend: "kcode:browser-view-suspend",
   /** Main → Renderer：为 suspended shell 重新挂载 guest。 */
-  BrowserViewRestore: "zcode:browser-view-restore",
+  BrowserViewRestore: "kcode:browser-view-restore",
   /** Main → Renderer：菜单触发新建任务 */
-  NewTask: "zcode:new-task",
+  NewTask: "kcode:new-task",
   /** Main → Renderer：菜单触发打开工作区 */
-  OpenWorkspace: "zcode:open-workspace",
+  OpenWorkspace: "kcode:open-workspace",
   /** Main → Renderer：deep link 直接打开指定本地工作区目录 */
-  OpenWorkspacePath: "zcode:open-workspace-path",
+  OpenWorkspacePath: "kcode:open-workspace-path",
   /** Main → Renderer：打开内置反馈对话框 */
-  OpenFeedbackDialog: "zcode:open-feedback-dialog",
+  OpenFeedbackDialog: "kcode:open-feedback-dialog",
   /** Main → Renderer：打开我的工单面板 */
-  OpenTicketsPanel: "zcode:open-tickets-panel",
+  OpenTicketsPanel: "kcode:open-tickets-panel",
   /** Main → Renderer：窗口全屏状态变化 */
-  WindowFullscreenChanged: "zcode:window-fullscreen-changed",
+  WindowFullscreenChanged: "kcode:window-fullscreen-changed",
   /** Renderer → Main：读取窗口最大化状态与系统原生圆角能力 */
-  GetDesktopWindowChromeState: "zcode:get-desktop-window-chrome-state",
+  GetDesktopWindowChromeState: "kcode:get-desktop-window-chrome-state",
   /** Main → Renderer：窗口最大化状态与系统原生圆角能力变化 */
-  DesktopWindowChromeStateChanged: "zcode:desktop-window-chrome-state-changed",
+  DesktopWindowChromeStateChanged: "kcode:desktop-window-chrome-state-changed",
   /** Main → Renderer：原生窗口控制区安全边距变化 */
-  WindowControlsOverlayChanged: "zcode:window-controls-overlay-changed",
+  WindowControlsOverlayChanged: "kcode:window-controls-overlay-changed",
   /** Preload → Main：preload 已同步读到当前窗口控制区安全边距 */
-  WindowControlsOverlayReady: "zcode:window-controls-overlay-ready",
+  WindowControlsOverlayReady: "kcode:window-controls-overlay-ready",
   /** 获取资源管理器快照（CPU / 内存，按基础服务、内置插件、社区插件归类） */
-  GetResourceUsageSnapshot: "zcode:get-resource-usage-snapshot",
-  SetResourceUsageSamplingActive: "zcode:set-resource-usage-sampling-active",
+  GetResourceUsageSnapshot: "kcode:get-resource-usage-snapshot",
+  SetResourceUsageSamplingActive: "kcode:set-resource-usage-sampling-active",
   /** 打开资源管理器窗口（其他窗口触发） */
-  OpenResourceManager: "zcode:open-resource-manager",
-  /** 资源管理器「存储」tab：开始扫描本机 .zcode 占用（main 持有 StorageService，Worker 线程遍历） */
-  StorageStartScan: "zcode:storage-start-scan",
+  OpenResourceManager: "kcode:open-resource-manager",
+  /** 资源管理器「存储」tab：开始扫描本机 .kcode 占用（main 持有 StorageService，Worker 线程遍历） */
+  StorageStartScan: "kcode:storage-start-scan",
   /** 资源管理器「存储」tab：取消扫描 */
-  StorageCancelScan: "zcode:storage-cancel-scan",
+  StorageCancelScan: "kcode:storage-cancel-scan",
   /** 资源管理器「存储」tab：读取最近一次快照 */
-  StorageGetSnapshot: "zcode:storage-get-snapshot",
+  StorageGetSnapshot: "kcode:storage-get-snapshot",
   /** 资源管理器「存储」tab：按类别清理 */
-  StorageClean: "zcode:storage-clean",
+  StorageClean: "kcode:storage-clean",
   /** 资源管理器「存储」tab：在系统文件管理器中定位数据根内的路径 */
-  StorageRevealPath: "zcode:storage-reveal-path",
+  StorageRevealPath: "kcode:storage-reveal-path",
   /** Main → 资源管理器 renderer：扫描进度快照推送 */
-  StorageScanProgress: "zcode:storage-scan-progress",
+  StorageScanProgress: "kcode:storage-scan-progress",
   /** Renderer → Main：打开外部 URL（用于 OAuth 跳转浏览器） */
-  OpenExternal: "zcode:open-external",
+  OpenExternal: "kcode:open-external",
   /** Renderer → Main：查询当前语言下是否存在可用的用户社群入口 */
-  CanOpenCommunity: "zcode:can-open-community",
+  CanOpenCommunity: "kcode:can-open-community",
   /** Renderer → Main：在系统文件管理器中打开路径 */
-  OpenInFileManager: "zcode:open-in-file-manager",
+  OpenInFileManager: "kcode:open-in-file-manager",
   /** Renderer → Main：使用系统默认应用打开本地文件 */
-  OpenExternalFile: "zcode:open-external-file",
-  /** Renderer → Main：打开 ZCode Computer Use 权限引导 */
-  OpenCuaPermissionOnboarding: "zcode:open-cua-permission-onboarding",
+  OpenExternalFile: "kcode:open-external-file",
+  /** Renderer → Main：打开 KCode Computer Use 权限引导 */
+  OpenCuaPermissionOnboarding: "kcode:open-cua-permission-onboarding",
   /** Renderer → Main：取消当前 renderer 发起的一次权限引导 participant */
-  CancelCuaPermissionOnboarding: "zcode:cancel-cua-permission-onboarding",
+  CancelCuaPermissionOnboarding: "kcode:cancel-cua-permission-onboarding",
   /**
    * Renderer → Main：预热并缓存已验证的 Helper 路径 + bundle 指纹。
    * 必须在拖拽浮窗挂载时调用 —— dragstart 链路里不允许任何异步 I/O。
    */
-  PrepareCuaHelperPermissionDrag: "zcode:prepare-cua-helper-permission-drag",
+  PrepareCuaHelperPermissionDrag: "kcode:prepare-cua-helper-permission-drag",
   /** Renderer → Main：把已验证的 Helper.app 同步拖出到 macOS 权限列表 */
-  StartCuaHelperPermissionDrag: "zcode:start-cua-helper-permission-drag",
+  StartCuaHelperPermissionDrag: "kcode:start-cua-helper-permission-drag",
   /**
    * Renderer → Main：拖拽手势结束。
    * 拖完授权即完成，浮窗该让位（用户此时要看设置页和系统的重启提示）。必须等 dragend 而不是
    * 在 dragstart 里就收窗：startDrag 只是把 drag session 交给 OS，非阻塞，drag source
    * 立刻消失可能打断正在进行的拖拽。
    */
-  NotifyCuaHelperPermissionDragEnded: "zcode:notify-cua-helper-permission-drag-ended",
+  NotifyCuaHelperPermissionDragEnded: "kcode:notify-cua-helper-permission-drag-ended",
   /** Renderer → Main：上报 OAuth state 用于 deep link 路由 */
-  OAuthRegisterState: "zcode:oauth-register-state",
+  OAuthRegisterState: "kcode:oauth-register-state",
   /** Main → Renderer：转发 deep link URL */
-  OAuthCallback: "zcode:oauth-callback",
+  OAuthCallback: "kcode:oauth-callback",
   /** Main → Renderer：转发支付 deep link URL */
-  PaymentCallback: "zcode:payment-callback",
+  PaymentCallback: "kcode:payment-callback",
   /** Main → Renderer：外部分享页请求导入 share code。 */
-  ShareImport: "zcode:share-import",
+  ShareImport: "kcode:share-import",
   /** Renderer → Main：OAuth 回调已处理完成，可继续后置启动流程 */
-  OAuthCallbackHandled: "zcode:oauth-callback-handled",
+  OAuthCallbackHandled: "kcode:oauth-callback-handled",
   /** Renderer → Main：renderer 已就绪，可接收缓存的 deep link */
-  RendererReady: "zcode:renderer-ready",
+  RendererReady: "kcode:renderer-ready",
   /** Renderer → Main：同步当前 renderer 的 telemetry 上下文 */
-  SyncTelemetryContext: "zcode:sync-telemetry-context",
+  SyncTelemetryContext: "kcode:sync-telemetry-context",
   /** Renderer → Main：通过统一 telemetry 层上报业务事件 */
-  ReportTelemetryEvent: "zcode:report-telemetry-event",
+  ReportTelemetryEvent: "kcode:report-telemetry-event",
   /** Renderer → Main：上报 ARMS 自定义事件 */
-  ReportArmsCustomEvent: "zcode:report-arms-custom-event",
+  ReportArmsCustomEvent: "kcode:report-arms-custom-event",
   /** Renderer → Main：读取 Renderer 用户操作 Trace 灰度配置。 */
-  GetRendererActionTraceConfig: "zcode:get-renderer-action-trace-config",
+  GetRendererActionTraceConfig: "kcode:get-renderer-action-trace-config",
   /** Main → Renderer：Renderer 用户操作 Trace 灰度配置变化。 */
-  RendererActionTraceConfigChanged: "zcode:renderer-action-trace-config-changed",
+  RendererActionTraceConfigChanged: "kcode:renderer-action-trace-config-changed",
   /** Renderer → Main：发送已结束的 ui_action batch。 */
-  ReportRendererActionTraceBatch: "zcode:report-renderer-action-trace-batch",
+  ReportRendererActionTraceBatch: "kcode:report-renderer-action-trace-batch",
   /** Renderer → Main：主窗口 renderer 每 60 秒的 heap 读数，单向 send，不需要回执。 */
-  ReportRendererHeapSample: "zcode:report-renderer-heap-sample",
-  ReportLocalTtftBatch: "zcode:report-local-ttft-batch",
+  ReportRendererHeapSample: "kcode:report-renderer-heap-sample",
+  ReportLocalTtftBatch: "kcode:report-local-ttft-batch",
   /** E2E preload → Main：读取 sendCustom 最终参数的内存 ring。 */
-  ReadFinalArmsCustomEventsE2E: "zcode:e2e:read-final-arms-custom-events",
+  ReadFinalArmsCustomEventsE2E: "kcode:e2e:read-final-arms-custom-events",
   /** E2E preload → Main：清空 sendCustom 最终参数的内存 ring。 */
-  ClearFinalArmsCustomEventsE2E: "zcode:e2e:clear-final-arms-custom-events",
+  ClearFinalArmsCustomEventsE2E: "kcode:e2e:clear-final-arms-custom-events",
   /** E2E preload → Main：配置只针对目标 event name 的真实网络抑制。 */
-  ConfigureFinalArmsCustomEventsE2E: "zcode:e2e:configure-final-arms-custom-events",
+  ConfigureFinalArmsCustomEventsE2E: "kcode:e2e:configure-final-arms-custom-events",
   /** Renderer → Main：触发任务完成/失败的系统通知 */
-  ShowTaskNotification: "zcode:show-task-notification",
+  ShowTaskNotification: "kcode:show-task-notification",
   /** Main → Preload：通知 renderer 播放任务通知提示音 */
-  TaskNotificationSound: "zcode:task-notification-sound",
+  TaskNotificationSound: "kcode:task-notification-sound",
   /** Main → Preload：用户点击了系统通知，携带 taskId 让 renderer 跳转到对应任务 */
-  TaskNotificationClick: "zcode:task-notification-click",
-  /** Renderer → Main：导出日志（打包 ~/.zcode/v2 及外部 agent 日志为 zip 并在 Finder 中显示） */
-  ExportLogs: "zcode:export-logs",
+  TaskNotificationClick: "kcode:task-notification-click",
+  /** Renderer → Main：导出日志（打包 ~/.kcode/v2 及外部 agent 日志为 zip 并在 Finder 中显示） */
+  ExportLogs: "kcode:export-logs",
   /** Renderer → Main：截取当前窗口作为反馈附件 */
-  CaptureWindowScreenshot: "zcode:capture-window-screenshot",
+  CaptureWindowScreenshot: "kcode:capture-window-screenshot",
   /**
    * Renderer → Main：`<webview>` guest dom-ready 后上报 webContentsId，
    * main 用 BrowserGuestManager attach 该 guest（fire-and-forget）。CDP-on-guest pivot。
    */
-  BrowserViewAttachGuest: "zcode:browser-view-attach-guest",
+  BrowserViewAttachGuest: "kcode:browser-view-attach-guest",
   /** Renderer → Main：重建 `<webview>` 前主动断开旧 guest 的 CDP。 */
-  BrowserViewDetachGuest: "zcode:browser-view-detach-guest",
+  BrowserViewDetachGuest: "kcode:browser-view-detach-guest",
   /** Renderer → Main：用户显式关闭 Browser tab。 */
-  BrowserViewCloseTabFromRenderer: "zcode:browser-view-close-tab-from-renderer",
+  BrowserViewCloseTabFromRenderer: "kcode:browser-view-close-tab-from-renderer",
   /** Renderer → Main：上报 Browser tab residency/display facts。 */
-  BrowserViewReportResidency: "zcode:browser-view-report-residency",
+  BrowserViewReportResidency: "kcode:browser-view-report-residency",
   /** Renderer → Main：指定 generation 的 guest 已卸载。 */
-  BrowserViewSuspendReady: "zcode:browser-view-suspend-ready",
+  BrowserViewSuspendReady: "kcode:browser-view-suspend-ready",
   /** Renderer → Main：用户访问 suspended tab，请求恢复。 */
-  BrowserViewEnsureResident: "zcode:browser-view-ensure-resident",
+  BrowserViewEnsureResident: "kcode:browser-view-ensure-resident",
   /** Renderer → Main：读取 workspace/task 的持久化 logical shells。 */
-  BrowserViewRestoreTabs: "zcode:browser-view-restore-tabs",
+  BrowserViewRestoreTabs: "kcode:browser-view-restore-tabs",
   /** Renderer → Main：自由尺寸拖拽/开关回写目标 guest viewport */
-  BrowserViewUpdateViewport: "zcode:browser-view-update-viewport",
+  BrowserViewUpdateViewport: "kcode:browser-view-update-viewport",
   /** Embedded Browser preload → Main：在网页原生 Dialog 创建前同步请求可信系统框。 */
-  EmbeddedBrowserJavaScriptDialog: "zcode:embedded-browser-javascript-dialog",
+  EmbeddedBrowserJavaScriptDialog: "kcode:embedded-browser-javascript-dialog",
   /** Renderer → Main：把自动发现的本机 Chrome Profile 数据一次性导入内置浏览器分区。 */
-  ImportChromeBrowserData: "zcode:import-chrome-browser-data",
+  ImportChromeBrowserData: "kcode:import-chrome-browser-data",
   /** Renderer → Main：清理内置浏览器缓存或全部站点数据。 */
-  ClearEmbeddedBrowserData: "zcode:clear-embedded-browser-data",
+  ClearEmbeddedBrowserData: "kcode:clear-embedded-browser-data",
   /** Main → Renderer：通知有新版本已下载完毕，可以重启安装 */
-  UpdateReady: "zcode:update-ready",
+  UpdateReady: "kcode:update-ready",
   /** Main → Renderer：用户手动点击"检查更新"后的结果反馈（toast 用） */
-  UpdateCheckResult: "zcode:update-check-result",
+  UpdateCheckResult: "kcode:update-check-result",
   /** Main → Renderer：自动更新持续状态变化（菜单 UI 用） */
-  UpdateStateChanged: "zcode:update-state-changed",
+  UpdateStateChanged: "kcode:update-state-changed",
   /** Renderer → Main：主动获取当前自动更新状态（菜单打开时补偿事件丢失） */
-  GetUpdateState: "zcode:get-update-state",
+  GetUpdateState: "kcode:get-update-state",
   /** Renderer → Main：开始下载当前已发现的自动更新 */
-  DownloadUpdate: "zcode:download-update",
+  DownloadUpdate: "kcode:download-update",
   /** Renderer → Main：取消当前正在下载的自动更新 */
-  CancelUpdateDownload: "zcode:cancel-update-download",
+  CancelUpdateDownload: "kcode:cancel-update-download",
   /** Renderer → Main：打开独立自动更新窗口 */
-  OpenUpdateStatusWindow: "zcode:open-update-status-window",
+  OpenUpdateStatusWindow: "kcode:open-update-status-window",
   /** Renderer → Main：读取自动更新偏好 */
-  GetAutoUpdatePreferences: "zcode:get-auto-update-preferences",
+  GetAutoUpdatePreferences: "kcode:get-auto-update-preferences",
   /** Renderer → Main：写入“自动下载并安装更新”偏好 */
-  SetAutoDownloadAndInstallUpdates: "zcode:set-auto-download-and-install-updates",
+  SetAutoDownloadAndInstallUpdates: "kcode:set-auto-download-and-install-updates",
   /** Renderer → Main：查询桌面端正在运行的会话数量 */
-  GetDesktopSessionActivity: "zcode:get-desktop-session-activity",
+  GetDesktopSessionActivity: "kcode:get-desktop-session-activity",
   /** Renderer → Main：读取当前窗口页面缩放档位 */
-  GetDesktopZoomLevel: "zcode:get-desktop-zoom-level",
+  GetDesktopZoomLevel: "kcode:get-desktop-zoom-level",
   /** Main → Renderer：当前窗口页面缩放档位变化 */
-  DesktopZoomLevelChanged: "zcode:desktop-zoom-level-changed",
+  DesktopZoomLevelChanged: "kcode:desktop-zoom-level-changed",
   /** Renderer → Main：读取开发态 stdio tap proxy 开关状态 */
-  GetZCodeStdioTapDevState: "zcode:get-zcode-stdio-tap-dev-state",
+  GetKCodeStdioTapDevState: "kcode:get-kcode-stdio-tap-dev-state",
   /** Main → Renderer：本地 setting.json 已由 main 进程更新 */
-  SettingsChanged: "zcode:settings-changed",
+  SettingsChanged: "kcode:settings-changed",
   /** Main → Renderer：应用语言已切换 */
-  ApplicationLocaleChanged: "zcode:application-locale-changed",
+  ApplicationLocaleChanged: "kcode:application-locale-changed",
   /** Renderer → Main：读取宿主系统语言 */
-  GetSystemLocale: "zcode:get-system-locale",
+  GetSystemLocale: "kcode:get-system-locale",
   /** Main → Renderer：更新安装后的版本说明 */
-  PostUpdateReleaseNotes: "zcode:post-update-release-notes",
+  PostUpdateReleaseNotes: "kcode:post-update-release-notes",
   /** Renderer → Main：确认版本说明已读 */
-  AcknowledgePostUpdateReleaseNotes: "zcode:ack-post-update-release-notes",
+  AcknowledgePostUpdateReleaseNotes: "kcode:ack-post-update-release-notes",
   /** Renderer → Main：跳过当前已发现的自动更新版本 */
-  SkipUpdateVersion: "zcode:skip-update-version",
+  SkipUpdateVersion: "kcode:skip-update-version",
   /** Renderer → Main：用户确认重启安装更新 */
-  QuitAndInstallUpdate: "zcode:quit-and-install-update",
+  QuitAndInstallUpdate: "kcode:quit-and-install-update",
   /** Renderer → Main：获取系统中已安装的编辑器/终端列表（含图标） */
-  GetInstalledEditors: "zcode:get-installed-editors",
+  GetInstalledEditors: "kcode:get-installed-editors",
   /** Renderer → Main：按 bundle id 获取系统应用图标 */
-  GetApplicationIcon: "zcode:get-application-icon",
+  GetApplicationIcon: "kcode:get-application-icon",
   /** Renderer → Main：用指定编辑器打开路径 */
-  OpenInEditor: "zcode:open-in-editor",
+  OpenInEditor: "kcode:open-in-editor",
   /** Renderer → Main：执行桌面窗口级命令 */
-  ExecuteDesktopCommand: "zcode:execute-desktop-command",
+  ExecuteDesktopCommand: "kcode:execute-desktop-command",
   /** Renderer → Main：同步应用菜单语言，用于重建原生菜单 */
-  SetApplicationLocale: "zcode:set-application-locale",
+  SetApplicationLocale: "kcode:set-application-locale",
   /** Renderer → Main：同步标题栏亮暗色，用于原生窗口控制按钮配色 */
-  SetTitleBarTheme: "zcode:set-title-bar-theme",
+  SetTitleBarTheme: "kcode:set-title-bar-theme",
   /** Renderer → Main：迁移旧版 Common MCP 配置 */
-  MigrateLegacyCommonMcp: "zcode:migrate-legacy-common-mcp",
+  MigrateLegacyCommonMcp: "kcode:migrate-legacy-common-mcp",
   /** Renderer → Main：获取当前设备的稳定标识符（deviceMid） */
-  GetDeviceId: "zcode:get-device-id",
+  GetDeviceId: "kcode:get-device-id",
 } as const;
 
 export type PlatformChannelName = (typeof PlatformChannels)[keyof typeof PlatformChannels];
@@ -432,7 +432,7 @@ export type PlatformChannelName = (typeof PlatformChannels)[keyof typeof Platfor
 /** Electron `<webview>` 的 `sendToHost` / `ipc-message` 频道，不经过 main process。 */
 export const EmbeddedBrowserWebviewChannels = {
   /** Guest 无法继续消费某方向的滚动时，把二维 delta 转交自由尺寸画布。 */
-  WheelBoundary: "zcode:embedded-browser-wheel-boundary",
+  WheelBoundary: "kcode:embedded-browser-wheel-boundary",
 } as const;
 
 export interface EmbeddedBrowserWheelBoundaryPayload {
@@ -445,12 +445,12 @@ export interface EmbeddedBrowserWheelBoundaryPayload {
 // ============================================================================
 
 /**
- * Electron `<webview>`（partition=persist:zcode-coding-plan）的 `sendToHost` / `ipc-message` 频道。
- * 官网页通过 preload 注入的 window.zcodeBridge 调用，不经过 main process。
+ * Electron `<webview>`（partition=persist:kcode-coding-plan）的 `sendToHost` / `ipc-message` 频道。
+ * 官网页通过 preload 注入的 window.kcodeBridge 调用，不经过 main process。
  */
 export const CodingPlanWebviewChannels = {
   /** 官网页购买成功后通知 App 刷新 entitlements 并关闭 webview。 */
-  PurchaseComplete: "zcode:coding-plan-purchase-complete",
+  PurchaseComplete: "kcode:coding-plan-purchase-complete",
 } as const;
 
 /** 购买完成回传 payload。provider 与官网 CodingPlanProvider / auth-ready 事件 detail.provider 同构。 */
@@ -461,14 +461,14 @@ export interface CodingPlanPurchaseCompletePayload {
 }
 
 /**
- * 官网页 window.__zcodeLang__ 的取值，与 App IntlProvider 的 Locale 一致。
+ * 官网页 window.__kcodeLang__ 的取值，与 App IntlProvider 的 Locale 一致。
  * App locale 变化时通过 executeJavaScript 重写此变量并派发 lang-change 事件。
  */
 export type CodingPlanWebviewLocale = "zh-CN" | "en-US";
 
 /**
  * 官网页 lang-change 事件 detail。App 用 executeJavaScript 在 main world 派发
- * `zcode-coding-plan-lang-change` CustomEvent，website 侧（zcodeBridge.onLangChange 或
+ * `kcode-coding-plan-lang-change` CustomEvent，website 侧（kcodeBridge.onLangChange 或
  * 直接 window.addEventListener）订阅后切换 copy。
  */
 export interface CodingPlanWebviewLangChangeDetail {
@@ -480,22 +480,22 @@ export interface CodingPlanWebviewLangChangeDetail {
 // ============================================================================
 /** 内部传输频道。用于 MessagePort 转发等框架级通信。 */
 export const InternalChannels = {
-  DatabaseStartupState: "zcode:database-startup-state",
-  DatabaseStartupControl: "zcode:database-startup-control",
+  DatabaseStartupState: "kcode:database-startup-state",
+  DatabaseStartupControl: "kcode:database-startup-control",
   /** main → renderer 转发 MessagePort（通过 webContents.postMessage） */
-  ServicePort: "zcode:service-port",
+  ServicePort: "kcode:service-port",
   /** main → renderer 转发窗口 Host 的 scoped MessagePort */
-  ScopedServicePort: "zcode:scoped-service-port",
+  ScopedServicePort: "kcode:scoped-service-port",
   /** renderer → main：scoped MessagePort 已注册，可安全切换 attachment */
-  ScopedServicePortReady: "zcode:scoped-service-port-ready",
+  ScopedServicePortReady: "kcode:scoped-service-port-ready",
   /** preload → renderer：主进程已确认系统通知展示，renderer 可播放提示音 */
-  TaskNotificationSound: "zcode:task-notification-sound",
+  TaskNotificationSound: "kcode:task-notification-sound",
 } as const;
 
 /** @deprecated `/ws` 已忽略该头；保留常量仅供旧客户端兼容。 */
-export const ZCODE_RPC_CLIENT_MODE_HEADER = "x-zcode-rpc-client-mode";
+export const KCODE_RPC_CLIENT_MODE_HEADER = "x-kcode-rpc-client-mode";
 /** desktop 先经受保护 HTTP endpoint 申请，再在 `/ws/host` 握手时一次性消费。 */
-export const ZCODE_RPC_HOST_CAPABILITY_HEADER = "x-zcode-rpc-host-capability";
+export const KCODE_RPC_HOST_CAPABILITY_HEADER = "x-kcode-rpc-host-capability";
 
 // ============================================================================
 // 进程间消息类型 —— main ↔ host process 之间的 postMessage
@@ -546,7 +546,7 @@ export const HostMessageTypes = {
   BrowserExecuteResult: "browser-execute-result",
   /** main → host：本地视频 canonical path 授权结果 */
   LocalMediaPreviewPathAuthorizeResult: "local-media-preview-path-authorize-result",
-  /** Main → Host：全局前台 ZCode 窗口派生的 producer focus fact。 */
+  /** Main → Host：全局前台 KCode 窗口派生的 producer focus fact。 */
   CuaPipFocusChanged: "cua-pip-focus-changed",
   /** main → host：要求 Host 现读本地 Source，并同步指定 Remote Environment。 */
   ProviderProvisioningExecute: "provider-provisioning-execute",
@@ -619,7 +619,7 @@ export const HostResponseTypes = {
   TaskOwnerCommandResult: "task-owner-command-result",
   /** host → main：Agent 请求向另一个 session 发送消息 */
   SessionMessageSendRequested: "session-message-send-requested",
-  /** host → main：声明一个 ZCode Agent session 当前归属该 host */
+  /** host → main：声明一个 KCode Agent session 当前归属该 host */
   SessionRouteAnnounce: "session-route-announce",
   /** host → main：目标 host 完成本地 session message 投递 */
   SessionMessageDeliverResult: "session-message-deliver-result",

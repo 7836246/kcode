@@ -1,4 +1,4 @@
-import type { WorkspaceFileEntry } from "@zcode/shared";
+import type { WorkspaceFileEntry } from "@kcode/shared";
 import {
   getWorkspaceFileAncestorDirectories,
   isWorkspaceFilePathInside,

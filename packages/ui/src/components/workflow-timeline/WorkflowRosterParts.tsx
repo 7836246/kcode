@@ -1,7 +1,7 @@
 import { CircleCheckIcon, CircleXIcon, LoaderCircleIcon } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import type { StepRunStatus } from "@/components/workflow-graph/types.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type { RosterCounts } from "./roster-model.js";
 
 /**
@@ -10,7 +10,7 @@ import type { RosterCounts } from "./roster-model.js";
 const COUNT_ORDER: readonly StepRunStatus[] = ["done", "running", "failed", "pending"];
 
 function useCountLabels(counts: RosterCounts): Record<StepRunStatus, string> {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const label = (status: StepRunStatus) =>
     intl.formatMessage(
       { id: `chat.toolCall.workflow.timeline.roster.${status}` },

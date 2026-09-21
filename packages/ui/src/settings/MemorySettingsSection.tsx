@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type IMemoryService, type ProjectMemoryWorkspaceSummary } from "@zcode/services";
-import { TID_SETTINGS_MEMORY_SWITCH } from "@zcode/shared";
+import { type IMemoryService, type ProjectMemoryWorkspaceSummary } from "@kcode/services";
+import { TID_SETTINGS_MEMORY_SWITCH } from "@kcode/shared";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
 import { Switch } from "@/components/ui/switch.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import {
   MemorySettingsViewer,
   type MemoryViewerLoadingState,
@@ -56,7 +56,7 @@ export function MemorySettingsSection({
   projectMemoryViewerAvailable: boolean;
   workspaceDisplayNames?: readonly string[];
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const catalogRequestIdRef = useRef(0);
   const [catalogState, setCatalogState] = useState<MemoryViewerLoadingState>("idle");
   const [catalogError, setCatalogError] = useState<string | null>(null);

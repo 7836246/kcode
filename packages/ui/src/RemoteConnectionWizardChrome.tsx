@@ -2,7 +2,7 @@ import { CheckIcon, MinusIcon, XIcon } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog.js";
 import { Button } from "@/components/ui/button.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 
 export type RemoteWizardStep = "kind" | "settings" | "connecting" | "directory";
 
@@ -35,7 +35,7 @@ function getStepIndex(step: RemoteWizardStep): number {
 }
 
 export function RemoteConnectionWizardSidebar({ currentStep }: { currentStep: RemoteWizardStep }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const currentIndex = getStepIndex(currentStep);
 
   return (
@@ -146,7 +146,7 @@ export function RemoteConnectionWizardHeader({
   onMinimize?: () => void;
   onClose?: () => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <div className="space-y-2">

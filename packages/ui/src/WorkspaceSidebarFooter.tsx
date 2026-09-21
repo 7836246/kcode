@@ -1,13 +1,12 @@
 /* oxlint-disable eslint(max-lines) -- footer 聚合账户、主题、模式和快捷键菜单。 */
-import type { Locale, UserInfo } from "@zcode/shared";
+import type { Locale, UserInfo } from "@kcode/shared";
 import { memo, useCallback, useEffect, useState } from "react";
 import {
   DesktopCommandIds,
-  TID_LOGIN_MENU_ITEM,
   TID_LOGIN_TRIGGER,
   TID_LOGOUT_BUTTON,
   TID_TASK_SETTINGS_BUTTON,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
 import { cn } from "@/components/lib/utils.js";
@@ -29,7 +28,6 @@ import {
   PencilRuler,
   Globe,
   Loader2,
-  LogInIcon,
   LogOut,
   Maximize,
   Palette,
@@ -39,9 +37,9 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
-import { useZCodeStore } from "@/store/StoreProvider.js";
+import { useKCodeStore } from "@/store/StoreProvider.js";
 import { normalizeInterfaceMode } from "@/lib/interfaceMode.js";
 import type { Theme } from "@/useTheme.js";
 import {
@@ -64,18 +62,11 @@ function getSidebarProfileName(user?: UserInfo | null): string {
     return username;
   }
 
-  return "ZCode";
+  return "KCode";
 }
 
-function getSidebarProfileBadge(
-  user: UserInfo | null | undefined,
-  formatMessage: ReturnType<typeof useZCodeIntl>["intl"]["formatMessage"],
-): string {
-  if (user) {
-    return getSidebarProfileName(user);
-  }
-
-  return formatMessage({ id: "sidebar.profile.notLoggedIn" });
+function getSidebarProfileBadge(user: UserInfo | null | undefined): string {
+  return getSidebarProfileName(user);
 }
 
 function getAvatarFallbackText(user: UserInfo | null | undefined): string {
@@ -90,8 +81,6 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onThemeChange,
   onSettingsButtonClick,
   onUsageClick,
-  onUpgradeClick,
-  onLogin,
   onLogout,
   settingsButtonMode = "settings",
   user,
@@ -108,10 +97,6 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onThemeChange: (value: string) => void;
   onSettingsButtonClick?: () => void;
   onUsageClick?: () => void;
-  onUpgradeClick?: Parameters<
-    typeof WorkspaceSidebarFooterUsageSummaryContent
-  >[0]["onUpgradeClick"];
-  onLogin?: () => void;
   onLogout?: () => void;
   settingsButtonMode?: "settings" | "back";
   user?: UserInfo | null;
@@ -122,15 +107,15 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   isDesktop?: boolean;
   className?: string;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const platform = usePlatform();
-  const interfaceMode = useZCodeStore((state) => state.interfaceMode);
-  const setInterfaceMode = useZCodeStore((state) => state.setInterfaceMode);
+  const interfaceMode = useKCodeStore((state) => state.interfaceMode);
+  const setInterfaceMode = useKCodeStore((state) => state.setInterfaceMode);
   const zoomInShortcutLabel = useShortcutCommandLabel("zoomIn");
   const zoomOutShortcutLabel = useShortcutCommandLabel("zoomOut");
   const resetZoomShortcutLabel = useShortcutCommandLabel("resetZoom");
-  const isRestoringOAuthSession = useZCodeStore((state) => state.isRestoringOAuthSession);
-  const profileBadge = getSidebarProfileBadge(user, intl.formatMessage);
+  const isRestoringOAuthSession = useKCodeStore((state) => state.isRestoringOAuthSession);
+  const profileBadge = getSidebarProfileBadge(user);
   const avatarFallbackText = getAvatarFallbackText(user);
   const avatarKey = user?.avatarUrl ?? user?.id ?? "guest";
   const showAuthRestoreLoading = !user && isRestoringOAuthSession;
@@ -306,7 +291,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
             </DropdownMenuSub>
             {/* 快捷键设置：缩放子菜单 label 读生效表，设置页改绑后即时跟随 */}
             {/* 收口重复缩放子菜单时误留了语言之后的那份，导致菜单顺序变成
-                语言→缩放→主题；账户菜单分组顺序固定为 语言→主题→界面模式→缩放→用量→登录/登出，
+                语言→缩放→主题；账户菜单分组顺序固定为 语言→主题→界面模式→缩放→用量→登出，
                 这里把唯一一份（读生效表）挪回用量摘要之前，不要再补第二份缩放子菜单。 */}
             {isDesktop ? (
               <DropdownMenuSub>
@@ -342,21 +327,10 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             ) : null}
-            {/* 升级入口状态不再以菜单开关为生命周期边界。*/}
             <WorkspaceSidebarFooterUsageSummaryContent
               state={usageSummaryState}
               onUsageClick={usageButtonClick}
-              onUpgradeClick={onUpgradeClick}
             />
-            {onLogin && !user ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={onLogin} data-testid={TID_LOGIN_MENU_ITEM}>
-                  <LogInIcon className="size-4" />
-                  {intl.formatMessage({ id: "app.login" })}
-                </DropdownMenuItem>
-              </>
-            ) : null}
             {onLogout ? (
               <>
                 <DropdownMenuSeparator />

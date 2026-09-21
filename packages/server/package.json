@@ -1,5 +1,5 @@
 {
-  "name": "@zcode/server",
+  "name": "@kcode/server",
   "private": true,
   "type": "module",
   "exports": {
@@ -22,10 +22,10 @@
     "@lydell/node-pty-darwin-x64": "1.2.0-beta.10",
     "@lydell/node-pty-linux-arm64": "1.2.0-beta.10",
     "@lydell/node-pty-linux-x64": "1.2.0-beta.10",
-    "@zcode/client": "workspace:*",
-    "@zcode/rpc": "workspace:*",
-    "@zcode/services": "workspace:*",
-    "@zcode/shared": "workspace:*",
+    "@kcode/client": "workspace:*",
+    "@kcode/rpc": "workspace:*",
+    "@kcode/services": "workspace:*",
+    "@kcode/shared": "workspace:*",
     "axios": "^1.13.6",
     "combined-stream": "^1.0.8",
     "follow-redirects": "^1.16.0",

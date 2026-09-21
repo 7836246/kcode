@@ -1,6 +1,6 @@
 import type { AccountProviderStates } from "./account-provider-state.js";
-import type { EffectiveModelSelectionResult } from "@zcode/shared/model-selection";
-export type { EffectiveModelSelectionResult } from "@zcode/shared/model-selection";
+import type { EffectiveModelSelectionResult } from "@kcode/shared/model-selection";
+export type { EffectiveModelSelectionResult } from "@kcode/shared/model-selection";
 import {
   validateModelSelectionOptions,
   type ModelSelection,

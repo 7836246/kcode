@@ -40,20 +40,20 @@ import {
   TID_V4_BACKGROUND_WORK_CANCEL,
   TID_V4_BACKGROUND_WORK_ITEM,
   testId,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type {
   GitChangeSourceId,
   GitRepositorySummary,
-  ZCodeSessionRunningSubagent,
-  ZCodeTaskChangeSummary,
-} from "@zcode/shared";
+  KCodeSessionRunningSubagent,
+  KCodeTaskChangeSummary,
+} from "@kcode/shared";
 import type {
   BackgroundWorkSummary,
   GoalState,
   PlanState,
   ToolCallRow,
   WorkflowRunState,
-} from "@zcode/shared/zcode-protocol-v4";
+} from "@kcode/shared/kcode-protocol-v4";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import {
@@ -78,7 +78,7 @@ import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { formatBackgroundTaskElapsedLabel } from "@/BackgroundTaskElapsedLabel.js";
 import { GitActionMenu } from "@/GitActionMenu.js";
 import { GitBranchSwitcher } from "@/GitBranchSwitcher.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type {
   OpenPlanDetailSideTabRequest,
   OpenSubagentDirectorySideTabRequest,
@@ -108,12 +108,12 @@ interface ConversationStatusPanelProps {
   gitDirtyFileCount?: number;
   gitWorktreeReviewSourceId?: GitChangeSourceId | null;
   gitWorktreeChangeSummary?: { added: number; removed: number } | null;
-  activeTaskChangeSummary?: ZCodeTaskChangeSummary | null;
+  activeTaskChangeSummary?: KCodeTaskChangeSummary | null;
   goal?: GoalState | null;
   sessionPlans?: readonly ToolCallRow[];
   plan?: PlanState | null;
   backgroundWorks?: readonly BackgroundWorkSummary[];
-  runningSubagents?: readonly ZCodeSessionRunningSubagent[];
+  runningSubagents?: readonly KCodeSessionRunningSubagent[];
   /** 本会话 `snapshot.workflowRuns.runs`；与 backgroundWorks 在模型层按 workId ≡ runId 联接。 */
   workflowRuns?: readonly WorkflowRunState[];
   /**
@@ -153,12 +153,12 @@ interface ConversationStatusPanelProps {
 
 // memo 组件默认 props 不内联创建数组，避免每次渲染生成新引用触发稳定引用边界测试。
 const EMPTY_BACKGROUND_WORKS: readonly BackgroundWorkSummary[] = [];
-const EMPTY_RUNNING_SUBAGENTS: readonly ZCodeSessionRunningSubagent[] = [];
+const EMPTY_RUNNING_SUBAGENTS: readonly KCodeSessionRunningSubagent[] = [];
 const EMPTY_WORKFLOW_RUNS: readonly WorkflowRunState[] = [];
 
 function formatDurationUnits(
   totalSeconds: number,
-  formatMessage: ReturnType<typeof useZCodeIntl>["intl"]["formatMessage"],
+  formatMessage: ReturnType<typeof useKCodeIntl>["intl"]["formatMessage"],
 ) {
   const seconds = Math.max(0, Math.floor(totalSeconds));
   const hours = Math.floor(seconds / 3600);
@@ -193,7 +193,7 @@ function getLongestRunningWorkElapsedMs(works: readonly BackgroundWorkSummary[],
 }
 
 function formatRunningCount(
-  formatMessage: ReturnType<typeof useZCodeIntl>["intl"]["formatMessage"],
+  formatMessage: ReturnType<typeof useKCodeIntl>["intl"]["formatMessage"],
   count: number,
 ) {
   return formatMessage(
@@ -208,7 +208,7 @@ function formatRunningCount(
 }
 
 function formatRunningSubagentCount(
-  formatMessage: ReturnType<typeof useZCodeIntl>["intl"]["formatMessage"],
+  formatMessage: ReturnType<typeof useKCodeIntl>["intl"]["formatMessage"],
   count: number,
 ) {
   return formatMessage(
@@ -366,7 +366,7 @@ function GitStatusSection({
   workspacePath,
   useVerticalFloatingPanels,
 }: {
-  activeTaskChangeSummary?: ZCodeTaskChangeSummary | null;
+  activeTaskChangeSummary?: KCodeTaskChangeSummary | null;
   gitSummary: GitRepositorySummary | null | undefined;
   gitWorktreeReviewSourceId?: GitChangeSourceId | null;
   model: ConversationStatusPanelModel;
@@ -377,7 +377,7 @@ function GitStatusSection({
   workspacePath: string;
   useVerticalFloatingPanels: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const git = model.git;
   if (!git || !gitSummary || !onRefreshGit) {
     return null;
@@ -465,7 +465,7 @@ function GoalStatusSection({
   onResumeGoal?: () => void;
   separated: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const goal = model.goal;
   const isPausable =
     goal?.status === "active" || goal?.status === "verifying" || goal?.status === "notSatisfied";
@@ -721,7 +721,7 @@ function TodoHiddenGroupPreview({
   open: boolean;
   popoverSide: "bottom" | "left";
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const messageId =
     group === "preceding"
       ? items.every((item) => item.status === "completed")
@@ -815,7 +815,7 @@ function SessionPlansStatusSection({
   parentSessionId?: string;
   separated: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const sessionPlans = model.sessionPlans;
   if (!sessionPlans) return null;
 
@@ -877,7 +877,7 @@ function PlanStatusSection({
   popoverSide: "bottom" | "left";
   separated: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const plan = model.plan;
   if (!plan) return null;
   const isCompleted = plan.totalCount > 0 && plan.completedCount >= plan.totalCount;
@@ -916,7 +916,7 @@ function RunningWorkCancelButton({
   workId: string;
   onCancel?: (workId: string) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const handleClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
@@ -952,7 +952,7 @@ function buildRunningSubagentOpenRequest({
 }: {
   parentSessionId?: string;
   rootSessionId?: string;
-  subagent: ZCodeSessionRunningSubagent;
+  subagent: KCodeSessionRunningSubagent;
 }): OpenSubagentSideTabRequest | null {
   if (!parentSessionId) return null;
   return {
@@ -975,7 +975,7 @@ function RunningStatusItem({
   onCancelBackgroundWork?: (workId: string) => void;
   work: BackgroundWorkSummary;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <li
@@ -1034,7 +1034,7 @@ function BackgroundWorkStatusSection({
   title: string;
   works: readonly BackgroundWorkSummary[];
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [now, setNow] = useState(() => Date.now());
   const orderedRunningWorks = useMemo(
     () => [...works].sort((left, right) => left.startedAt - right.startedAt),
@@ -1139,7 +1139,7 @@ function WorkflowStatusSection({
   separated: boolean;
   title: string;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [now, setNow] = useState(() => Date.now());
   // 只有带 startedAt 的行需要秒级刷新；一行都没有时不必让面板每秒重渲染。
   const tickingRunCount = runs.filter((run) => run.startedAt !== undefined).length;
@@ -1338,7 +1338,7 @@ function SubagentStatusSection({
   title: string;
   subagents: readonly ConversationStatusPanelRunningSubagent[];
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [now, setNow] = useState(() => Date.now());
   const ordered = useMemo(
     () => [...subagents].sort((left, right) => (left.startedAt ?? 0) - (right.startedAt ?? 0)),
@@ -1511,7 +1511,7 @@ function EndedSubagentDirectoryRow({
   rootSessionId?: string;
   separated: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   return (
     <EndedDirectoryRow
       count={count}
@@ -1569,7 +1569,7 @@ function StatusSummaryRow({
   model: ConversationStatusPanelModel;
   onVariantChange?: (variant: ChatViewSummaryPanelVariant | null) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const expandLabel = intl.formatMessage({ id: "chat.summaryPanel.showPanel" });
   const currentPlanItem = getCurrentPlanItem(model.plan);
   const completedPlanItem = getCompletedPlanItem(model.plan);
@@ -1782,7 +1782,7 @@ function ConversationStatusPanelImpl({
   const isVariantAutomatic = summaryPanelVariantOverride == null;
   const useVerticalFloatingPanels = false;
   const panelModeValue = isVariantAutomatic ? "auto" : variant;
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const panelMenuLabel = intl.formatMessage({
     id: "chat.summaryPanel.displayMode",
   });

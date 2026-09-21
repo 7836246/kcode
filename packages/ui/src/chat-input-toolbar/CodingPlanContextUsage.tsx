@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- Composer 用量入口集中维护多来源状态、弹层和重置交互；本阶段只迁移 Account Access，不拆分既有 UI 结构。 */
-import { type CodingPlanResetType } from "@zcode/shared";
+import { type CodingPlanResetType } from "@kcode/shared";
 import { Loader2 } from "lucide-react";
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -14,7 +14,7 @@ import { CodingPlanUsageNotice } from "@/chat-input-toolbar/CodingPlanUsageNotic
 import { CodingPlanQuotaResetOpportunity } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetOpportunity.js";
 import { buildCodingPlanQuotaResetDialogConfig } from "@/components/coding-plan-quota-reset/buildCodingPlanQuotaResetDialogConfig.js";
 import { useCodingPlanQuotaResetUi } from "@/hooks/useCodingPlanQuotaResetUi.js";
-import type { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import type { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import {
   findCodingPlanQuotaLimit,
   formatQuotaRemainingPercentage,
@@ -180,7 +180,7 @@ export function ChatCodingPlanUsageRemainingPanel({
   onQuotaResetDialogOpenChange,
 }: {
   config: ChatCodingPlanUsageRemainingConfig;
-  intl: ReturnType<typeof useZCodeIntl>["intl"];
+  intl: ReturnType<typeof useKCodeIntl>["intl"];
   locale: string;
   quotaResetDialogOpen?: boolean;
   separated?: boolean;
@@ -427,9 +427,9 @@ export function ChatCodingPlanUsageRemainingPanel({
           <ChatCodingPlanMcpUsageMeter
             color={mcpQuotaMeter.color}
             description={intl.formatMessage({
-              id: "sidebar.usage.plan.zcodeMcpDescription",
+              id: "sidebar.usage.plan.kcodeMcpDescription",
             })}
-            label={intl.formatMessage({ id: "sidebar.usage.plan.zcodeMcp" })}
+            label={intl.formatMessage({ id: "sidebar.usage.plan.kcodeMcp" })}
             percentage={getQuotaRemainingPercentage(mcpQuotaMeter.limit)}
             primaryQuotaCount={primaryQuotaMeters.length}
             resetTime={mcpQuotaMeter.resetTime}

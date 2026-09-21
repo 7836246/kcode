@@ -12,14 +12,14 @@ import {
   resolveModelProviderFamilySpecByProviderId,
   type ModelConnectivityResult,
   type OAuthProviderId,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import {
   getProviderFormApiKeyManagementUrl,
   type ProviderSettingsFormProvider,
 } from "@/lib/providerSettingsFormTypes.js";
 import { ArrowRightIcon, AstroidIcon, UsersIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useEffect, useMemo } from "react";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import {
   type CodingPlanStatus,
   type CodingPlanProviderId,
@@ -54,14 +54,9 @@ import { resolveStartPlanEntitlementSummary } from "./StartPlanCard.js";
 import { useCodingPlanProducts } from "./useCodingPlanProducts.js";
 import { useEnterpriseCodingPlanProducts } from "./useEnterpriseCodingPlanProducts.js";
 import { useUsageEntitlement } from "@/hooks/useUsageEntitlement.js";
-import {
-  createCodingPlanFunnelContext,
-  resolveCodingPlanEntryPlanState,
-} from "@/lib/codingPlanFunnelTelemetry.js";
-import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
-import type { ProviderSettingsView } from "@zcode/services";
-import type { SavePersonalModelDraftInput } from "@zcode/provider";
+import type { ProviderSettingsView } from "@kcode/services";
+import type { SavePersonalModelDraftInput } from "@kcode/provider";
 import { resolveAccountProviderInspectionAccess } from "@/lib/accountProviderAccess.js";
 import { projectProviderSettingsViewToFormProviders } from "@/lib/providerSettingsFormProjection.js";
 
@@ -302,12 +297,8 @@ export function ModelProviderSectionDetail({
   onSelectNavItem?: (item: ModelProviderNavItem) => void;
   providerSettingsView?: ProviderSettingsView | null;
 }) {
-  const { intl } = useZCodeIntl();
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  const { intl } = useKCodeIntl();
   const loadingLabel = intl.formatMessage({ id: "common.loading" });
-  const [upgradePlansVisibleProviderId, setUpgradePlansVisibleProviderId] =
-    useState<BuiltinModelProviderId | null>(null);
-  const selectedItemKey = selectedNavItem?.key ?? null;
   const rootProviderSettingsRead = useProviderSettingsView();
   const rootProviderSettingsView =
     rootProviderSettingsRead.state.status === "ready" ? rootProviderSettingsRead.state.view : null;
@@ -386,12 +377,15 @@ export function ModelProviderSectionDetail({
     />
   );
 
-  useEffect(() => {
-    setUpgradePlansVisibleProviderId(null);
-  }, [selectedItemKey]);
-
   if (!selectedNavItem) {
-    return <ModelProviderLoadingCard loadingLabel={loadingLabel} />;
+    if (presetLoading) {
+      return <ModelProviderLoadingCard loadingLabel={loadingLabel} />;
+    }
+    return (
+      <p className="text-ui-base text-foreground-subtle">
+        {intl.formatMessage({ id: "settings.modelProvider.empty" })}
+      </p>
+    );
   }
 
   if (selectedNavItem.type === "preset") {
@@ -514,61 +508,7 @@ export function ModelProviderSectionDetail({
           selectedNavItem.availabilityReason === "expired"))
         ? null
         : resolveCodingPlanAccessBanner(statusPanelViewState.displayStatus, intl, reloginOnFailure);
-    const upgradePlansVisible = upgradePlansVisibleProviderId === selectedNavItem.presetId;
-    const handleUpgradePlansVisibleChange = (visible: boolean) => {
-      setUpgradePlansVisibleProviderId(visible ? selectedNavItem.presetId : null);
-    };
-    const purchaseChoiceBannersVisible =
-      statusPanelViewState.displayStatus === "notPurchased" &&
-      (selectedNavItem.oauthProviderId === ZAI_PROVIDER_ID ||
-        (selectedNavItem.oauthProviderId === BIGMODEL_PROVIDER_ID &&
-          codingPlanPurchaseTokenAuthenticated));
-    const anonymousPurchaseChoiceBannersVisible =
-      (selectedNavItem.oauthProviderId === BIGMODEL_PROVIDER_ID ||
-        selectedNavItem.oauthProviderId === ZAI_PROVIDER_ID) &&
-      statusPanelViewState.displayStatus === "disconnected";
-    const handlePurchaseChoiceSelect = (
-      audience: PurchaseAudience,
-      options: { initialTeamPlanKey?: string; eventText?: string } = {},
-    ) => {
-      if (resolvePurchaseChoiceSelectionIntent(statusPanelViewState.displayStatus) === "login") {
-        // 未登录时个人/团队套餐必须先建立对应 provider 的 OAuth 身份。
-        // 直接打开购买面板会绕过账号态，导致后续价格/订单接口只能再报 oauth_required。
-        onCodingPlanLogin(
-          selectedNavItem.presetId,
-          selectedNavItem.oauthProviderId,
-          selectedNavItem.providerName,
-          selectedNavItem.status,
-        );
-        return;
-      }
-      const nextFunnelContext = createCodingPlanFunnelContext({
-        providerId: selectedNavItem.presetId,
-        upgradeSource:
-          audience === "team" ? "setting_team_plan_banner" : "setting_personal_plan_banner",
-        eventRegion: "app.setting",
-        eventText:
-          options.eventText ??
-          intl.formatMessage({
-            id:
-              audience === "team"
-                ? "settings.modelProvider.codingPlan.purchaseBanner.teamTitle"
-                : "settings.modelProvider.codingPlan.purchaseBanner.personalTitle",
-          }),
-        entryPlanState: resolveCodingPlanEntryPlanState({
-          displayStatus: statusPanelViewState.displayStatus,
-          providerId: selectedNavItem.presetId,
-          planLevel: selectedNavItem.planLevel,
-        }),
-        purchaseAudience: audience,
-      });
-      openCodingPlanUpgrade({
-        providerId: selectedNavItem.presetId,
-        initialAudience: audience,
-        initialTeamPlanKey: options.initialTeamPlanKey,
-        funnelContext: nextFunnelContext,
-      });
-    };
+    const upgradePlansVisible = false;
     const codingPlanFamilyHeader = (
       <ProviderFamilyHeader selectedNavItem={selectedNavItem} trailingAction={planModeSwitch} />
     );
@@ -586,19 +526,9 @@ export function ModelProviderSectionDetail({
             provider.accountState.entitled,
         ),
     );
-    const planSupplementalContent =
-      isStartPlanProvider && hasActivePaidPlan ? null : anonymousPurchaseChoiceBannersVisible ||
-        purchaseChoiceBannersVisible ? (
-        <CodingPlanPurchaseChoiceBanners
-          providerId={selectedNavItem.presetId}
-          soldOutVisible={codingPlanPurchaseTokenAuthenticated}
-          accountDisconnected={statusPanelViewState.displayStatus === "disconnected"}
-          onSelect={handlePurchaseChoiceSelect}
-          teamVisible={selectedNavItem.oauthProviderId !== ZAI_PROVIDER_ID}
-        />
-      ) : accessBanner ? (
-        <CodingPlanAccessBanner title={accessBanner.title} description={accessBanner.description} />
-      ) : null;
+    const planSupplementalContent = accessBanner ? (
+      <CodingPlanAccessBanner title={accessBanner.title} description={accessBanner.description} />
+    ) : null;
 
     if (shouldShowDedicatedProviderDetail && dedicatedProvider) {
       const statusPanel = (
@@ -679,17 +609,9 @@ export function ModelProviderSectionDetail({
               options,
             );
           }}
-          onOpenUpgradePlans={(options) => {
-            openCodingPlanUpgrade({
-              providerId: selectedNavItem.presetId,
-              initialAudience: options.initialAudience,
-              funnelContext: options.funnelContext ?? undefined,
-            });
-          }}
           upgradePlansVisible={upgradePlansVisible}
-          onUpgradePlansVisibleChange={handleUpgradePlansVisibleChange}
           purchaseInitialAudience={selectedNavItem.type === "teamPlan" ? "team" : "personal"}
-          upgradeActionVisible={!isStartPlanProvider || !hasActivePaidPlan}
+          upgradeActionVisible={false}
           startPlanPreviewVisible={false}
         />
       );
@@ -799,17 +721,9 @@ export function ModelProviderSectionDetail({
                 : undefined
             }
             disconnectLoading={codingPlanDisconnectProviderId === selectedNavItem.presetId}
-            onOpenUpgradePlans={(options) => {
-              openCodingPlanUpgrade({
-                providerId: selectedNavItem.presetId,
-                initialAudience: options.initialAudience,
-                funnelContext: options.funnelContext ?? undefined,
-              });
-            }}
             upgradePlansVisible={upgradePlansVisible}
-            onUpgradePlansVisibleChange={handleUpgradePlansVisibleChange}
             purchaseInitialAudience={selectedNavItem.type === "teamPlan" ? "team" : "personal"}
-            upgradeActionVisible={!isStartPlanProvider || !hasActivePaidPlan}
+            upgradeActionVisible={false}
             startPlanPreviewVisible={false}
           />
           {hidePlanModels ? null : providerSettingsView && !dedicatedProvider ? (
@@ -894,7 +808,7 @@ function CodingPlanPurchaseChoiceBanners({
   onSelectStartPlan?: () => void;
 }) {
   const entryGate = useCodingPlanEntryGate();
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const startPlanSummary = startPlanPreview
     ? resolveStartPlanEntitlementSummary(startPlanPreview, intl, locale)
     : null;
@@ -1171,7 +1085,7 @@ function PurchaseChoiceBannerPrice({
   currency: string | null;
   locale: string;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const formattedAmount = formatCodingPlanAmount(price, currency, locale);
   const isChineseLocale = locale.toLowerCase().startsWith("zh");
   if (!isChineseLocale) {
@@ -1215,7 +1129,7 @@ function CodingPlanAccessBanner({ title, description }: { title: string; descrip
 
 function resolveCodingPlanAccessBanner(
   status: CodingPlanStatus,
-  intl: ReturnType<typeof useZCodeIntl>["intl"],
+  intl: ReturnType<typeof useKCodeIntl>["intl"],
   reloginOnFailure = false,
 ): { title: string; description: string } | null {
   if (

@@ -6,9 +6,9 @@ import type {
   CodingPlanUsageSnapshot,
   UsageStatsRange,
   UsageStatsSnapshot,
-  ZCodeAccountAccess,
-  ZCodeProviderAccountAccess,
-} from "@zcode/shared";
+  KCodeAccountAccess,
+  KCodeProviderAccountAccess,
+} from "@kcode/shared";
 import { logger } from "@/logger.js";
 import { useServices } from "@/hooks/useServices.js";
 import { useStableAccountAccess } from "@/hooks/useStableAccountAccess.js";
@@ -75,7 +75,7 @@ export function useUsageStats(
     dataSource?: "local" | "monitor";
     enabled?: boolean;
     preferredProviderId?: string;
-    accountAccess?: ZCodeProviderAccountAccess | ZCodeAccountAccess;
+    accountAccess?: KCodeProviderAccountAccess | KCodeAccountAccess;
     requirePreferredProvider?: boolean;
     allowEnvApiKey?: boolean;
   } = {},
@@ -245,7 +245,7 @@ export function useCodingPlanUsageStats(
   options: {
     enabled?: boolean;
     preferredProviderId?: string;
-    accountAccess?: ZCodeProviderAccountAccess | ZCodeAccountAccess;
+    accountAccess?: KCodeProviderAccountAccess | KCodeAccountAccess;
     customStartDate?: string | null;
     customEndDate?: string | null;
   },

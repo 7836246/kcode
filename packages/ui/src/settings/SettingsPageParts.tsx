@@ -3,7 +3,7 @@ import type { BundledTheme } from "shiki";
 import { CodeBlock } from "@/components/ai-elements/code-block.js";
 import { Card, CardContent } from "@/components/ui/card.js";
 import { CODE_PREVIEW_THEME_OPTIONS, SETTINGS_PREVIEW_CODE } from "@/lib/codePreviewPreferences.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import {
   Select,
   SelectContent,
@@ -63,11 +63,11 @@ export function ThemePreviewCard({
   wrapLongLines: boolean;
   fontSizePx: number;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const previewSurfaceClassName = mode === "light" ? "ring-1 ring-black/5" : "ring-1 ring-white/8";
   const previewThemeStyle = {
-    "--color-background": mode === "light" ? "#f8f8f8" : "#161616",
-    "--color-card": mode === "light" ? "#f8f8f8" : "#161616",
+    "--color-background": mode === "light" ? "#ffffff" : "#161616",
+    "--color-card": mode === "light" ? "#ffffff" : "#161616",
     "--color-foreground": mode === "light" ? "#0d0d0d" : "#ffffff",
   } as CSSProperties;
 

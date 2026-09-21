@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { DesktopWindowChromeState, IPlatformService, UpdateStatePayload } from "@zcode/shared";
+import type { DesktopWindowChromeState, IPlatformService, UpdateStatePayload } from "@kcode/shared";
 import { logger } from "@/logger.js";
 import { toast } from "@/components/ui/toast.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 
 const MACOS_WINDOW_CONTROLS_DEFAULT_LEFT_PADDING_PX = 96;
 const WINDOWS_WINDOW_CONTROLS_DEFAULT_RIGHT_PADDING_PX = 136;
@@ -78,7 +78,7 @@ export function useAppChromeState({
   const sidebarContainerRef = useRef<HTMLElement | null>(null);
   const hasShownUpdateToastRef = useRef(false);
   const updateStateEventRevisionRef = useRef(0);
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   useEffect(() => {
     if (!isDesktop || !isMacDesktop) {

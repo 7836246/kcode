@@ -6,9 +6,9 @@ import {
   resolveModelProviderFamilySpecByProviderId,
   type UsageEntitlementSubscriptionDetail,
   type UsageQuotaLimit,
-  type ZCodeAccountAccess,
-  type ZCodeProviderAccountAccess,
-} from "@zcode/shared";
+  type KCodeAccountAccess,
+  type KCodeProviderAccountAccess,
+} from "@kcode/shared";
 import { InfoIcon, Loader2Icon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button.js";
@@ -17,7 +17,7 @@ import { logger } from "@/logger.js";
 import { LocalizedCodingPlanQuotaResetAction } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetAction.js";
 import { CodingPlanQuotaResetOpportunity } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetOpportunity.js";
 import { buildCodingPlanQuotaResetDialogConfig } from "@/components/coding-plan-quota-reset/buildCodingPlanQuotaResetDialogConfig.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useCodingPlanQuotaResetUi } from "@/hooks/useCodingPlanQuotaResetUi.js";
 import {
   formatQuotaResetTime,
@@ -121,7 +121,7 @@ export function PresetProviderPlaceholderCard({
   displayName: string;
   messageId?: string;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <div className="bg-background/50 rounded-2xl p-3">
@@ -213,10 +213,10 @@ export function CodingPlanStatusPanel({
   teamPlanAvailabilityReason?: TeamPlanAvailabilityReason;
   /** Team Plan 必须传完整连接 key，避免与同 provider 的个人套餐共享重置状态。 */
   quotaResetSourceKey?: string;
-  quotaResetAccountAccess?: ZCodeProviderAccountAccess | ZCodeAccountAccess;
+  quotaResetAccountAccess?: KCodeProviderAccountAccess | KCodeAccountAccess;
   onQuotaResetEntitlementRefresh?: () => void | Promise<void>;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [internalUpgradePlansVisible, setInternalUpgradePlansVisible] = useState(false);
   const [startPlanEntitlementRefreshing, setStartPlanEntitlementRefreshing] = useState(false);
   const upgradePlansVisible = controlledUpgradePlansVisible ?? internalUpgradePlansVisible;
@@ -314,9 +314,7 @@ export function CodingPlanStatusPanel({
   const displayPlanLevel = /^GLM[\s_-]+CODING\b/i.test(rawPlanLevel)
     ? formatQuotaModelDisplayName(rawPlanLevel)
     : normalizedPlanLevel;
-  const canUpgrade =
-    // Max 已是最高档但仍需要续期入口，不能因为不可升级就隐藏按钮。
-    upgradeActionVisible && isPurchased && !isChecking && !isUnsupported;
+  const canUpgrade = false;
   const canManageCodingPlan =
     !isDisconnected &&
     !isChecking &&
@@ -391,32 +389,7 @@ export function CodingPlanStatusPanel({
       }}
     />
   ) : null;
-  const buyAction =
-    !isStartPlanProvider && !canUpgrade && isNotPurchased && !isChecking && !isUnsupported ? (
-      <CodingPlanEntryButton
-        type="button"
-        size="lg"
-        // 未购买状态也可能正在等待权益接口返回；此时必须和 Upgrade
-        // 按钮一样禁用，避免旧的 notPurchased 快照被提前提交为购买入口。
-        disabled={effectiveViewState.loginLoading}
-        onClick={() => {
-          openUpgradePlans(
-            purchaseInitialAudience,
-            createSettingPlanCardFunnelContext(
-              intl.formatMessage({
-                id: "settings.modelProvider.codingPlan.subscribe",
-              }),
-            ),
-          );
-        }}
-      >
-        {/* 单卡同步可能晚于全局套餐查询；仅禁用会丢失等待反馈，和 Upgrade 保持一致。 */}
-        {effectiveViewState.loginLoading ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-        {intl.formatMessage({
-          id: "settings.modelProvider.codingPlan.subscribe",
-        })}
-      </CodingPlanEntryButton>
-    ) : null;
+  const buyAction = null;
   const inlineDisconnectVisible = canDisconnectProvider && !isPurchased;
   const planTitle = resolveCodingPlanStatusCardTitle({
     isPurchased,
@@ -719,10 +692,10 @@ function CodingPlanUsageSummaryCards({
   mcpQuotaLimit: UsageQuotaLimit | null;
   sourceKey: string;
   preferredProviderId: string;
-  accountAccess?: ZCodeProviderAccountAccess | ZCodeAccountAccess;
+  accountAccess?: KCodeProviderAccountAccess | KCodeAccountAccess;
   onEntitlementRefresh?: () => void | Promise<void>;
 }) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const [quotaResetDialogOpen, setQuotaResetDialogOpen] = useState(false);
   const resetUi = useCodingPlanQuotaResetUi({
     sourceKey,
@@ -889,7 +862,7 @@ function CodingPlanUsageSummaryCards({
             infoDescription={
               card.key === "serverMcp"
                 ? intl.formatMessage({
-                    id: "sidebar.usage.plan.zcodeMcpDescription",
+                    id: "sidebar.usage.plan.kcodeMcpDescription",
                   })
                 : undefined
             }
@@ -951,7 +924,7 @@ function isDisplayableUsageLimit(limit: UsageQuotaLimit): boolean {
 
 function resolveGenericUsageLimitLabel(
   limit: UsageQuotaLimit,
-  intl: ReturnType<typeof useZCodeIntl>["intl"],
+  intl: ReturnType<typeof useKCodeIntl>["intl"],
 ): string {
   if (limit.type === "TIME_LIMIT") {
     return intl.formatMessage({
@@ -980,7 +953,7 @@ function PlanUsageMetricCard({
   progressColor: string;
   resetTimeFormat: "date" | "dateTime";
 }) {
-  const { locale } = useZCodeIntl();
+  const { locale } = useKCodeIntl();
   const remainingPercentage = resolveLimitRemainingPercentage(limit);
   const progressPercentage = remainingPercentage ?? 0;
   const modelLabel = limit && limit.type !== "TIME_LIMIT" ? formatLimitModels(limit) : "";
@@ -1003,7 +976,7 @@ function PlanUsageMetricCard({
                 type="button"
                 aria-label={infoDescription}
                 className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-foreground-subtle transition-colors hover:text-foreground"
-                data-zcode-mcp-info="model-settings"
+                data-kcode-mcp-info="model-settings"
               >
                 <InfoIcon className="size-3.5" aria-hidden="true" />
               </button>

@@ -19,7 +19,7 @@ import type {
   PluginSyncComponentType,
   PluginSyncImportResult,
   PluginSyncRemoteStatus,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import type { IPluginSyncService } from "./pluginSync.js";
 import {
   createPluginSyncArchive,
@@ -75,7 +75,7 @@ const USER_CONFIG_FILE_MODE = 0o600;
 const MARKETPLACE_SOURCE_ROOT_DIRECTORY = "marketplace-sources";
 const MIRRORED_MARKETPLACE_PLUGIN_ROOT = "plugins";
 const PLUGIN_MANIFEST_RELATIVE_PATHS = [
-  [".zcode-plugin", "plugin.json"],
+  [".kcode-plugin", "plugin.json"],
   [".claude-plugin", "plugin.json"],
   [".codex-plugin", "plugin.json"],
 ] as const;
@@ -217,11 +217,11 @@ function resolveUserHomeDir(): string {
 }
 
 function getUserZcodeConfigPath(): string {
-  return join(resolveUserHomeDir(), ".zcode", "cli", "config.json");
+  return join(resolveUserHomeDir(), ".kcode", "cli", "config.json");
 }
 
 function getUserZcodePluginRoot(): string {
-  return join(resolveUserHomeDir(), ".zcode", "plugins");
+  return join(resolveUserHomeDir(), ".kcode", "plugins");
 }
 
 async function collectLocalUserPluginCandidates(): Promise<PluginSyncCandidate[]> {
@@ -360,7 +360,7 @@ async function importMarketplaceSourceArchiveInternal(
   archive: Uint8Array,
   maxArchiveBytes: number,
 ) {
-  const tempRoot = join(tmpdir(), `zcode-plugin-marketplace-source-${randomUUID()}`);
+  const tempRoot = join(tmpdir(), `kcode-plugin-marketplace-source-${randomUUID()}`);
   try {
     await extractPluginSyncArchive(archive, tempRoot, {
       maxExtractedBytes: maxArchiveBytes,
@@ -437,7 +437,7 @@ async function importPluginsArchive(
   archive: Uint8Array,
   maxArchiveBytes: number,
 ): Promise<PluginSyncImportResult> {
-  const tempRoot = join(tmpdir(), `zcode-plugin-sync-${randomUUID()}`);
+  const tempRoot = join(tmpdir(), `kcode-plugin-sync-${randomUUID()}`);
   try {
     await extractPluginSyncArchive(archive, tempRoot, {
       maxExtractedBytes: maxArchiveBytes,

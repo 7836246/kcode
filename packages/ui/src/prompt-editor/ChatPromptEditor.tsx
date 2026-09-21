@@ -8,7 +8,7 @@ import type {
   ReactNode,
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TID_CHAT_SEND_BUTTON } from "@zcode/shared";
+import { TID_CHAT_SEND_BUTTON } from "@kcode/shared";
 import { ArrowUpIcon, Hand, XIcon } from "lucide-react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { Button } from "@/components/ui/button.js";
@@ -19,7 +19,7 @@ import {
   type ChatComposerPasteEvent,
   type LexicalChatInputHandle,
 } from "@/LexicalChatInput.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type { AppSlashCommand } from "@/slashCommandHelpers.js";
 import {
   hasWorkspaceFileDragPayload,
@@ -63,6 +63,7 @@ export function ChatPromptEditor({
   topContent,
   leadingActions,
   attachmentAction,
+  planAction,
   betweenCancelAndSubmitAction,
   submitControl,
   inputTestId,
@@ -119,6 +120,11 @@ export function ChatPromptEditor({
     testId?: string;
     menuItemTestId?: string;
   };
+  /** 主输入框才有：添加菜单里的计划开关。行内编辑不传。 */
+  planAction?: {
+    enabled: boolean;
+    onToggle: (enabled: boolean) => void;
+  };
   /** 行内编辑专用：固定插在取消与主提交之间的第二动作。 */
   betweenCancelAndSubmitAction?: ReactNode;
   submitControl?: ReactNode;
@@ -149,7 +155,7 @@ export function ChatPromptEditor({
   /** mention 面板开关（透传 LexicalChatInput）。 */
   enableMentionPanel?: boolean;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const toolbarRef = useComposerToolbarFit();
   const internalInputApiRef = useRef<LexicalChatInputHandle | null>(null);
   const resolvedInputApiRef = inputApiRef ?? internalInputApiRef;
@@ -393,6 +399,7 @@ export function ChatPromptEditor({
                   actionMenuTitle={actionMenuTitle}
                   excludedSlashCommandNames={excludedSlashCommandNames}
                   attachmentAction={attachmentAction}
+                  planAction={planAction}
                   disabled={disabled}
                   disabledReason={disabledReason}
                   inputApiRef={resolvedInputApiRef}

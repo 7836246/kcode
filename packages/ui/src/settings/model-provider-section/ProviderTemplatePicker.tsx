@@ -1,16 +1,17 @@
-import type { ProviderSettingsView } from "@zcode/services";
+import type { ProviderSettingsView } from "@kcode/services";
 import { ArrowLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
-import { resolveProviderTemplateName } from "@zcode/provider";
+import { resolveProviderTemplateName } from "@kcode/provider";
 import type { ReactNode } from "react";
 import {
+  isOfficialZhipuProviderTemplateId,
   TID_MODEL_PROVIDER_TEMPLATE_BACK_BUTTON,
   TID_MODEL_PROVIDER_TEMPLATE_ITEM,
   TID_MODEL_PROVIDER_TEMPLATE_PICKER,
   testId,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { ProviderLogo } from "./ProviderLogo.js";
 import { useProviderDetailFeedback } from "./ProviderDetailFeedback.js";
@@ -31,22 +32,17 @@ export function ProviderTemplatePicker({
   onCreateCustom: CustomProviderCreate;
   creating: boolean;
 }) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const { dismissFeedback, showFeedback } = useProviderDetailFeedback();
   const customLabel = intl.formatMessage({ id: "settings.modelProvider.newProviderName" });
-  const zhipuIds = ["bigmodel-api", "zai-api", "bigmodel-standard-api", "zai-standard-api"];
   const groups = [
     {
-      id: "zhipu",
-      templates: zhipuIds.flatMap((id) =>
-        templates.filter((template) => template.templateId === id),
+      id: "other" as const,
+      templates: templates.filter(
+        (template) => !isOfficialZhipuProviderTemplateId(template.templateId),
       ),
     },
-    {
-      id: "other",
-      templates: templates.filter((template) => !zhipuIds.includes(template.templateId)),
-    },
-  ] as const;
+  ];
   const createWithFeedback = async (create: () => Promise<void>) => {
     const feedbackKey = "provider-template-create";
     dismissFeedback(feedbackKey);

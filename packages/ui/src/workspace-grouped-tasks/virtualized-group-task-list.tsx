@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { ZCodeTaskMeta } from "@zcode/shared";
+import type { KCodeTaskMeta } from "@kcode/shared";
 import { GroupedTaskItem } from "@/workspace-grouped-tasks/task-item.js";
 import { taskKey } from "@/workspace-grouped-tasks/ids.js";
 import {
@@ -59,22 +59,22 @@ export function VirtualizedGroupedTaskList({
   activeDragTaskKey,
   tooltipsDisabled,
 }: {
-  tasks: ZCodeTaskMeta[];
+  tasks: KCodeTaskMeta[];
   groupId: string;
   groups: TaskGroupMenuItem[];
   activeWorkspacePath: string;
   activeWorkspaceIdentity?: string;
   activeTaskId: string | null;
-  getTaskRemoteSessionId: (task: ZCodeTaskMeta) => string | undefined;
-  getTaskWorkspaceLabel: (task: ZCodeTaskMeta) => string;
+  getTaskRemoteSessionId: (task: KCodeTaskMeta) => string | undefined;
+  getTaskWorkspaceLabel: (task: KCodeTaskMeta) => string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
-  onCloseTask: (task: ZCodeTaskMeta) => void;
-  onOpenFileTree?: (task: ZCodeTaskMeta) => void;
-  onMoveTaskToGroup: (task: ZCodeTaskMeta, groupId: string | null) => void;
-  onMoveTaskToTop: (task: ZCodeTaskMeta) => void;
-  onStartRenameTask: (task: ZCodeTaskMeta) => void;
-  onArchiveTask: (task: ZCodeTaskMeta) => void;
-  onMarkTaskAsUnread: (task: ZCodeTaskMeta) => void;
+  onCloseTask: (task: KCodeTaskMeta) => void;
+  onOpenFileTree?: (task: KCodeTaskMeta) => void;
+  onMoveTaskToGroup: (task: KCodeTaskMeta, groupId: string | null) => void;
+  onMoveTaskToTop: (task: KCodeTaskMeta) => void;
+  onStartRenameTask: (task: KCodeTaskMeta) => void;
+  onArchiveTask: (task: KCodeTaskMeta) => void;
+  onMarkTaskAsUnread: (task: KCodeTaskMeta) => void;
   activeDragTaskKey?: string | null;
   tooltipsDisabled?: boolean;
 }) {
@@ -149,7 +149,7 @@ export function VirtualizedGroupedTaskList({
   const measureElement = rowVirtualizer.measureElement;
 
   const renderTask = useCallback(
-    (task: ZCodeTaskMeta) => (
+    (task: KCodeTaskMeta) => (
       <GroupedTaskItem
         key={taskKey(task)}
         task={task}

@@ -1,17 +1,17 @@
 /* oxlint-disable eslint(max-lines) -- telemetry state lock、deviceMid 编排和上报路径共享同一状态文件，拆分会增加锁语义漂移风险。 */
 import {
   createUuid,
-  ZCODE_VERSION,
-  ZCODE_ENV,
-  ZCODE_TELEMETRY_ENABLED,
-  ZCODE_TELEMETRY_REPORT_ENDPOINT,
-  buildZCodeSourceHeadersFromContext,
-  rewriteZCodeEndpointUrl,
+  KCODE_VERSION,
+  KCODE_ENV,
+  KCODE_TELEMETRY_ENABLED,
+  KCODE_TELEMETRY_REPORT_ENDPOINT,
+  buildKCodeSourceHeadersFromContext,
+  rewriteKCodeEndpointUrl,
   sanitizeTelemetryEventDetail,
   type TelemetryEventPayload,
   type TelemetryRendererContext,
   type OAuthLoginAttribution,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import {
   ensureDeviceMid,
   ensureDeviceMidInLockedState,
@@ -26,7 +26,7 @@ import { getAppConfigDir } from "../paths.js";
 
 function sessionCreateEventId(userId: string, sessionId: string): string {
   const bytes = createHash("sha256")
-    .update(JSON.stringify(["zcode:session_create:v1", userId, sessionId]))
+    .update(JSON.stringify(["kcode:session_create:v1", userId, sessionId]))
     .digest()
     .subarray(0, 16);
   bytes[6] = (bytes[6]! & 0x0f) | 0x80;
@@ -57,7 +57,7 @@ interface TelemetryCoreDependencies {
   releaseChannel?: string;
   osVersion?: string;
   homeDir?: string;
-  resolveZCodeEndpointOrigin?: () => Promise<string> | string;
+  resolveKCodeEndpointOrigin?: () => Promise<string> | string;
   requestTimeoutMs?: number;
   sleep?: (ms: number) => Promise<void>;
   warn?: (message: string) => void;
@@ -127,14 +127,14 @@ function toLocalDateKey(timestamp: number, timeZone: string): string {
 
 function resolveTelemetryStateFile(homeDir?: string): string {
   if (homeDir) {
-    return join(homeDir, ".zcode", "v2", "telemetry-state.json");
+    return join(homeDir, ".kcode", "v2", "telemetry-state.json");
   }
   return join(getAppConfigDir(), "telemetry-state.json");
 }
 
 function resolveTelemetryLockFile(homeDir?: string): string {
   if (homeDir) {
-    return join(homeDir, ".zcode", "v2", "telemetry-state.lock");
+    return join(homeDir, ".kcode", "v2", "telemetry-state.lock");
   }
   return join(getAppConfigDir(), "telemetry-state.lock");
 }
@@ -291,7 +291,7 @@ export function createTelemetryCore(dependencies: TelemetryCoreDependencies = {}
   let didWarnMarketingParamsLoadFailure = false;
   const randomUUID = dependencies.randomUUID ?? (() => createUuid());
   const now = dependencies.now ?? Date.now;
-  const appVersion = dependencies.appVersion ?? ZCODE_VERSION;
+  const appVersion = dependencies.appVersion ?? KCODE_VERSION;
   const platform = dependencies.platform ?? process.platform;
   const osVersion = dependencies.osVersion ?? version();
   const requestTimeoutMs = dependencies.requestTimeoutMs ?? REPORT_REQUEST_TIMEOUT_MS;
@@ -365,7 +365,7 @@ export function createTelemetryCore(dependencies: TelemetryCoreDependencies = {}
     deviceMid: string,
   ): Promise<void> {
     // 总开关关闭或上报端点未配置时，事件到此终止。
-    if (!ZCODE_TELEMETRY_ENABLED || !ZCODE_TELEMETRY_REPORT_ENDPOINT) {
+    if (!KCODE_TELEMETRY_ENABLED || !KCODE_TELEMETRY_REPORT_ENDPOINT) {
       return;
     }
     let marketingParams: OAuthLoginAttribution | null = null;
@@ -406,18 +406,18 @@ export function createTelemetryCore(dependencies: TelemetryCoreDependencies = {}
     });
 
     const endpoint = String(
-      rewriteZCodeEndpointUrl(
-        ZCODE_TELEMETRY_REPORT_ENDPOINT,
-        (await dependencies.resolveZCodeEndpointOrigin?.()) ?? ZCODE_TELEMETRY_REPORT_ENDPOINT,
+      rewriteKCodeEndpointUrl(
+        KCODE_TELEMETRY_REPORT_ENDPOINT,
+        (await dependencies.resolveKCodeEndpointOrigin?.()) ?? KCODE_TELEMETRY_REPORT_ENDPOINT,
       ),
     );
 
-    const headers = buildZCodeSourceHeadersFromContext({
+    const headers = buildKCodeSourceHeadersFromContext({
       appVersion,
       platform,
       arch: dependencies.arch ?? process.arch,
       osVersion,
-      releaseChannel: dependencies.releaseChannel ?? ZCODE_ENV,
+      releaseChannel: dependencies.releaseChannel ?? KCODE_ENV,
       clientLanguage: context.clientLanguage,
       clientTimezone: context.clientTimezone,
       deviceMid,

@@ -1,7 +1,7 @@
 import { access, rm } from "node:fs/promises";
 import { constants } from "node:fs";
 import { normalize, resolve } from "node:path";
-import type { ZCodeImportSessionsResult, ZCodeTaskMeta } from "@zcode/shared";
+import type { KCodeImportSessionsResult, KCodeTaskMeta } from "@kcode/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import { buildImportedClaudeTaskFile } from "#src/session/claude-native/buildImportedClaudeTaskFile.js";
 import type { ClaudeNativeImportedSessionSource } from "#src/session/claude-native/claudeNativeImportedSessionTypes.js";
@@ -45,13 +45,13 @@ export async function importClaudeNativeSessions(params: {
   workspacePath?: string;
   workspaceIdentity?: string;
   sessionIds: string[];
-  createImportedSession?: (source: ClaudeNativeImportedSessionSource) => Promise<ZCodeTaskMeta>;
-  onTaskImported: (meta: ZCodeTaskMeta) => void;
-}): Promise<ZCodeImportSessionsResult> {
+  createImportedSession?: (source: ClaudeNativeImportedSessionSource) => Promise<KCodeTaskMeta>;
+  onTaskImported: (meta: KCodeTaskMeta) => void;
+}): Promise<KCodeImportSessionsResult> {
   const normalizedSessionIds = [
     ...new Set(params.sessionIds.map((item) => item.trim()).filter(Boolean)),
   ];
-  const result: ZCodeImportSessionsResult = {
+  const result: KCodeImportSessionsResult = {
     imported: [],
     skipped: [],
     failed: [],
@@ -122,7 +122,7 @@ export async function importClaudeNativeSessions(params: {
       });
 
       const targetWorkspaceIdentity = params.workspacePath ? params.workspaceIdentity : undefined;
-      let meta: ZCodeTaskMeta;
+      let meta: KCodeTaskMeta;
       if (params.createImportedSession) {
         meta = await params.createImportedSession(importedSource);
         const sessionFile = buildImportedClaudeTaskFile(importedSource, undefined, meta.taskId);

@@ -1,13 +1,13 @@
 /**
- * 草稿态空态问候：时间问候语 + ZCode Logo。
+ * 草稿态空态问候：时间问候语 + KCode Logo。
  * 自旧版 ChatView/ChatViewEmptyState.tsx 恢复（该组件随旧 ChatView 删除，
  * i18n key `chat.empty.greeting.*` 一直保留）；边界时刻自动换档逻辑保真。
  * 手机远控复用同一组件，但继续保留 20px 紧凑标题；桌面草稿首页才按标题自身宽度适配。
  */
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
-import darkEmptyStateLogoUrl from "@/assets/Z.svg";
+import darkEmptyStateLogoUrl from "@/assets/K.svg";
 import { cn } from "@/components/lib/utils.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import { logger } from "@/logger.js";
 
@@ -78,7 +78,7 @@ function resolveGreetingFontSizePx({
 }
 
 export function ConversationDraftEmptyState({ className }: { className?: string }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const isOfficeMode = useIsOfficeMode();
   const [greetingDate, setGreetingDate] = useState(() => new Date());
   const [greetingFontSizePx, setGreetingFontSizePx] = useState(GREETING_MAX_FONT_SIZE_PX);
@@ -177,11 +177,11 @@ export function ConversationDraftEmptyState({ className }: { className?: string 
       <div
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute left-1/2 top-1/2 aspect-[5/4] w-[min(72vw,25rem)] -mt-10",
+          "pointer-events-none absolute left-1/2 top-1/2 aspect-[5/6] w-[min(52vw,18rem)] -mt-10",
           "-translate-x-1/2 -translate-y-1/2 text-foreground-subtlest",
         )}
       >
-        <ZCodeEmptyStateLogo className="h-full w-full" />
+        <KCodeEmptyStateLogo className="h-full w-full" />
       </div>
       <p
         ref={greetingContainerRef}
@@ -209,7 +209,7 @@ export function ConversationDraftEmptyState({ className }: { className?: string 
   );
 }
 
-function ZCodeEmptyStateLogo({ className }: { className?: string }) {
+function KCodeEmptyStateLogo({ className }: { className?: string }) {
   return (
     <>
       {/* 夜间资源已自带渐变和透明度，公共容器叠加遮罩会让它重复变淡；渐隐效果只属于浅色线框。*/}
@@ -223,15 +223,19 @@ function ZCodeEmptyStateLogo({ className }: { className?: string }) {
           "[mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
           "[mask-repeat:no-repeat] [mask-size:100%_100%]",
         )}
-        width="400"
-        height="320"
-        viewBox="0 0 400 320"
+        width="240"
+        height="288"
+        viewBox="0 0 50 54"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
+        {/* 三根圆线在大面积空态上会显得像草稿；改用词标 K 的勾边字形，字重接近原来的空态 Z。 */}
         <path
-          d="M398.97 0.5L147.576 319.5H1.03027L37.5996 273.081L120.167 169.603L120.171 169.598L215.342 47.5605L215.343 47.5615L252.424 0.5H398.97ZM264.544 273.271H372.527L336.082 319.498H189.886L202.642 303.307C217.584 284.34 240.398 273.271 264.544 273.271ZM209.164 0.5L202.786 8.58887C183.782 32.6885 154.782 46.752 124.091 46.752H25.9805L62.4268 0.5H209.164Z"
+          d="M2 1.16H14.2V22.4L33.6 1.16H46.2L21.2 26.57L46.2 51.97H33.6L14.2 31.1V51.97H2V1.16Z"
           stroke="currentColor"
+          strokeWidth="1.15"
+          strokeLinejoin="miter"
+          strokeMiterlimit="2.2"
         />
       </svg>
       {/* 深色资源包含专用渐变与模糊效果，不能通过 currentColor 复刻；主题类保证两套 Logo 互斥显示。 */}

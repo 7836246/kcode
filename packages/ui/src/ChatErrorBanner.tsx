@@ -1,8 +1,7 @@
-import { CodingPlanEntryButton } from "@/settings/CodingPlanEntryButton.js";
 /**
  * ChatErrorBanner — 错误提示组件
  *
- * 显示 ZCode Agent 链路中的错误，带 traceId 方便排查。
+ * 显示 KCode Agent 链路中的错误，带 traceId 方便排查。
  */
 import { useState } from "react";
 import {
@@ -12,9 +11,9 @@ import {
   TID_CHAT_ERROR_DETAILS_BUTTON,
   TID_CHAT_ERROR_BANNER,
   TID_CHAT_ERROR_HOOK_ICON,
-} from "@zcode/shared";
-import { AnchorIcon, CopyIcon, InfoIcon, RocketIcon, SettingsIcon, X } from "lucide-react";
-import { useZCodeIntl } from "./i18n/IntlProvider.js";
+} from "@kcode/shared";
+import { AnchorIcon, CopyIcon, InfoIcon, SettingsIcon, X } from "lucide-react";
+import { useKCodeIntl } from "./i18n/IntlProvider.js";
 import type { IntlInstance } from "./i18n/IntlProvider.js";
 import { Button } from "./components/ui/button.js";
 import {
@@ -33,7 +32,7 @@ import {
   isSuspiciousEmptyModelResultMessage,
   resolveOffPeakTicketExpiredBusinessCode,
 } from "@/lib/providerBusinessError.js";
-import type { ZCodeUiError } from "@/lib/zcodeUiError.js";
+import type { KCodeUiError } from "@/lib/kcodeUiError.js";
 
 const HISTORICAL_MODEL_UNAVAILABLE_MESSAGES = [
   "历史任务使用的模型已不可用",
@@ -50,8 +49,8 @@ const LOCALIZED_ERROR_CODES = new Set([
   MEDIA_BUDGET_CURRENT_VIDEO_TOO_LARGE_ERROR_CODE,
   // 服务层错误 message 是跨进程兜底，不能作为最终 UI 语言来源。
   // 历史任务模型不可用要按稳定 code 本地化，避免英文界面显示中文提示。
-  "ZCODE_RUNTIME_MODEL_UNAVAILABLE",
-  "ZCODE_BIGMODEL_TEAM_PLAN_MEMBER_REQUIRED",
+  "KCODE_RUNTIME_MODEL_UNAVAILABLE",
+  "KCODE_BIGMODEL_TEAM_PLAN_MEMBER_REQUIRED",
 ]);
 
 const MODEL_CONFIG_MISSING_CODES = new Set([
@@ -60,7 +59,7 @@ const MODEL_CONFIG_MISSING_CODES = new Set([
   "ModelConfigMissing",
 ]);
 
-function isModelConfigMissingError(error: Pick<ZCodeUiError, "code" | "message">): boolean {
+function isModelConfigMissingError(error: Pick<KCodeUiError, "code" | "message">): boolean {
   // 桌面端发送前 registry 为空时，agent 会退回 CLI config 并抛 Model config is missing。
   // 真实原因是“当前没有可用模型”，不能把 CLI 配置路径直接暴露给桌面用户。
   // 这里只按结构化 code 识别，避免 UNKNOWN/SEND_FAILED 等包装错误的可读 message
@@ -69,7 +68,7 @@ function isModelConfigMissingError(error: Pick<ZCodeUiError, "code" | "message">
 }
 
 export function resolveChatErrorBannerDisplayMessage(
-  error: ZCodeUiError,
+  error: KCodeUiError,
   intl: IntlInstance,
 ): string {
   if (isModelConfigMissingError(error)) {
@@ -84,21 +83,21 @@ export function resolveChatErrorBannerDisplayMessage(
   }
 
   if (isSuspiciousEmptyModelResultMessage(error.message)) {
-    return intl.formatMessage({ id: "zcode.error.modelSuspiciousEmpty" });
+    return intl.formatMessage({ id: "kcode.error.modelSuspiciousEmpty" });
   }
 
   return error.code && LOCALIZED_ERROR_CODES.has(error.code)
-    ? intl.formatMessage({ id: `zcode.error.${error.code}` })
+    ? intl.formatMessage({ id: `kcode.error.${error.code}` })
     : error.message;
 }
 
 export function shouldSuppressChatErrorBanner(
-  error: Pick<ZCodeUiError, "code" | "message">,
+  error: Pick<KCodeUiError, "code" | "message">,
 ): boolean {
   // 只有历史恢复残留的模型不可用提示才隐藏；当前发送/草稿报错需要展示，
   // 否则 registry 移除模型后用户会看到“请求没返回”而没有任何可操作反馈。
   return Boolean(
-    error.code === "ZCODE_RUNTIME_MODEL_UNAVAILABLE" &&
+    error.code === "KCODE_RUNTIME_MODEL_UNAVAILABLE" &&
     HISTORICAL_MODEL_UNAVAILABLE_MESSAGES.some((message) => error.message.includes(message)),
   );
 }
@@ -110,17 +109,15 @@ export function ChatErrorBanner({
   retryDisabled,
   onDismiss,
   onOpenModelSettings,
-  onOpenUpgrade,
 }: {
-  error: ZCodeUiError;
+  error: KCodeUiError;
   onRetry?: () => void;
   retryLabel?: string;
   retryDisabled?: boolean;
   onDismiss?: () => void;
   onOpenModelSettings?: () => void;
-  onOpenUpgrade?: () => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const actionButtonClassName = "shrink-0";
@@ -207,35 +204,17 @@ export function ChatErrorBanner({
         </div>
 
         {modelConfigMissing ? (
-          <>
-            <CodingPlanEntryButton
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={onOpenUpgrade}
-              className={cn(
-                actionButtonClassName,
-                "button-gradient gap-1.5 text-white hover:bg-transparent hover:opacity-90 dark:bg-[#484A58] dark:hover:bg-[#484A58]",
-              )}
-              aria-label={intl.formatMessage({
-                id: "chat.quota.action.upgrade",
-              })}
-            >
-              <RocketIcon className="size-3.5" />
-              {intl.formatMessage({ id: "chat.quota.action.upgrade" })}
-            </CodingPlanEntryButton>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onOpenModelSettings}
-              className={cn(actionButtonClassName, "gap-1.5")}
-              aria-label={intl.formatMessage({ id: "chat.error.setModels" })}
-            >
-              <SettingsIcon className="size-3.5" />
-              {intl.formatMessage({ id: "chat.error.setModels" })}
-            </Button>
-          </>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onOpenModelSettings}
+            className={cn(actionButtonClassName, "gap-1.5")}
+            aria-label={intl.formatMessage({ id: "chat.error.setModels" })}
+          >
+            <SettingsIcon className="size-3.5" />
+            {intl.formatMessage({ id: "chat.error.setModels" })}
+          </Button>
         ) : null}
 
         {!modelConfigMissing && error.detail ? (

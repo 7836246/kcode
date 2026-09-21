@@ -1,4 +1,4 @@
-import type { GitRepositorySummary, ZCodeTaskChangeSummary } from "@zcode/shared";
+import type { GitRepositorySummary, KCodeTaskChangeSummary } from "@kcode/shared";
 import type { GitBranchCommitPreviewFile } from "@/git-branch-switcher/display.js";
 
 function normalizeCommitScopePath(path: string): string {
@@ -55,7 +55,7 @@ function addScopePath(scope: Set<string>, path: string | null): void {
 }
 
 function buildCurrentSessionFileScope(options: {
-  summary: ZCodeTaskChangeSummary | null;
+  summary: KCodeTaskChangeSummary | null;
   gitSummary: GitRepositorySummary;
   workspacePath: string;
 }): Set<string> | null {
@@ -95,7 +95,7 @@ function isPreviewFileInScope(
 }
 
 export function getCurrentSessionFilePaths(
-  summary: ZCodeTaskChangeSummary | null,
+  summary: KCodeTaskChangeSummary | null,
 ): string[] | undefined {
   const paths = Array.from(
     new Set(
@@ -107,7 +107,7 @@ export function getCurrentSessionFilePaths(
 
 export function filterCommitPreviewFilesByCurrentSession(options: {
   files: readonly GitBranchCommitPreviewFile[];
-  summary: ZCodeTaskChangeSummary | null;
+  summary: KCodeTaskChangeSummary | null;
   gitSummary: GitRepositorySummary;
   workspacePath: string;
 }): GitBranchCommitPreviewFile[] {

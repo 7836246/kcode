@@ -1,5 +1,5 @@
-import type { PrintPageToPdfResult } from "@zcode/shared";
-import { PlatformChannels } from "@zcode/shared";
+import type { PrintPageToPdfResult } from "@kcode/shared";
+import { PlatformChannels } from "@kcode/shared";
 import { ipcMain } from "electron";
 
 /** 同一 webContents 的打印请求串行化，防止重复触发 Chromium 打印管线 */

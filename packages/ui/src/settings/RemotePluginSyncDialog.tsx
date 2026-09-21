@@ -14,19 +14,19 @@ import type {
   PluginSyncImportResult,
   PluginSyncRemoteStatus,
   RemoteTarget,
-  ZCodePluginOptionValue,
-  ZCodePluginInfo,
-  ZCodePluginMarketplaceSummary,
-  ZCodePluginUserConfigOption,
-  ZCodePluginsOverviewResult,
-} from "@zcode/shared";
-import type { IPluginSyncService, IZCodeAgentService } from "@zcode/services";
+  KCodePluginOptionValue,
+  KCodePluginInfo,
+  KCodePluginMarketplaceSummary,
+  KCodePluginUserConfigOption,
+  KCodePluginsOverviewResult,
+} from "@kcode/shared";
+import type { IPluginSyncService, IKCodeAgentService } from "@kcode/services";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog.js";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { formatRemoteSkillSyncTarget } from "@/settings/RemoteSkillSyncDialog.js";
 import {
   isRemoteSyncPreflightTimeoutError,
@@ -39,12 +39,12 @@ type Step = RemotePluginSyncDialogStep;
 type RemotePluginSyncKind = "inline" | "marketplace";
 
 interface RemotePluginSyncPluginOptions {
-  configuredOptions: Record<string, ZCodePluginOptionValue>;
-  userConfig: Record<string, ZCodePluginUserConfigOption>;
+  configuredOptions: Record<string, KCodePluginOptionValue>;
+  userConfig: Record<string, KCodePluginUserConfigOption>;
 }
 
 type RemotePluginSyncAgentService = Pick<
-  IZCodeAgentService,
+  IKCodeAgentService,
   | "addPluginMarketplace"
   | "cancelPluginOperation"
   | "configurePlugin"
@@ -157,8 +157,8 @@ interface RemotePluginSyncDialogProps {
   onOpenChange: (open: boolean) => void;
   localPluginSyncService: IPluginSyncService;
   remotePluginSyncService: IPluginSyncService;
-  localZCodeAgentService?: RemotePluginSyncAgentService | null;
-  remoteZCodeAgentService?: RemotePluginSyncAgentService | null;
+  localKCodeAgentService?: RemotePluginSyncAgentService | null;
+  remoteKCodeAgentService?: RemotePluginSyncAgentService | null;
   remoteTarget: RemoteTarget;
   localWorkspacePath?: string;
   workspacePath: string;
@@ -254,8 +254,8 @@ function shouldAllowRemotePluginSyncDialogOpenChange(
 }
 
 function buildMarketplaceRemotePluginSyncCandidates(
-  overview: ZCodePluginsOverviewResult,
-  plugins: readonly ZCodePluginInfo[],
+  overview: KCodePluginsOverviewResult,
+  plugins: readonly KCodePluginInfo[],
 ): RemotePluginSyncCandidate[] {
   const pluginInfoById = new Map(plugins.map((plugin) => [plugin.id, plugin]));
   const marketplaceSourceById = new Map(
@@ -295,7 +295,7 @@ function buildMarketplaceRemotePluginSyncCandidates(
 
 function buildMarketplaceRemotePluginStatuses(
   candidates: readonly RemotePluginSyncCandidate[],
-  remoteOverview: ZCodePluginsOverviewResult,
+  remoteOverview: KCodePluginsOverviewResult,
 ): RemotePluginSyncCandidateStatus[] {
   const installedById = new Map(
     remoteOverview.installedPlugins.map((plugin) => [plugin.id, plugin]),
@@ -315,12 +315,12 @@ function buildMarketplaceRemotePluginStatuses(
   });
 }
 
-function componentTypesFromPluginInfo(plugin: ZCodePluginInfo | undefined): string[] {
+function componentTypesFromPluginInfo(plugin: KCodePluginInfo | undefined): string[] {
   return plugin?.components?.map((component) => component.kind) ?? [];
 }
 
 function buildRemotePluginSyncPluginOptions(
-  plugin: ZCodePluginInfo | undefined,
+  plugin: KCodePluginInfo | undefined,
 ): RemotePluginSyncPluginOptions | undefined {
   const configuredOptions = plugin?.configuredOptions ?? {};
   if (Object.keys(configuredOptions).length === 0) {
@@ -334,7 +334,7 @@ function buildRemotePluginSyncPluginOptions(
 
 function applyPluginInfoToRemoteSyncCandidate(
   candidate: RemotePluginSyncCandidate,
-  plugin: ZCodePluginInfo | undefined,
+  plugin: KCodePluginInfo | undefined,
 ): RemotePluginSyncCandidate {
   const pluginOptions = buildRemotePluginSyncPluginOptions(plugin);
   return pluginOptions ? { ...candidate, pluginOptions } : candidate;
@@ -342,7 +342,7 @@ function applyPluginInfoToRemoteSyncCandidate(
 
 function enrichRemotePluginSyncCandidatesWithPluginInfo(
   candidates: readonly RemotePluginSyncCandidate[],
-  plugins: readonly ZCodePluginInfo[],
+  plugins: readonly KCodePluginInfo[],
 ): RemotePluginSyncCandidate[] {
   const pluginInfoById = new Map(plugins.map((plugin) => [plugin.id, plugin]));
   return candidates.map((candidate) =>
@@ -370,7 +370,7 @@ function summarizeLocalPluginOptionsForDisplay(
 }
 
 function serializeMarketplaceSourceInput(
-  marketplace: ZCodePluginMarketplaceSummary,
+  marketplace: KCodePluginMarketplaceSummary,
 ): string | undefined {
   const source = marketplace.source;
   const sourceKind = typeof source.source === "string" ? source.source : "";
@@ -389,7 +389,7 @@ function serializeMarketplaceSourceInput(
 }
 
 function buildMarketplaceSourceSyncInfo(
-  marketplace: ZCodePluginMarketplaceSummary,
+  marketplace: KCodePluginMarketplaceSummary,
 ): Pick<
   NonNullable<RemotePluginSyncCandidate["marketplacePlugin"]>,
   "marketplaceSourceArchive" | "marketplaceSourceInput"
@@ -413,11 +413,11 @@ function buildMarketplaceSourceSyncInfo(
 async function loadRemotePluginSyncCandidates(params: {
   localPluginSyncService: IPluginSyncService;
   localWorkspacePath: string;
-  localZCodeAgentService?: RemotePluginSyncAgentService | null;
+  localKCodeAgentService?: RemotePluginSyncAgentService | null;
   remotePluginSyncService: IPluginSyncService;
   remoteWorkspaceIdentity?: string;
   remoteWorkspacePath: string;
-  remoteZCodeAgentService?: RemotePluginSyncAgentService | null;
+  remoteKCodeAgentService?: RemotePluginSyncAgentService | null;
 }): Promise<{
   candidates: RemotePluginSyncCandidate[];
   statuses: RemotePluginSyncCandidateStatus[];
@@ -442,18 +442,18 @@ async function loadRemotePluginSyncCandidates(params: {
     }),
   );
 
-  if (!params.localZCodeAgentService || !params.remoteZCodeAgentService) {
+  if (!params.localKCodeAgentService || !params.remoteKCodeAgentService) {
     return { candidates: inlineCandidates, statuses: inlineStatuses };
   }
 
   const [localOverview, localPluginsResult, remoteOverview] = await Promise.all([
-    params.localZCodeAgentService.getPluginsOverview({
+    params.localKCodeAgentService.getPluginsOverview({
       workspacePath: params.localWorkspacePath,
     }),
-    params.localZCodeAgentService.listPlugins({
+    params.localKCodeAgentService.listPlugins({
       workspacePath: params.localWorkspacePath,
     }),
-    params.remoteZCodeAgentService.getPluginsOverview({
+    params.remoteKCodeAgentService.getPluginsOverview({
       workspacePath: params.remoteWorkspacePath,
       ...(params.remoteWorkspaceIdentity
         ? { workspaceIdentity: params.remoteWorkspaceIdentity }
@@ -599,14 +599,14 @@ async function awaitRemotePluginSyncStep<T>(
   }
 }
 
-function isPathPluginOption(option: ZCodePluginUserConfigOption | undefined): boolean {
+function isPathPluginOption(option: KCodePluginUserConfigOption | undefined): boolean {
   return option?.type === "file" || option?.type === "directory";
 }
 
 function isPortablePluginOptionValue(
-  value: ZCodePluginOptionValue,
-  localOption: ZCodePluginUserConfigOption | undefined,
-  remoteOption: ZCodePluginUserConfigOption | undefined,
+  value: KCodePluginOptionValue,
+  localOption: KCodePluginUserConfigOption | undefined,
+  remoteOption: KCodePluginUserConfigOption | undefined,
 ): boolean {
   if (!localOption || !remoteOption) {
     return false;
@@ -626,9 +626,9 @@ function isPortablePluginOptionValue(
 
 function buildPortablePluginOptionsSyncPlan(
   localOptions: RemotePluginSyncPluginOptions,
-  remotePlugin: ZCodePluginInfo,
-): { options: Record<string, ZCodePluginOptionValue>; skippedCount: number } {
-  const options: Record<string, ZCodePluginOptionValue> = {};
+  remotePlugin: KCodePluginInfo,
+): { options: Record<string, KCodePluginOptionValue>; skippedCount: number } {
+  const options: Record<string, KCodePluginOptionValue> = {};
   let skippedCount = 0;
   for (const [key, value] of Object.entries(localOptions.configuredOptions)) {
     if (
@@ -647,8 +647,8 @@ function buildPortablePluginOptionsSyncPlan(
 }
 
 function arePluginOptionsEqual(
-  left: Record<string, ZCodePluginOptionValue>,
-  right: Record<string, ZCodePluginOptionValue>,
+  left: Record<string, KCodePluginOptionValue>,
+  right: Record<string, KCodePluginOptionValue>,
 ): boolean {
   const leftEntries = Object.entries(left);
   if (leftEntries.length !== Object.keys(right).length) {
@@ -662,7 +662,7 @@ async function syncPortablePluginOptions(
     onItemProgress?: (event: RemotePluginSyncProgressEvent) => void;
     remoteWorkspaceIdentity?: string;
     remoteWorkspacePath: string;
-    remoteZCodeAgentService?: RemotePluginSyncAgentService | null;
+    remoteKCodeAgentService?: RemotePluginSyncAgentService | null;
     signal?: AbortSignal;
     stopControl?: RemotePluginSyncStopControl;
   },
@@ -672,8 +672,8 @@ async function syncPortablePluginOptions(
   if (!localOptions || Object.keys(localOptions.configuredOptions).length === 0) {
     return;
   }
-  const remoteZCodeAgentService = params.remoteZCodeAgentService;
-  if (!remoteZCodeAgentService) {
+  const remoteKCodeAgentService = params.remoteKCodeAgentService;
+  if (!remoteKCodeAgentService) {
     emitRemotePluginSyncProgress(
       params,
       row,
@@ -692,7 +692,7 @@ async function syncPortablePluginOptions(
     params,
     row,
     `RPC plugins/list for options ${row.candidate.pluginId}`,
-    () => remoteZCodeAgentService.listPlugins(workspace),
+    () => remoteKCodeAgentService.listPlugins(workspace),
   );
   const remotePlugin = remotePlugins.plugins.find((plugin) => plugin.id === row.candidate.pluginId);
   if (!remotePlugin) {
@@ -741,7 +741,7 @@ async function syncPortablePluginOptions(
     row,
     `RPC plugins/configure ${portableCount} portable option(s) for ${row.candidate.pluginId}`,
     () =>
-      remoteZCodeAgentService.configurePlugin({
+      remoteKCodeAgentService.configurePlugin({
         ...workspace,
         options: mergedOptions,
         pluginId: row.candidate.pluginId,
@@ -756,7 +756,7 @@ async function syncSelectedRemotePlugins(params: {
   remotePluginSyncService: IPluginSyncService;
   remoteWorkspaceIdentity?: string;
   remoteWorkspacePath: string;
-  remoteZCodeAgentService?: RemotePluginSyncAgentService | null;
+  remoteKCodeAgentService?: RemotePluginSyncAgentService | null;
   rows: readonly RemotePluginSyncRow[];
   signal?: AbortSignal;
   stopControl?: RemotePluginSyncStopControl;
@@ -847,7 +847,7 @@ async function syncMarketplaceRemotePlugin(
     remotePluginSyncService: IPluginSyncService;
     remoteWorkspaceIdentity?: string;
     remoteWorkspacePath: string;
-    remoteZCodeAgentService?: RemotePluginSyncAgentService | null;
+    remoteKCodeAgentService?: RemotePluginSyncAgentService | null;
     selectedMarketplacePluginNames: ReadonlyMap<string, string[]>;
     signal?: AbortSignal;
     stopControl?: RemotePluginSyncStopControl;
@@ -859,10 +859,10 @@ async function syncMarketplaceRemotePlugin(
   const directoryName = `${candidate.marketplace}/${candidate.name}`;
   try {
     throwIfRemotePluginSyncStopped(params, row);
-    if (!params.remoteZCodeAgentService || !marketplacePlugin) {
+    if (!params.remoteKCodeAgentService || !marketplacePlugin) {
       throw new Error("remote plugin install service is not available");
     }
-    const remoteZCodeAgentService = params.remoteZCodeAgentService;
+    const remoteKCodeAgentService = params.remoteKCodeAgentService;
     const workspace = {
       workspacePath: params.remoteWorkspacePath,
       ...(params.remoteWorkspaceIdentity
@@ -878,7 +878,7 @@ async function syncMarketplaceRemotePlugin(
           localPluginSyncService: params.localPluginSyncService,
           onItemProgress: params.onItemProgress,
           remotePluginSyncService: params.remotePluginSyncService,
-          remoteZCodeAgentService,
+          remoteKCodeAgentService,
           selectedMarketplacePluginNames: params.selectedMarketplacePluginNames,
           signal: params.signal,
           stopControl: params.stopControl,
@@ -893,7 +893,7 @@ async function syncMarketplaceRemotePlugin(
       row,
       `RPC plugins/install ${candidate.pluginId}`,
       (operationId) =>
-        remoteZCodeAgentService.installPlugin({
+        remoteKCodeAgentService.installPlugin({
           ...workspace,
           marketplace: candidate.marketplace,
           operationId,
@@ -917,7 +917,7 @@ async function syncMarketplaceRemotePlugin(
       row,
       `RPC plugins/setEnabled enabled=${String(candidate.enabled)} for ${candidate.pluginId}`,
       () =>
-        remoteZCodeAgentService.setPluginEnabled({
+        remoteKCodeAgentService.setPluginEnabled({
           ...workspace,
           enabled: candidate.enabled,
           pluginId: candidate.pluginId,
@@ -970,7 +970,7 @@ async function prepareRemoteMarketplaceSource(
     localPluginSyncService: IPluginSyncService;
     onItemProgress?: (event: RemotePluginSyncProgressEvent) => void;
     remotePluginSyncService: IPluginSyncService;
-    remoteZCodeAgentService: RemotePluginSyncAgentService;
+    remoteKCodeAgentService: RemotePluginSyncAgentService;
     selectedMarketplacePluginNames: ReadonlyMap<string, string[]>;
     signal?: AbortSignal;
     stopControl?: RemotePluginSyncStopControl;
@@ -990,7 +990,7 @@ async function prepareRemoteMarketplaceSource(
       row,
       `RPC plugins/marketplace/add ${candidate.marketplace} from ${marketplaceSourceInput}`,
       (operationId) =>
-        params.remoteZCodeAgentService.addPluginMarketplace({
+        params.remoteKCodeAgentService.addPluginMarketplace({
           ...workspace,
           operationId,
           source: marketplaceSourceInput,
@@ -1031,7 +1031,7 @@ async function prepareRemoteMarketplaceSource(
     row,
     `RPC plugins/marketplace/add mirrored ${candidate.marketplace} from ${imported.path}`,
     (operationId) =>
-      params.remoteZCodeAgentService.addPluginMarketplace({
+      params.remoteKCodeAgentService.addPluginMarketplace({
         ...workspace,
         operationId,
         source: imported.path,
@@ -1057,7 +1057,7 @@ function formatInstallError(
 }
 
 function RemotePluginSyncTitle() {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const [warningTooltipOpen, setWarningTooltipOpen] = useState(false);
   const warningTitle = intl.formatMessage({
     id: "settings.plugins.remoteSync.warningTitle",
@@ -1098,7 +1098,7 @@ function RemotePluginSyncExistingFilterCheckbox({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <label className="inline-flex h-6 cursor-pointer items-center gap-2 rounded-md px-1 text-ui-base text-foreground-subtle hover:text-foreground">
@@ -1124,7 +1124,7 @@ function RemotePluginSyncTargetRow({
   showExistingFilter: boolean;
   onShowExistingRemotePluginsChange: (checked: boolean) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1154,7 +1154,7 @@ function RemotePluginSyncBulkSelectionCheckbox({
   onSelectAll: () => void;
   onClearAll: () => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const inputRef = useRef<HTMLInputElement>(null);
   const disabled = totalSelectable === 0;
   const checked = totalSelectable > 0 && selectedCount >= totalSelectable;
@@ -1203,7 +1203,7 @@ function RemotePluginSyncSelectionList({
   emptyMessageId?: string;
   onToggle: (pluginId: string, checked: boolean) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   if (rows.length === 0) {
     return (
@@ -1302,7 +1302,7 @@ function RemotePluginSyncSelectionList({
 }
 
 function RemotePluginSyncStatusBadge({ status }: { status: RemotePluginSyncProgressStatus }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const label = intl.formatMessage({ id: `settings.plugins.remoteSync.${status}` });
   const icon =
     status === "synced" ? (
@@ -1331,7 +1331,7 @@ function RemotePluginSyncStatusBadge({ status }: { status: RemotePluginSyncProgr
 }
 
 function RemotePluginSyncLogHoverCard({ logs }: { logs: readonly string[] }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const shownLogs = logs.length > 0 ? logs : ["Queued plugin sync"];
 
   return (
@@ -1371,7 +1371,7 @@ function RemotePluginSyncProgressList({
   rows: readonly RemotePluginSyncRow[];
   onStop: (candidateId: string) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   if (rows.length === 0) {
     return (
@@ -1475,7 +1475,7 @@ function RemotePluginSyncProgressList({
 }
 
 function RemotePluginSyncResultList({ result }: { result: RemotePluginSyncRunResult | null }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const items = result?.results ?? [];
 
   if (items.length === 0) {
@@ -1513,16 +1513,16 @@ function RemotePluginSyncResultList({ result }: { result: RemotePluginSyncRunRes
 }
 
 export function RemotePluginSyncDialog(props: RemotePluginSyncDialogProps) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const {
     localPluginSyncService,
     localWorkspacePath,
-    localZCodeAgentService,
+    localKCodeAgentService,
     onOpenChange,
     onSynced,
     open,
     remotePluginSyncService,
-    remoteZCodeAgentService,
+    remoteKCodeAgentService,
     remoteTarget,
     workspacePath,
     workspaceIdentity,
@@ -1567,11 +1567,11 @@ export function RemotePluginSyncDialog(props: RemotePluginSyncDialogProps) {
         const { candidates, statuses } = await loadRemotePluginSyncCandidates({
           localPluginSyncService,
           localWorkspacePath: localWorkspacePath ?? workspacePath,
-          localZCodeAgentService,
+          localKCodeAgentService,
           remotePluginSyncService,
           remoteWorkspaceIdentity: workspaceIdentity,
           remoteWorkspacePath: workspacePath,
-          remoteZCodeAgentService,
+          remoteKCodeAgentService,
         });
         if (cancelled) {
           return;
@@ -1599,10 +1599,10 @@ export function RemotePluginSyncDialog(props: RemotePluginSyncDialogProps) {
   }, [
     localPluginSyncService,
     localWorkspacePath,
-    localZCodeAgentService,
+    localKCodeAgentService,
     open,
     remotePluginSyncService,
-    remoteZCodeAgentService,
+    remoteKCodeAgentService,
     workspaceIdentity,
     workspacePath,
   ]);
@@ -1770,15 +1770,15 @@ export function RemotePluginSyncDialog(props: RemotePluginSyncDialogProps) {
         remotePluginSyncService,
         remoteWorkspaceIdentity: workspaceIdentity,
         remoteWorkspacePath: workspacePath,
-        remoteZCodeAgentService,
+        remoteKCodeAgentService,
         rows: selectedRows,
         signal: syncAbortController.signal,
         stopControl: {
           cancelOperation: async (operationId) => {
-            if (!remoteZCodeAgentService?.cancelPluginOperation) {
+            if (!remoteKCodeAgentService?.cancelPluginOperation) {
               return;
             }
-            await remoteZCodeAgentService.cancelPluginOperation({ operationId });
+            await remoteKCodeAgentService.cancelPluginOperation({ operationId });
           },
           isStopped: (candidateId) => stopRequestedRef.current.has(candidateId),
           waitForStop: (candidateId) => {

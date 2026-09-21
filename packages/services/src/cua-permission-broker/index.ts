@@ -1,15 +1,15 @@
 // Thin re-export shim — the broker server (51 files, formerly under
 // services/src/cua-permission-broker/) has been consolidated into
-// @zcode/zcode-cua as part of the single-package merge. This file preserves
+// @kcode/kcode-cua as part of the single-package merge. This file preserves
 // the existing `#src/cua-permission-broker/index.js` import site for the
 // services internal callers (node.ts, accessor.ts, etc.) so they keep
 // compiling without per-file edits.
 //
 // Why two layers:
-//   - `@zcode/zcode-cua/broker/server` (51 server files) — broker server +
+//   - `@kcode/kcode-cua/broker/server` (51 server files) — broker server +
 //     Helper install/launch/verify/reaper + native seam + electron backend +
 //     MCP injection + host orchestration + the cuaPermissionService types.
-//   - `@zcode/zcode-cua/broker` (protocol) — brokerProtocol / helperErrors /
+//   - `@kcode/kcode-cua/broker` (protocol) — brokerProtocol / helperErrors /
 //     helperHealth / helperConstants / socketPath / brokerAuth / types / ports.
 //
 // Both barrels re-export the ax-types symbols (AxAppPayload, AxReadOnlySource,
@@ -24,7 +24,7 @@
 // (brokerServer, cuaHelperHost, electronNativeBackend, mcpBrokerInjection,
 // cuaProductMcpResolver, helperAppBundle, etc.)
 // plus the ax-types re-export via axReadOnly.
-export * from "@zcode/zcode-cua/broker/server";
+export * from "@kcode/kcode-cua/broker/server";
 
 /** @deprecated 默认 CUA 装配不再使用，仅为旧注入方保留兼容导出。 */
 export {
@@ -82,7 +82,7 @@ export {
   // helperErrors.ts
   CuaHelperError,
   isCuaHelperError,
-} from "@zcode/zcode-cua/broker";
+} from "@kcode/kcode-cua/broker";
 export type {
   BrokerErrorCode,
   BrokerMethod,
@@ -90,7 +90,7 @@ export type {
   BrokerResponse,
   CuaHelperErrorCode,
   NativeAutomationBackend,
-} from "@zcode/zcode-cua/broker";
+} from "@kcode/kcode-cua/broker";
 
 export { WindowsCuaHelperHost } from "./windowsCuaDevHelperHost.js";
 export type {

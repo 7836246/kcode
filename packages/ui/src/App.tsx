@@ -1,9 +1,9 @@
 /* eslint-disable max-lines -- App 当前集中编排 workspace 级状态、导航、Git 派生数据和 shell wiring；已将新增 side pane memory 桥接抽出，剩余拆分需要按 shell 边界单独重构。 */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { GitChangeSourceId, WorkspacePurpose } from "@zcode/shared";
-import { useZCodeStore } from "@/store/StoreProvider.js";
-import { getVisibleTaskMetas, useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
+import type { GitChangeSourceId, WorkspacePurpose } from "@kcode/shared";
+import { useKCodeStore } from "@/store/StoreProvider.js";
+import { getVisibleTaskMetas, useKCodeSessionStore } from "@/store/kcodeSessionStore.js";
 import { useTaskQueryCacheStore } from "@/store/taskQueryCacheStore.js";
 import { useAppPanels } from "@/hooks/useAppPanels.js";
 import { useGitAutoRefresh } from "@/hooks/useGitAutoRefresh.js";
@@ -15,7 +15,7 @@ import { useEnsureWorkspaceMcpLoaded } from "@/hooks/useEnsureWorkspaceMcpLoaded
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceReadOnly, isWorkspaceTab } from "@/store/tabStore.js";
 import type { TaskChatMessage as TestChatMessage } from "@/lib/taskChatMessageTypes.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import { getPathLeaf } from "@/lib/path.js";
 import {
@@ -46,14 +46,13 @@ import {
   type SettingsSectionId,
 } from "@/lib/settingsNavigation.js";
 import { runWorkspaceVisibleCommand } from "@/lib/workspaceVisibleCommand.js";
-import { ZCODE_PRODUCT_DOCS_URL } from "@/lib/productDocs.js";
-import appLogoUrl from "@/assets/provider-icons/logo-zai.svg";
+import appLogoUrl from "@/assets/provider-icons/logo-kcode.svg";
 import { resolveTheme } from "@/useTheme.js";
 import { WorkspaceShellLayout } from "@/app-shell/WorkspaceShellLayout.js";
 import { useAppChromeState } from "@/app-shell/useAppChromeState.js";
 import { useWorkspaceSessionReload } from "@/app-shell/useWorkspaceSessionReload.js";
 import { useWorkspaceShellLifecycle } from "@/app-shell/useWorkspaceShellLifecycle.js";
-import { useWorkspaceShellZCodeState } from "@/app-shell/useWorkspaceShellZCodeState.js";
+import { useWorkspaceShellKCodeState } from "@/app-shell/useWorkspaceShellKCodeState.js";
 import { useWorkspaceMainViewSettingsExit } from "@/app-shell/useWorkspaceMainViewSettingsExit.js";
 import {
   useWorkspaceTaskNavigation,
@@ -96,7 +95,6 @@ export function App({
   onCancelRemoteProject,
   onReconnectRemoteWorkspace,
   onLogout,
-  onLogin,
   user,
   reconnectingRemoteWorkspaceKeys,
   remoteWorkspaceErrorByWorkspaceKey,
@@ -133,7 +131,7 @@ export function App({
   const openWorkspaceShortcutLabel = useShortcutCommandLabel("openWorkspace");
   const isLinuxDesktop = Boolean(isDesktop && !isMacDesktop && !isWindowsDesktop);
   const supportsEmbeddedBrowser = explicitSupportsEmbeddedBrowser ?? Boolean(isDesktop);
-  const { intl, locale, setLocale } = useZCodeIntl();
+  const { intl, locale, setLocale } = useKCodeIntl();
   const isOfficeMode = useIsOfficeMode();
   const platform = usePlatform();
   // 进程内存本地诊断日志：每窗口一个 60s 采样器，
@@ -196,21 +194,21 @@ export function App({
   const workspaceReadOnlyReason = workspaceReadOnly
     ? intl.formatMessage({ id: "workspaceSidebar.unavailableLocalDirectory" })
     : undefined;
-  const { workspaceShellZCodeState, reloadSessionDisabled } = useWorkspaceShellZCodeState(
+  const { workspaceShellKCodeState, reloadSessionDisabled } = useWorkspaceShellKCodeState(
     workspaceAbsPath,
     workspaceIdentity,
   );
-  const activeTaskId = workspaceShellZCodeState.activeTaskId;
+  const activeTaskId = workspaceShellKCodeState.activeTaskId;
   // 右侧栏按对话隔离的归属 id：草稿态 activeTaskId 为 null，用 draftSessionId 兜底
   //（draftSessionId 稳定、每个新对话唯一、发首条消息后会变成 activeTaskId），
   // 从而新建对话不会串到上一个对话/草稿留下的 tab，且草稿转正后 tab 归属无缝衔接。
-  const draftSessionId = useZCodeSessionStore(
+  const draftSessionId = useKCodeSessionStore(
     (state) => state.getWorkspaceState(workspaceAbsPath, workspaceIdentity).draftSessionId,
   );
   const sidePaneOwnerId = activeTaskId ?? draftSessionId ?? null;
   const [summaryPanelVariantOverride, setSummaryPanelVariantOverride] =
     useState<ChatViewSummaryPanelVariant | null>(null);
-  const draftFocusVersion = workspaceShellZCodeState.draftFocusVersion;
+  const draftFocusVersion = workspaceShellKCodeState.draftFocusVersion;
   const {
     isTerminalOpen,
     setIsTerminalOpen,
@@ -271,7 +269,7 @@ export function App({
     }),
   });
   const workspaceKey = workspaceIdentity?.trim() || workspaceAbsPath;
-  const notificationEnabled = useZCodeStore((s) => s.notificationEnabled);
+  const notificationEnabled = useKCodeStore((s) => s.notificationEnabled);
   useWorkspaceTerminalTaskNotifications({
     workspacePath: workspaceAbsPath,
     ...(workspaceIdentity ? { workspaceIdentity } : {}),
@@ -343,7 +341,6 @@ export function App({
     useState<ChatSearchResultHighlightRequest | null>(null);
   const [fileChangeFindState, setFileChangeFindState] = useState(createTaskFindNavigationState);
   const [fileChangeFindMatchCount, setFileChangeFindMatchCount] = useState(0);
-  const [canOpenCommunityFromQuickPick, setCanOpenCommunityFromQuickPick] = useState(false);
   const [gitSelectedSourceId, setGitSelectedSourceId] = useState<GitChangeSourceId>("unstaged");
   const [gitRefreshVersion, setGitRefreshVersion] = useState(0);
   const { browserRestoreUrls, handleBrowserUrlChange } = useTaskSidePaneMemoryBridge({
@@ -353,8 +350,8 @@ export function App({
     workspaceAbsPath,
     workspaceIdentity,
   });
-  const theme = useZCodeStore((s) => s.theme);
-  const setTheme = useZCodeStore((s) => s.setTheme);
+  const theme = useKCodeStore((s) => s.theme);
+  const setTheme = useKCodeStore((s) => s.setTheme);
   const {
     isMacFullscreen,
     desktopWindowChromeState,
@@ -388,7 +385,7 @@ export function App({
     activeTaskId,
     workspaceRemoteSessionId,
     workspaceIdentity,
-    selectedProvider: workspaceShellZCodeState.selectedProvider,
+    selectedProvider: workspaceShellKCodeState.selectedProvider,
     intl,
   });
   const workspaceTabs = useMemo(
@@ -661,10 +658,6 @@ export function App({
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
   const openFeedbackTickets = useFeedbackStore((state) => state.openTickets);
   const isLoggedIn = Boolean(user);
-  const handleOpenFeedback = useCallback(() => {
-    void platform.openFeedback();
-  }, [platform]);
-
   useEffect(() => {
     // 内置反馈中心合并了"提交反馈 / 我的反馈"两个 Tab，
     // 老的 OpenTicketsPanel IPC 仍然兼容（直接打开列表），未来如果还需要单独入口可以复用。
@@ -679,10 +672,6 @@ export function App({
       disposeTicketsPanel?.();
     };
   }, [openFeedbackSubmit, openFeedbackTickets, platform]);
-  const handleOpenCommunity = useCallback(() => platform.openCommunity(), [platform]);
-  const handleOpenProductDocs = useCallback(() => {
-    platform.openExternal(ZCODE_PRODUCT_DOCS_URL);
-  }, [platform]);
   const themeTarget = resolveTheme(theme) === "dark" ? "light" : "dark";
   const handleSwitchTheme = useCallback(() => {
     setTheme(themeTarget);
@@ -705,9 +694,9 @@ export function App({
       targetWorkspacePath: string,
       targetWorkspaceIdentity?: string,
       targetWorkspacePurpose?: WorkspacePurpose,
-      createSource?: import("@zcode/shared").SessionCreateSource,
+      createSource?: import("@kcode/shared").SessionCreateSource,
     ) => {
-      const store = useZCodeSessionStore.getState();
+      const store = useKCodeSessionStore.getState();
       const resolvedTargetWorkspaceIdentity =
         targetWorkspaceIdentity ??
         tabs.filter(isWorkspaceTab).find((tab) => tab.workspacePath === targetWorkspacePath)
@@ -716,7 +705,7 @@ export function App({
         return;
       }
       const targetSelectedProvider = resolveWorkspaceSwitchDraftProvider({
-        currentSelectedProvider: workspaceShellZCodeState.selectedProvider,
+        currentSelectedProvider: workspaceShellKCodeState.selectedProvider,
         targetWorkspacePath,
         targetWorkspaceIdentity: resolvedTargetWorkspaceIdentity,
         workspaces: store.workspaces,
@@ -786,7 +775,7 @@ export function App({
       tabs,
       workspaceAbsPath,
       workspaceIdentity,
-      workspaceShellZCodeState.selectedProvider,
+      workspaceShellKCodeState.selectedProvider,
     ],
   );
 
@@ -811,16 +800,16 @@ export function App({
         setTestMessages([...messages]);
       },
       getChatMessageCount: () => testMessages?.length ?? 0,
-      getPluginsOverview: (params) => services.zcodeAgentService.getPluginsOverview(params),
-      addPluginMarketplace: (params) => services.zcodeAgentService.addPluginMarketplace(params),
+      getPluginsOverview: (params) => services.kcodeAgentService.getPluginsOverview(params),
+      addPluginMarketplace: (params) => services.kcodeAgentService.addPluginMarketplace(params),
       updatePluginMarketplace: (params) =>
-        services.zcodeAgentService.updatePluginMarketplace(params),
-      installPlugin: (params) => services.zcodeAgentService.installPlugin(params),
-      listPlugins: (params) => services.zcodeAgentService.listPlugins(params),
+        services.kcodeAgentService.updatePluginMarketplace(params),
+      installPlugin: (params) => services.kcodeAgentService.installPlugin(params),
+      listPlugins: (params) => services.kcodeAgentService.listPlugins(params),
       getPluginReferenceCatalog: (params) =>
-        services.zcodeAgentService.getPluginReferenceCatalog(params),
+        services.kcodeAgentService.getPluginReferenceCatalog(params),
     }),
-    [locale, services.zcodeAgentService, setLocale, theme, setTheme, testMessages],
+    [locale, services.kcodeAgentService, setLocale, theme, setTheme, testMessages],
   );
   useTestActions(testActions);
   const [workspaceMainView, setWorkspaceMainView] = useState<WorkspaceMainView>("chat");
@@ -896,7 +885,7 @@ export function App({
   const handleSelectAdjacentConversation = useCallback(
     (direction: "previous" | "next") => {
       runVisibleWorkspaceCommand(() => {
-        const sessionState = useZCodeSessionStore.getState();
+        const sessionState = useKCodeSessionStore.getState();
         const workspaceState = sessionState.getWorkspaceState(workspaceAbsPath, workspaceIdentity);
         const fallbackTaskIds = getVisibleTaskMetas(workspaceState).map((task) => task.taskId);
         const taskQueryCacheState = useTaskQueryCacheStore.getState();
@@ -970,34 +959,12 @@ export function App({
       : null,
   });
 
-  useEffect(() => {
-    let disposed = false;
-
-    void platform.canOpenCommunity(locale).then(
-      (visible) => {
-        if (!disposed) {
-          setCanOpenCommunityFromQuickPick(visible);
-        }
-      },
-      () => {
-        if (!disposed) {
-          setCanOpenCommunityFromQuickPick(false);
-        }
-      },
-    );
-
-    return () => {
-      disposed = true;
-    };
-  }, [locale, platform]);
-
   const quickPickCommands = useMemo(
     () =>
       createQuickPickCommands({
         supportsTerminal: !isOfficeMode,
         supportsReview: !isOfficeMode,
         allowOpenWorkspace,
-        canOpenCommunity: canOpenCommunityFromQuickPick,
         isSidebarVisible,
         supportsEmbeddedBrowser,
         // quick pick 命令只关心登录态布尔值。
@@ -1023,10 +990,6 @@ export function App({
             openSettingsTab();
           },
           switchTheme: handleSwitchTheme,
-          openFeedback: handleOpenFeedback,
-          openCommunity: handleOpenCommunity,
-          openProductDocs: handleOpenProductDocs,
-          login: onLogin,
           logout: onLogout,
           toggleSidebar: () => runVisibleWorkspaceCommand(handleToggleSidebar),
           toggleTerminal: () => runVisibleWorkspaceCommand(handleToggleTerminalIfWritable),
@@ -1039,10 +1002,6 @@ export function App({
     [
       allowOpenWorkspace,
       isOfficeMode,
-      canOpenCommunityFromQuickPick,
-      handleOpenCommunity,
-      handleOpenFeedback,
-      handleOpenProductDocs,
       handleOpenSettingsSection,
       handleSwitchTheme,
       handleOpenBrowserTab,
@@ -1055,7 +1014,6 @@ export function App({
       isSidebarVisible,
       newTaskShortcutLabel,
       handleCreateTaskIfWritable,
-      onLogin,
       onLogout,
       onOpenWorkspace,
       runVisibleWorkspaceCommand,
@@ -1139,7 +1097,6 @@ export function App({
         onCancelRemoteProject={onCancelRemoteProject}
         onReconnectRemoteWorkspace={onReconnectRemoteWorkspace}
         onLogout={onLogout}
-        onLogin={onLogin}
         user={user}
         reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
         remoteWorkspaceErrorByWorkspaceKey={remoteWorkspaceErrorByWorkspaceKey}
@@ -1165,7 +1122,7 @@ export function App({
         isDesktop={isDesktop}
         isMacDesktop={isMacDesktop}
         isWindowsDesktop={isWindowsDesktop}
-        workspaceShellZCodeState={workspaceShellZCodeState}
+        workspaceShellKCodeState={workspaceShellKCodeState}
         theme={theme}
         isMacFullscreen={isMacFullscreen}
         desktopWindowChromeState={desktopWindowChromeState}

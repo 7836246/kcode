@@ -1,9 +1,9 @@
 import type { PaneSplitSide } from "@/v4/paneLayoutTree.js";
 
-export const WORKBENCH_SESSION_DRAG_MIME = "application/x-zcode-session";
+export const WORKBENCH_SESSION_DRAG_MIME = "application/x-kcode-session";
 
 export interface WorkbenchSessionDragPayload {
-  readonly kind: "zcode/session";
+  readonly kind: "kcode/session";
   readonly workspacePath: string;
   readonly workspaceIdentity?: string;
   readonly remoteSessionId?: string;
@@ -58,14 +58,14 @@ export function parseWorkbenchSessionDragPayload(
     const parsed = JSON.parse(raw);
     if (
       !isRecord(parsed) ||
-      parsed.kind !== "zcode/session" ||
+      parsed.kind !== "kcode/session" ||
       typeof parsed.workspacePath !== "string" ||
       typeof parsed.sessionId !== "string"
     ) {
       return null;
     }
     return {
-      kind: "zcode/session",
+      kind: "kcode/session",
       workspacePath: parsed.workspacePath,
       workspaceIdentity:
         typeof parsed.workspaceIdentity === "string" ? parsed.workspaceIdentity : undefined,

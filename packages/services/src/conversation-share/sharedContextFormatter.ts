@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { ConversationRow } from "@zcode/shared/zcode-protocol-v4";
+import type { ConversationRow } from "@kcode/shared/kcode-protocol-v4";
 
 import { ConversationShareServiceError } from "#src/conversation-share/conversationShare.js";
 
@@ -44,8 +44,8 @@ export function formatSharedContextV1(
       case "userInput":
         {
           const attachmentLines = (row.attachments ?? []).flatMap((attachment) => {
-            const artifactId = attachment.ref.startsWith("zcode-artifact://share/")
-              ? attachment.ref.slice("zcode-artifact://share/".length)
+            const artifactId = attachment.ref.startsWith("kcode-artifact://share/")
+              ? attachment.ref.slice("kcode-artifact://share/".length)
               : "";
             const installed = paths.get(artifactId);
             return installed

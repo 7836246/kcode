@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import type { RefObject } from "react";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import type { IServiceAccessor } from "@zcode/services";
+import type { IServiceAccessor } from "@kcode/services";
 import { Terminal } from "@/Terminal.js";
 import { ScopedErrorBoundary } from "@/ErrorBoundary.js";
 import { cn } from "@/components/lib/utils.js";
@@ -15,7 +15,7 @@ export function AnimatedTerminalPanel({
   openWorkspaceKeys,
   isVisible,
   isWindowsDesktop,
-  frameClassName = "rounded-xl border border-border",
+  frameClassName = "rounded-2xl border border-border",
   panelRef,
   panelElementRef,
   onClose,

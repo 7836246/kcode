@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ConversationRow, SessionPhase } from "@zcode/shared/zcode-protocol-v4";
+import type { ConversationRow, SessionPhase } from "@kcode/shared/kcode-protocol-v4";
 import {
   applyConversationFindHighlights,
   applySearchResultHighlight,

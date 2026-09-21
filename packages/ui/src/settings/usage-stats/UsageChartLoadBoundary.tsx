@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { ScopedErrorBoundary } from "@/ErrorBoundary.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { UsageEmptyState } from "@/settings/usage-stats/usageStatsUiParts.js";
 
 export function UsageChartLoadBoundary({
@@ -14,7 +14,7 @@ export function UsageChartLoadBoundary({
   resetKeys: readonly unknown[];
   scope: string;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
 
   return (
     <ScopedErrorBoundary scope={scope} resetKeys={resetKeys} variant="inline">

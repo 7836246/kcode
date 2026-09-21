@@ -2450,15 +2450,15 @@ The original import revisions of copied components are not recorded in the curre
 
 - ai-elements (Apache-2.0): packages/ui/src/components/ai-elements, .agents/skills/ai-elements. License reference: https://raw.githubusercontent.com/vercel/ai-elements/6a9d5b1822ffb10bba4bd97175f01edd7d8651cd/LICENSE. Original import revision: not recorded.
 
-- Fig autocomplete registry (MIT): apps/zcode-cli/packages/core/src/tool/handlers/generated/bash-command-registry.ts. License reference: https://raw.githubusercontent.com/withfig/autocomplete/aef52acff84c45edde61ae610cc2c964802b9a38/LICENSE. Original import revision: not recorded.
+- Fig autocomplete registry (MIT): apps/kcode-cli/packages/core/src/tool/handlers/generated/bash-command-registry.ts. License reference: https://raw.githubusercontent.com/withfig/autocomplete/aef52acff84c45edde61ae610cc2c964802b9a38/LICENSE. Original import revision: not recorded.
 
 - Material Icon Theme (MIT): packages/desktop/src/renderer/public/material-icons, packages/web/public/material-icons. License reference: https://raw.githubusercontent.com/material-extensions/vscode-material-icon-theme/cb1dfb6d9cb73b15681a93939983d75dbba7bf5b/LICENSE. Original import revision: not recorded.
 
 - agent-browser skills (including dogfood and electron) (Apache-2.0): .agents/skills/agent-browser, .agents/skills/dogfood, .agents/skills/electron. License reference: https://raw.githubusercontent.com/vercel-labs/agent-browser/99c732c18810494593ead9dd96ab6f5f0c78b729/LICENSE. Original import revision: not recorded.
 
-- Visual Studio Code IPC and common utilities (MIT): packages/rpc/src, packages/rpc/examples, packages/shared/src/zcode-protocol-v4/wire-codec.ts. License reference: https://raw.githubusercontent.com/microsoft/vscode/44825207bf4389c3bd17c92d3ec28cf784c324cc/LICENSE.txt. Original import revision: not recorded.
+- Visual Studio Code IPC and common utilities (MIT): packages/rpc/src, packages/rpc/examples, packages/shared/src/kcode-protocol-v4/wire-codec.ts. License reference: https://raw.githubusercontent.com/microsoft/vscode/44825207bf4389c3bd17c92d3ec28cf784c324cc/LICENSE.txt. Original import revision: not recorded.
 
-- Superpowers skill description adaptations (MIT): packages/ui/src/lib/builtinSkillI18n.ts, apps/zcode-cli/packages/superpowers-plugin/LICENSE. License reference: https://raw.githubusercontent.com/obra/superpowers/f2cbfbefebbfef77321e4c9abc9e949826bea9d7/LICENSE. Original import revision: not recorded.
+- Superpowers skill description adaptations (MIT): packages/ui/src/lib/builtinSkillI18n.ts, apps/kcode-cli/packages/superpowers-plugin/LICENSE. License reference: https://raw.githubusercontent.com/obra/superpowers/f2cbfbefebbfef77321e4c9abc9e949826bea9d7/LICENSE. Original import revision: not recorded.
 
 - React Best Practices skill (MIT): .agents/skills/react-best-practices. License reference: https://github.com/vercel-labs/agent-skills/tree/063bee94c3f4df8453406c830b0a7df0f2860278. Original import revision: not recorded. Review required: Pinned upstream README and skill declare MIT, but a complete original copyright/license notice has not been obtained.
 
@@ -2474,11 +2474,11 @@ Electron/Chromium target-specific notices are shipped separately under Resources
 
 ## Modified npm packages
 
-- @arms/rum-electron@0.0.3: modified by ZCode; the changes are recorded in patches/@arms__rum-electron@0.0.3.patch in the source repository.
+- @arms/rum-electron@0.0.3: modified by KCode; the changes are recorded in patches/@arms__rum-electron@0.0.3.patch in the source repository.
 
-- @ai-sdk/openai-compatible@2.0.60: modified by ZCode; the changes are recorded in patches/@ai-sdk__openai-compatible@2.0.60.patch in the source repository.
+- @ai-sdk/openai-compatible@2.0.60: modified by KCode; the changes are recorded in patches/@ai-sdk__openai-compatible@2.0.60.patch in the source repository.
 
-- @ai-sdk/anthropic@3.0.81: modified by ZCode; the changes are recorded in patches/@ai-sdk__anthropic@3.0.81.patch in the source repository.
+- @ai-sdk/anthropic@3.0.81: modified by KCode; the changes are recorded in patches/@ai-sdk__anthropic@3.0.81.patch in the source repository.
 
 ## License and NOTICE texts
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import type { IClientScenesService } from "@zcode/services";
+import type { IClientScenesService } from "@kcode/services";
 import {
   isClientScenesBusinessError,
   useClientScenesResource,

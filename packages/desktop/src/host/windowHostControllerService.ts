@@ -1,22 +1,22 @@
 /* eslint-disable max-lines -- Controller source 聚合、路由、订阅与生命周期属于同一个 Host 边界。 */
-import { Emitter } from "@zcode/rpc";
-import type { ZCodeTaskMeta } from "@zcode/shared";
+import { Emitter } from "@kcode/rpc";
+import type { KCodeTaskMeta } from "@kcode/shared";
 import type {
   ControllerSubscribeParams,
   WindowHostControllerTaskRow,
   WindowHostTaskAddress,
-} from "@zcode/shared/zcode-protocol-v4";
-import { matchesTaskListMembershipKind } from "@zcode/shared/zcode-protocol-v4";
+} from "@kcode/shared/kcode-protocol-v4";
+import { matchesTaskListMembershipKind } from "@kcode/shared/kcode-protocol-v4";
 import type {
   IWindowControllerService,
-  IZCodeAgentService,
-  IZCodeTaskService,
+  IKCodeAgentService,
+  IKCodeTaskService,
   WindowHostControllerFrame,
   WindowHostControllerTaskListItem,
   WindowHostControllerTaskListResult,
-  ZCodeTaskListQuery,
-  ZCodeTaskListWorkspaceScope,
-} from "@zcode/services";
+  KCodeTaskListQuery,
+  KCodeTaskListWorkspaceScope,
+} from "@kcode/services";
 import {
   createWindowHostControllerProjection,
   type WindowHostControllerMutation,
@@ -31,8 +31,8 @@ import {
 
 interface ResolvedWindowHostControllerSource {
   scope: WindowHostControllerSourceScope;
-  taskService?: IZCodeTaskService;
-  agentService?: IZCodeAgentService;
+  taskService?: IKCodeTaskService;
+  agentService?: IKCodeAgentService;
   sourceAvailability: "online" | "offline";
 }
 
@@ -40,14 +40,14 @@ function sourceKey(scope: WindowHostControllerSourceScope): string {
   return `${scope.kind}\0${scope.kind === "remote" ? scope.remoteSessionId : "local"}\0${scope.workspaceIdentity?.trim() || scope.workspacePath}`;
 }
 
-function taskKey(task: Pick<ZCodeTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">) {
+function taskKey(task: Pick<KCodeTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">) {
   return `${task.workspaceIdentity?.trim() || task.workspacePath}\0${task.taskId}`;
 }
 
 function normalizeTaskMeta(
-  meta: ZCodeTaskMeta,
+  meta: KCodeTaskMeta,
   scope: WindowHostControllerSourceScope,
-): ZCodeTaskMeta {
+): KCodeTaskMeta {
   return {
     ...meta,
     workspacePath: scope.workspacePath,
@@ -60,7 +60,7 @@ function normalizeTaskMeta(
 function compareItems(
   left: WindowHostControllerTaskListItem,
   right: WindowHostControllerTaskListItem,
-  sortBy: ZCodeTaskListQuery["sortBy"],
+  sortBy: KCodeTaskListQuery["sortBy"],
 ): number {
   const leftAt = sortBy === "created" ? left.createdAt : left.updatedAt;
   const rightAt = sortBy === "created" ? right.createdAt : right.updatedAt;
@@ -76,7 +76,7 @@ function mutationParams(address: WindowHostTaskAddress) {
 }
 
 function sessionOverlay(
-  summary: import("@zcode/shared/zcode-protocol-v4").SessionSummary,
+  summary: import("@kcode/shared/kcode-protocol-v4").SessionSummary,
 ): WindowHostControllerSessionOverlay {
   const liveStatus: WindowHostControllerSessionOverlay["liveStatus"] =
     summary.pendingInteraction ||
@@ -124,7 +124,7 @@ function sessionOverlay(
   };
 }
 
-function liveStatusFromMeta(meta: ZCodeTaskMeta): WindowHostControllerTaskRow["liveStatus"] {
+function liveStatusFromMeta(meta: KCodeTaskMeta): WindowHostControllerTaskRow["liveStatus"] {
   if (meta.status === "completed") return "completed";
   if (meta.status === "error") return "error";
   return "idle";
@@ -136,7 +136,7 @@ function liveStatusFromMeta(meta: ZCodeTaskMeta): WindowHostControllerTaskRow["l
  */
 export function createWindowHostControllerRuntime(options: {
   createId: () => string;
-  resolveSource: (scope: ZCodeTaskListWorkspaceScope) => ResolvedWindowHostControllerSource | null;
+  resolveSource: (scope: KCodeTaskListWorkspaceScope) => ResolvedWindowHostControllerSource | null;
   onSourceError?: (
     scope: WindowHostControllerSourceScope,
     operation: "refresh" | "search",
@@ -146,18 +146,18 @@ export function createWindowHostControllerRuntime(options: {
   const projection = createWindowHostControllerProjection({ createId: options.createId });
   const registeredScopes = new Map<string, WindowHostControllerSourceScope>();
   const sourceAvailability = new Map<string, "online" | "offline">();
-  const sourceTaskServices = new Map<string, IZCodeTaskService>();
-  const sourceSnapshotTaskServices = new Map<string, IZCodeTaskService>();
+  const sourceTaskServices = new Map<string, IKCodeTaskService>();
+  const sourceSnapshotTaskServices = new Map<string, IKCodeTaskService>();
   const sourceEventSubscriptions = new Map<string, { dispose(): void }>();
   const sourceRefreshFlights = new Map<
     string,
-    { taskService: IZCodeTaskService; promise: Promise<void> }
+    { taskService: IKCodeTaskService; promise: Promise<void> }
   >();
   const sourceRefreshGenerations = new Map<string, number>();
   const sourceLiveOverlays = new Map<string, WindowHostControllerSessionOverlay[]>();
   const sourceSessionObservers = new Map<
     string,
-    { agentService: IZCodeAgentService; observer: WindowHostSessionsIndexObserver }
+    { agentService: IKCodeAgentService; observer: WindowHostSessionsIndexObserver }
   >();
   const pendingReplacementByNextSourceKey = new Map<string, WindowHostControllerSourceScope>();
 
@@ -360,7 +360,7 @@ export function createWindowHostControllerRuntime(options: {
     const membershipByTaskKey = new Map<
       string,
       {
-        meta: ZCodeTaskMeta;
+        meta: KCodeTaskMeta;
         membership: { pinned: boolean; archived: boolean; active: boolean };
       }
     >();
@@ -456,7 +456,7 @@ export function createWindowHostControllerRuntime(options: {
   }
 
   function resolveQuerySources(
-    scopes: ZCodeTaskListWorkspaceScope[],
+    scopes: KCodeTaskListWorkspaceScope[],
   ): ResolvedWindowHostControllerSource[] {
     const resolved = new Map<string, ResolvedWindowHostControllerSource>();
     for (const scope of scopes) {
@@ -470,7 +470,7 @@ export function createWindowHostControllerRuntime(options: {
   }
 
   async function listTaskList(
-    query: ZCodeTaskListQuery,
+    query: KCodeTaskListQuery,
   ): Promise<WindowHostControllerTaskListResult> {
     const resolvedSources = resolveQuerySources(query.workspaceScopes);
     await Promise.all(
@@ -680,7 +680,7 @@ export function createWindowHostControllerRuntime(options: {
       taskId: string;
       workspacePath: string;
       workspaceIdentity?: string;
-      attachmentScope?: import("@zcode/shared").WindowHostAttachmentScope;
+      attachmentScope?: import("@kcode/shared").WindowHostAttachmentScope;
       allowMissingTask?: boolean;
     }): Promise<WindowHostTaskAddress> {
       const remoteAttachmentScope =

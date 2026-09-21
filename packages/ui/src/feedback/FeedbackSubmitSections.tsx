@@ -1,4 +1,4 @@
-import { TID_FEEDBACK_LOGS_OPT_IN } from "@zcode/shared";
+import { TID_FEEDBACK_LOGS_OPT_IN } from "@kcode/shared";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";

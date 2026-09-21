@@ -1,12 +1,12 @@
 import {
-  ZCODE_PRODUCT_FLAVOR,
-  type ZCodeProductFlavor,
+  KCODE_PRODUCT_FLAVOR,
+  type KCodeProductFlavor,
   type UpdateStatePayload,
-} from "@zcode/shared";
+} from "@kcode/shared";
 
 // 更新入口跟随产品身份而不是后端环境：Preview 身份（含生产后端的 Preview）禁用更新器。
 export function shouldShowDesktopUpdateEntry(
-  flavor: ZCodeProductFlavor = ZCODE_PRODUCT_FLAVOR,
+  flavor: KCodeProductFlavor = KCODE_PRODUCT_FLAVOR,
 ): boolean {
   return flavor === "production";
 }

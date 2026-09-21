@@ -15,8 +15,8 @@ import type {
   Locale,
   UsageEntitlementSnapshot,
   UserInfo,
-  ZCodeInteractionBehavior,
-} from "@zcode/shared";
+  KCodeInteractionBehavior,
+} from "@kcode/shared";
 import {
   BUILTIN_MODEL_PROVIDER_IDS,
   TID_SETTINGS_BACK_BUTTON,
@@ -24,11 +24,11 @@ import {
   TID_SETTINGS_SECTION_NAV,
   TID_SETTINGS_USAGE_TAB,
   testId,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { DesktopWindowFrame } from "@/DesktopWindowFrame.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { getPathLeaf } from "@/lib/path.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
@@ -55,7 +55,6 @@ import {
 } from "@/lib/accountProviderAccess.js";
 import { buildUsageEntitlementCacheKey } from "@/lib/usageEntitlementCache.js";
 import { ModelProviderSection } from "@/settings/ModelProviderSection.js";
-import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 import { useEnterpriseCodingPlanProducts } from "@/settings/model-provider-section/useEnterpriseCodingPlanProducts.js";
 import { UsageStatsSection, type UsageStatsSectionTab } from "@/settings/UsageStatsSection.js";
 import {
@@ -80,7 +79,7 @@ import {
   SettingsHeaderBreadcrumb,
   type SettingsBreadcrumbItem,
 } from "@/settings/SettingsHeaderBreadcrumb.js";
-import { useZCodeStore } from "@/store/StoreProvider.js";
+import { useKCodeStore } from "@/store/StoreProvider.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 import type { Theme } from "@/useTheme.js";
@@ -95,6 +94,7 @@ import { useSelectDirectory } from "@/hooks/usePlatform.js";
 import { ServiceProvider, useServices } from "@/hooks/useServices.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import type { CreateTaskRequest } from "@/app-shell/types.js";
+import { resolveWorkspaceShellWindowChromeClass } from "@/app-shell/workspaceShellWindowChrome.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { resolveModelProviderConnectivityWorkspacePath } from "@/lib/modelProviderConnectivityTarget.js";
 import {
@@ -143,7 +143,7 @@ function SettingsUsageProviderTabs({
   codingPlanSources: CodingPlanUsageSource[];
   onTabChange: (tab: UsageStatsSectionTab) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const tabItems = [
     {
       id: "app" as const,
@@ -248,10 +248,10 @@ function SettingsSidebarButton({
         type={buttonProps.type ?? "button"}
         aria-label={label}
         className={cn(
-          "flex h-8 w-full items-center gap-2 rounded-xl px-2.5 text-left transition-colors",
+          "flex h-8 w-full items-center gap-2 rounded-2xl px-2.5 text-left transition-colors",
           "max-lg:mx-auto max-lg:size-10 max-lg:justify-center max-lg:px-0",
           active
-            ? "bg-surface-hover text-foreground"
+            ? "bg-selected text-foreground"
             : "text-foreground-subtle hover:bg-surface-hover hover:text-foreground",
           className,
         )}
@@ -277,7 +277,6 @@ export function SettingsPage({
   onCreateTask,
   onOpenWorkspace,
   allowOpenWorkspace = true,
-  onLogin,
   onLogout,
   user,
 }: {
@@ -290,11 +289,10 @@ export function SettingsPage({
   onCreateTask?: (request?: CreateTaskRequest) => void;
   onOpenWorkspace?: () => void;
   allowOpenWorkspace?: boolean;
-  onLogin?: () => void;
   onLogout?: () => void;
   user?: UserInfo | null;
 }) {
-  const { intl, localePreference, setLocalePreference } = useZCodeIntl();
+  const { intl, localePreference, setLocalePreference } = useKCodeIntl();
   const { settingsSectionGroups, settingsSections } = useMemo(
     () =>
       createSettingsPageConfig({
@@ -335,18 +333,18 @@ export function SettingsPage({
   const [settingsBreadcrumbItems, setSettingsBreadcrumbItems] = useState<
     readonly SettingsBreadcrumbItem[]
   >([]);
-  const interfaceMode = useZCodeStore((state) => state.interfaceMode);
-  const setInterfaceMode = useZCodeStore((state) => state.setInterfaceMode);
-  const theme = useZCodeStore((state) => state.theme);
-  const setTheme = useZCodeStore((state) => state.setTheme);
-  const codePreviewSettings = useZCodeStore((state) => state.codePreviewSettings);
-  const setCodePreviewSettings = useZCodeStore((state) => state.setCodePreviewSettings);
-  const uiFontSizePx = useZCodeStore((state) => state.uiFontSizePx);
-  const setUiFontSizePx = useZCodeStore((state) => state.setUiFontSizePx);
-  const notificationEnabled = useZCodeStore((state) => state.notificationEnabled);
-  const setNotificationEnabled = useZCodeStore((state) => state.setNotificationEnabled);
-  const notificationSoundEnabled = useZCodeStore((state) => state.notificationSoundEnabled);
-  const setNotificationSoundEnabled = useZCodeStore((state) => state.setNotificationSoundEnabled);
+  const interfaceMode = useKCodeStore((state) => state.interfaceMode);
+  const setInterfaceMode = useKCodeStore((state) => state.setInterfaceMode);
+  const theme = useKCodeStore((state) => state.theme);
+  const setTheme = useKCodeStore((state) => state.setTheme);
+  const codePreviewSettings = useKCodeStore((state) => state.codePreviewSettings);
+  const setCodePreviewSettings = useKCodeStore((state) => state.setCodePreviewSettings);
+  const uiFontSizePx = useKCodeStore((state) => state.uiFontSizePx);
+  const setUiFontSizePx = useKCodeStore((state) => state.setUiFontSizePx);
+  const notificationEnabled = useKCodeStore((state) => state.notificationEnabled);
+  const setNotificationEnabled = useKCodeStore((state) => state.setNotificationEnabled);
+  const notificationSoundEnabled = useKCodeStore((state) => state.notificationSoundEnabled);
+  const setNotificationSoundEnabled = useKCodeStore((state) => state.setNotificationSoundEnabled);
   const usageProviderSettingsRead = useProviderSettingsView();
   const usageProviderSettingsView =
     usageProviderSettingsRead.state.status === "ready"
@@ -550,7 +548,6 @@ export function SettingsPage({
     usageBigmodelEnterpriseProducts.loading ||
     usageZaiEnterpriseProducts.loading;
   const [initialModelProviderTarget] = useState(() => consumePendingSettingsModelProviderTarget());
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
   const [pendingModelProviderTarget, setPendingModelProviderTarget] = useState<
     SettingsModelProviderTarget | undefined
   >(() => initialModelProviderTarget);
@@ -589,7 +586,7 @@ export function SettingsPage({
         : "app",
     );
   }, [selectedUsageCodingPlanSource, usageActiveTab, usageCodingPlanSources]);
-  const setNewUserOnboardingOpen = useZCodeStore((state) => state.setNewUserOnboardingOpen);
+  const setNewUserOnboardingOpen = useKCodeStore((state) => state.setNewUserOnboardingOpen);
   const requestOnboardingDialog = () => setNewUserOnboardingOpen(true);
   const setActiveSettingsSection = useCallback(
     (section: SettingsSectionId, fallbackSection: SettingsSectionId = activeSection) => {
@@ -598,18 +595,6 @@ export function SettingsPage({
       writeLastSettingsSectionPreference(resolvedSection);
     },
     [activeSection],
-  );
-  const handleOpenCodingPlanUpgradeSettings = useCallback(
-    (
-      providerId: string,
-      funnelContext?: import("@/lib/codingPlanFunnelTelemetry.js").CodingPlanFunnelContext,
-    ) => {
-      openCodingPlanUpgrade({
-        providerId,
-        funnelContext,
-      });
-    },
-    [openCodingPlanUpgrade],
   );
   const handleOpenModelProviderSettings = useCallback(() => {
     setActiveSettingsSection("modelProvider");
@@ -710,8 +695,8 @@ export function SettingsPage({
   const [toolGroupingExploreEnabled, setToolGroupingExploreEnabled] = useState(true);
   const [toolGroupingTerminalEnabled, setToolGroupingTerminalEnabled] = useState(true);
   const [toolGroupingChangesEnabled, setToolGroupingChangesEnabled] = useState(false);
-  const [zcodeInteractionBehavior, setZCodeInteractionBehavior] =
-    useState<ZCodeInteractionBehavior>("queue");
+  const [kcodeInteractionBehavior, setKCodeInteractionBehavior] =
+    useState<KCodeInteractionBehavior>("queue");
   const [defaultHomeDir, setDefaultHomeDir] = useState("");
   const [hostPlatform, setHostPlatform] = useState("");
 
@@ -794,7 +779,7 @@ export function SettingsPage({
         setToolGroupingExploreEnabled(settings.toolGroupingExploreEnabled ?? true);
         setToolGroupingTerminalEnabled(settings.toolGroupingTerminalEnabled ?? true);
         setToolGroupingChangesEnabled(settings.toolGroupingChangesEnabled ?? false);
-        setZCodeInteractionBehavior(settings.zcodeInteractionBehavior ?? "queue");
+        setKCodeInteractionBehavior(settings.kcodeInteractionBehavior ?? "queue");
       })
       .catch(() => {});
     // 这里配置的是本地全局设置。远端 workspace 激活时 useServices()
@@ -827,7 +812,7 @@ export function SettingsPage({
     setToolGroupingExploreEnabled(sharedSettings.toolGroupingExploreEnabled ?? true);
     setToolGroupingTerminalEnabled(sharedSettings.toolGroupingTerminalEnabled ?? true);
     setToolGroupingChangesEnabled(sharedSettings.toolGroupingChangesEnabled ?? false);
-    setZCodeInteractionBehavior(sharedSettings.zcodeInteractionBehavior ?? "queue");
+    setKCodeInteractionBehavior(sharedSettings.kcodeInteractionBehavior ?? "queue");
     setReceivePreviewUpdates(sharedSettings.receivePreviewUpdates ?? false);
     setAutoDownloadAndInstallUpdates(sharedSettings.autoDownloadAndInstallUpdates ?? false);
   }, [sharedSettings]);
@@ -1251,16 +1236,16 @@ export function SettingsPage({
     },
     [updateSharedSettings],
   );
-  const handleZCodeInteractionBehaviorChange = useCallback(
-    async (behavior: ZCodeInteractionBehavior) => {
+  const handleKCodeInteractionBehaviorChange = useCallback(
+    async (behavior: KCodeInteractionBehavior) => {
       await runSettingsActionAsync({
         featureId: "settings.conversation",
         action: "change_interaction_behavior",
         trigger: "select",
-        operation: () => updateSharedSettings({ zcodeInteractionBehavior: behavior }),
+        operation: () => updateSharedSettings({ kcodeInteractionBehavior: behavior }),
         completed: { resultSource: "shared_settings", valueAfter: behavior },
       });
-      setZCodeInteractionBehavior(behavior);
+      setKCodeInteractionBehavior(behavior);
     },
     [updateSharedSettings],
   );
@@ -1405,7 +1390,7 @@ export function SettingsPage({
                       aria-label={intl.formatMessage({
                         id: "workspace.backToWorkspace",
                       })}
-                      className="m-1 w-[calc(100%-0.5rem)] justify-start gap-2 rounded-xl px-1.5 text-foreground-subtle hover:bg-surface-hover hover:text-foreground max-lg:m-1 max-lg:size-10 max-lg:justify-center max-lg:px-0"
+                      className="m-1 w-[calc(100%-0.5rem)] justify-start gap-2 rounded-2xl px-1.5 text-foreground-subtle hover:bg-surface-hover hover:text-foreground max-lg:m-1 max-lg:size-10 max-lg:justify-center max-lg:px-0"
                       onClick={() => {
                         runUserAction({
                           input: {
@@ -1537,8 +1522,6 @@ export function SettingsPage({
                   onThemeChange={handleFooterThemeChange}
                   onSettingsButtonClick={onBack}
                   onUsageClick={handleOpenUsageSettings}
-                  onUpgradeClick={handleOpenCodingPlanUpgradeSettings}
-                  onLogin={onLogin}
                   onLogout={onLogout}
                   settingsButtonMode="back"
                   user={user}
@@ -1555,7 +1538,8 @@ export function SettingsPage({
             className={cn(
               "flex min-h-0 flex-col",
               // 桌面平台统一复用主工作区的面板 inset；左侧仍与导航相接，顶部由独立拖拽留白承接。
-              isDesktop ? "p-1 pl-0 pt-0" : "p-0",
+              // 四周 4px，含侧栏与内容卡之间的缝，白卡四角都能收圆。
+              isDesktop ? "p-1 pt-0" : "p-0",
             )}
           >
             <div
@@ -1565,9 +1549,14 @@ export function SettingsPage({
             <div
               data-settings-panel-frame="true"
               className={cn(
-                "relative flex flex-col min-h-0 h-full border border-border bg-background",
-                // Windows 设置页已有 4px 外层留白，不再承担系统窗口外沿；圆角与主工作区统一为 5px。
-                isWindowsDesktop ? "rounded-[5px]" : "rounded-xl",
+                "relative flex min-h-0 h-full flex-col bg-background",
+                resolveWorkspaceShellWindowChromeClass({
+                  isMacDesktop,
+                  isWindowsDesktop,
+                  isLinuxDesktop: Boolean(isDesktop && !isMacDesktop && !isWindowsDesktop),
+                  isWindowsMaximized: false,
+                  supportsNativeRoundedCorners: true,
+                }),
               )}
             >
               {!usesInlineWindowControls ? (
@@ -1717,7 +1706,7 @@ export function SettingsPage({
                             toolGroupingExploreEnabled={toolGroupingExploreEnabled}
                             toolGroupingTerminalEnabled={toolGroupingTerminalEnabled}
                             toolGroupingChangesEnabled={toolGroupingChangesEnabled}
-                            zcodeInteractionBehavior={zcodeInteractionBehavior}
+                            kcodeInteractionBehavior={kcodeInteractionBehavior}
                             askUserQuestionAutoResolutionEnabled={
                               askUserQuestionAutoResolutionEnabled
                             }
@@ -1764,7 +1753,7 @@ export function SettingsPage({
                             onToolGroupingChangesEnabledChange={
                               handleToolGroupingChangesEnabledChange
                             }
-                            onZCodeInteractionBehaviorChange={handleZCodeInteractionBehaviorChange}
+                            onKCodeInteractionBehaviorChange={handleKCodeInteractionBehaviorChange}
                             onAskUserQuestionAutoResolutionEnabledChange={
                               handleAskUserQuestionAutoResolutionEnabledChange
                             }

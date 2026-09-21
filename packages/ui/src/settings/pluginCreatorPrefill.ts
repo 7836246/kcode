@@ -1,9 +1,9 @@
-import type { SkillSummary } from "@zcode/shared";
+import type { SkillSummary } from "@kcode/shared";
 import type { CreateTaskOptions } from "@/app-shell/types.js";
 import { buildSkillMentionMarkdown } from "@/mentions/mentionMarkdown.js";
 
 const PLUGIN_CREATOR_SKILL = "plugin-creator";
-const PLUGIN_CREATOR_ID = "plugin-creator@zcode-plugins-official";
+const PLUGIN_CREATOR_ID = "plugin-creator@kcode-plugins-official";
 
 function buildPluginCreatorPrefill(skills: readonly SkillSummary[]): CreateTaskOptions {
   // 创建入口只信任官方来源，不让用户目录或同名市场技能截获这项产品动作。

@@ -1,5 +1,5 @@
-import type { RemoteTarget } from "@zcode/shared";
-import { isRemoteWorkspaceIdentity } from "@zcode/shared";
+import type { RemoteTarget } from "@kcode/shared";
+import { isRemoteWorkspaceIdentity } from "@kcode/shared";
 
 type ComputerUseAvailabilityKind =
   | "local-macos"
@@ -58,7 +58,7 @@ export function resolveComputerUseAvailability({
   return { kind: "local-linux", supported: false };
 }
 
-const COMPUTER_USE_SEARCH_TERMS = ["电脑控制", "computer use", "zcode-cua", "cua"];
+const COMPUTER_USE_SEARCH_TERMS = ["电脑控制", "computer use", "kcode-cua", "cua"];
 
 export function matchesComputerUseSearch(query: string): boolean {
   const normalized = query.trim().toLocaleLowerCase();

@@ -6,20 +6,20 @@ index d26925cd014c42b6c6d470f9d2d4d75196203339..ce203cba549db3b21cddf71bb7a2c741
  /** 初始化窗口期时长(ms)，用于合并框架路由重定向 */
  F(_, "INITIAL_LOAD_WINDOW_MS", 200);
  let kA = _;
-+// ZCode 修复：main logger 把公共前缀、业务消息和上下文作为多个 console.error 参数传入。
++// KCode 修复：main logger 把公共前缀、业务消息和上下文作为多个 console.error 参数传入。
 +// SDK 原先只采第一个参数，导致 ARMS 里只剩 [timestamp] [pid] [source]，完全丢失错误正文。
 +// 采集边界统一去前缀、安全序列化、脱敏和截断，避免为了监控改坏 console 的原生多参数语义。
-+const zcodeConsoleErrorMaxLength = 2e3;
-+const zcodeMainLogPrefixPattern = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]\s+\[pid:\d+\]\s+\[[a-z][a-z0-9_-]*\]\s*$/;
-+const zcodeConsoleSensitiveKeyPattern = /(?:api[-_]?key|authorization|cookie|credential|password|secret|token)/i;
-+const zcodeConsoleSensitiveAssignmentPattern = /(["']?(?:api[-_]?key|authorization|cookie|credential|password|secret|token)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi;
-+const zcodeConsoleAuthSchemePattern = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi;
-+const zcodeConsoleApiKeyPattern = /\b(sk-)[A-Za-z0-9_-]{16,}\b/gi;
-+function zcodeRedactConsoleErrorText(I) {
-+  return I.replace(zcodeConsoleSensitiveAssignmentPattern, "$1<redacted>").replace(zcodeConsoleAuthSchemePattern, "$1 <redacted>").replace(zcodeConsoleApiKeyPattern, "$1<redacted>");
++const kcodeConsoleErrorMaxLength = 2e3;
++const kcodeMainLogPrefixPattern = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]\s+\[pid:\d+\]\s+\[[a-z][a-z0-9_-]*\]\s*$/;
++const kcodeConsoleSensitiveKeyPattern = /(?:api[-_]?key|authorization|cookie|credential|password|secret|token)/i;
++const kcodeConsoleSensitiveAssignmentPattern = /(["']?(?:api[-_]?key|authorization|cookie|credential|password|secret|token)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi;
++const kcodeConsoleAuthSchemePattern = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi;
++const kcodeConsoleApiKeyPattern = /\b(sk-)[A-Za-z0-9_-]{16,}\b/gi;
++function kcodeRedactConsoleErrorText(I) {
++  return I.replace(kcodeConsoleSensitiveAssignmentPattern, "$1<redacted>").replace(kcodeConsoleAuthSchemePattern, "$1 <redacted>").replace(kcodeConsoleApiKeyPattern, "$1<redacted>");
 +}
-+function zcodeFormatConsoleErrorValue(I) {
-+  if (typeof I == "string") return zcodeRedactConsoleErrorText(I);
++function kcodeFormatConsoleErrorValue(I) {
++  if (typeof I == "string") return kcodeRedactConsoleErrorText(I);
 +  if (typeof I == "bigint" || typeof I == "number" || typeof I == "boolean" || typeof I == "symbol" || I == null)
 +    return String(I);
 +  if (typeof I == "undefined") return "undefined";
@@ -27,8 +27,8 @@ index d26925cd014c42b6c6d470f9d2d4d75196203339..ce203cba549db3b21cddf71bb7a2c741
 +  const A = new WeakSet();
 +  try {
 +    const Q = JSON.stringify(I, (g, C) => {
-+      if (g && zcodeConsoleSensitiveKeyPattern.test(g)) return "<redacted>";
-+      if (typeof C == "string") return zcodeRedactConsoleErrorText(C);
++      if (g && kcodeConsoleSensitiveKeyPattern.test(g)) return "<redacted>";
++      if (typeof C == "string") return kcodeRedactConsoleErrorText(C);
 +      if (typeof C == "bigint") return String(C);
 +      if (typeof C == "function") return `[Function${C.name ? ` ${C.name}` : ""}]`;
 +      if (C && typeof C == "object") {
@@ -42,11 +42,11 @@ index d26925cd014c42b6c6d470f9d2d4d75196203339..ce203cba549db3b21cddf71bb7a2c741
 +    return "[Unserializable Object]";
 +  }
 +}
-+function zcodeFormatConsoleErrorArgs(I) {
++function kcodeFormatConsoleErrorArgs(I) {
 +  const A = Array.from(I || []);
-+  typeof A[0] == "string" && zcodeMainLogPrefixPattern.test(A[0]) && A.shift();
-+  const Q = zcodeRedactConsoleErrorText(A.map(zcodeFormatConsoleErrorValue).filter((g) => g.length > 0).join(" ").trim());
-+  return Q.slice(0, zcodeConsoleErrorMaxLength);
++  typeof A[0] == "string" && kcodeMainLogPrefixPattern.test(A[0]) && A.shift();
++  const Q = kcodeRedactConsoleErrorText(A.map(kcodeFormatConsoleErrorValue).filter((g) => g.length > 0).join(" ").trim());
++  return Q.slice(0, kcodeConsoleErrorMaxLength);
 +}
  class sQ {
    constructor() {
@@ -62,7 +62,7 @@ index d26925cd014c42b6c6d470f9d2d4d75196203339..ce203cba549db3b21cddf71bb7a2c741
 +        A.errorHandle(C, "console.error");
 +        return;
 +      }
-+      const B = zcodeFormatConsoleErrorArgs(g);
++      const B = kcodeFormatConsoleErrorArgs(g);
 +      B && A.errorHandle(B, "console.error");
      });
    }
@@ -71,83 +71,83 @@ index d26925cd014c42b6c6d470f9d2d4d75196203339..ce203cba549db3b21cddf71bb7a2c741
    const A = await LQ(I, null);
    return JSON.parse(A);
  }
-+// ZCode 修复：旧版 WASM 没有透传 Crashpad 进程角色。minidump 还包含任意内存片段，
++// KCode 修复：旧版 WASM 没有透传 Crashpad 进程角色。minidump 还包含任意内存片段，
 +// 因此不能全文件搜索 process_type 字节；必须从 Crashpad info stream 沿 RVA 读取结构化
 +// annotation，避免 renderer 内存里的同名字节被误判成 browser 并污染 Native Crash 指标。
-+const zcodeCrashpadInfoStreamType = 1129316353;
-+function zcodeHasDumpRange(I, A, Q) {
++const kcodeCrashpadInfoStreamType = 1129316353;
++function kcodeHasDumpRange(I, A, Q) {
 +  return Number.isSafeInteger(A) && Number.isSafeInteger(Q) && A >= 0 && Q >= 0 && A <= I.length - Q;
 +}
-+function zcodeReadDumpLocation(I, A) {
-+  if (!zcodeHasDumpRange(I, A, 8)) return;
++function kcodeReadDumpLocation(I, A) {
++  if (!kcodeHasDumpRange(I, A, 8)) return;
 +  const Q = I.readUInt32LE(A), g = I.readUInt32LE(A + 4);
-+  if (Q === 0 || g === 0 || !zcodeHasDumpRange(I, g, Q)) return;
++  if (Q === 0 || g === 0 || !kcodeHasDumpRange(I, g, Q)) return;
 +  return { size: Q, rva: g };
 +}
-+function zcodeReadDumpString(I, A, Q, g) {
-+  if (!zcodeHasDumpRange(I, A, 4)) return;
++function kcodeReadDumpString(I, A, Q, g) {
++  if (!kcodeHasDumpRange(I, A, 4)) return;
 +  const C = I.readUInt32LE(A), B = A + 4;
-+  if (C < 1 || C > Q || !zcodeHasDumpRange(I, B, C + (g ? 1 : 0))) return;
++  if (C < 1 || C > Q || !kcodeHasDumpRange(I, B, C + (g ? 1 : 0))) return;
 +  if (g && I[B + C] !== 0) return;
 +  return I.subarray(B, B + C).toString("utf8");
 +}
-+function zcodeRememberProcessType(I, A, Q) {
++function kcodeRememberProcessType(I, A, Q) {
 +  if (A !== "process_type" && A !== "ptype") return;
 +  const g = Q.trim().toLowerCase();
 +  if (/^[a-z][a-z0-9_-]*$/.test(g)) I.add(g);
 +}
-+function zcodeReadSimpleAnnotations(I, A, Q) {
++function kcodeReadSimpleAnnotations(I, A, Q) {
 +  if (!A || A.size < 4) return;
 +  const g = I.readUInt32LE(A.rva);
 +  if (g > Math.floor((A.size - 4) / 8)) return;
 +  for (let C = 0; C < g; C += 1) {
-+    const B = A.rva + 4 + C * 8, E = zcodeReadDumpString(I, I.readUInt32LE(B), 64, !0);
++    const B = A.rva + 4 + C * 8, E = kcodeReadDumpString(I, I.readUInt32LE(B), 64, !0);
 +    if (E !== "process_type" && E !== "ptype") continue;
-+    const D = zcodeReadDumpString(I, I.readUInt32LE(B + 4), 64, !0);
-+    if (D) zcodeRememberProcessType(Q, E, D);
++    const D = kcodeReadDumpString(I, I.readUInt32LE(B + 4), 64, !0);
++    if (D) kcodeRememberProcessType(Q, E, D);
 +  }
 +}
-+function zcodeReadAnnotationObjects(I, A, Q) {
++function kcodeReadAnnotationObjects(I, A, Q) {
 +  if (!A || A.size < 4) return;
 +  const g = I.readUInt32LE(A.rva);
 +  if (g > Math.floor((A.size - 4) / 12)) return;
 +  for (let C = 0; C < g; C += 1) {
 +    const B = A.rva + 4 + C * 12;
 +    if (I.readUInt16LE(B + 4) !== 1 || I.readUInt16LE(B + 6) !== 0) continue;
-+    const E = zcodeReadDumpString(I, I.readUInt32LE(B), 64, !0);
++    const E = kcodeReadDumpString(I, I.readUInt32LE(B), 64, !0);
 +    if (E !== "process_type" && E !== "ptype") continue;
-+    const D = zcodeReadDumpString(I, I.readUInt32LE(B + 8), 64, !1);
-+    if (D) zcodeRememberProcessType(Q, E, D);
++    const D = kcodeReadDumpString(I, I.readUInt32LE(B + 8), 64, !1);
++    if (D) kcodeRememberProcessType(Q, E, D);
 +  }
 +}
-+function zcodeReadModuleAnnotations(I, A, Q) {
++function kcodeReadModuleAnnotations(I, A, Q) {
 +  if (!A || A.size < 20 || I.readUInt32LE(A.rva) < 1) return;
-+  zcodeReadSimpleAnnotations(I, zcodeReadDumpLocation(I, A.rva + 12), Q);
++  kcodeReadSimpleAnnotations(I, kcodeReadDumpLocation(I, A.rva + 12), Q);
 +  if (A.size >= 28)
-+    zcodeReadAnnotationObjects(I, zcodeReadDumpLocation(I, A.rva + 20), Q);
++    kcodeReadAnnotationObjects(I, kcodeReadDumpLocation(I, A.rva + 20), Q);
 +}
-+function zcodeReadCrashpadInfo(I, A, Q) {
++function kcodeReadCrashpadInfo(I, A, Q) {
 +  if (!A || A.size < 52 || I.readUInt32LE(A.rva) < 1) return;
-+  zcodeReadSimpleAnnotations(I, zcodeReadDumpLocation(I, A.rva + 36), Q);
-+  const g = zcodeReadDumpLocation(I, A.rva + 44);
++  kcodeReadSimpleAnnotations(I, kcodeReadDumpLocation(I, A.rva + 36), Q);
++  const g = kcodeReadDumpLocation(I, A.rva + 44);
 +  if (!g || g.size < 4) return;
 +  const C = I.readUInt32LE(g.rva);
 +  if (C > Math.floor((g.size - 4) / 12)) return;
 +  for (let B = 0; B < C; B += 1) {
 +    const E = g.rva + 4 + B * 12;
-+    zcodeReadModuleAnnotations(I, zcodeReadDumpLocation(I, E + 4), Q);
++    kcodeReadModuleAnnotations(I, kcodeReadDumpLocation(I, E + 4), Q);
 +  }
 +}
 +function readCrashProcessType(I) {
 +  const Q = Buffer.from(I.buffer, I.byteOffset, I.byteLength);
-+  if (!zcodeHasDumpRange(Q, 0, 32) || Q.toString("ascii", 0, 4) !== "MDMP") return;
++  if (!kcodeHasDumpRange(Q, 0, 32) || Q.toString("ascii", 0, 4) !== "MDMP") return;
 +  const A = Q.readUInt32LE(8), g = Q.readUInt32LE(12);
-+  if (A < 1 || A > 4096 || !zcodeHasDumpRange(Q, g, A * 12)) return;
++  if (A < 1 || A > 4096 || !kcodeHasDumpRange(Q, g, A * 12)) return;
 +  const C = new Set();
 +  for (let B = 0; B < A; B += 1) {
 +    const E = g + B * 12;
-+    if (Q.readUInt32LE(E) === zcodeCrashpadInfoStreamType)
-+      zcodeReadCrashpadInfo(Q, zcodeReadDumpLocation(Q, E + 4), C);
++    if (Q.readUInt32LE(E) === kcodeCrashpadInfoStreamType)
++      kcodeReadCrashpadInfo(Q, kcodeReadDumpLocation(Q, E + 4), C);
 +  }
 +  if (C.size === 1) return C.values().next().value;
 +}

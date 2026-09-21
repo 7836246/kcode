@@ -1,4 +1,4 @@
-import type { ZCodeGroupedTaskViewNode, ZCodeTaskGroupColor } from "@zcode/services";
+import type { KCodeGroupedTaskViewNode, KCodeTaskGroupColor } from "@kcode/services";
 import { ChevronDownIcon, ChevronRightIcon, MessageCirclePlus } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
@@ -21,8 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { CRON_DEFAULT_GROUP_ID, OFF_PEAK_DEFAULT_GROUP_ID } from "@zcode/shared";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { CRON_DEFAULT_GROUP_ID, OFF_PEAK_DEFAULT_GROUP_ID } from "@kcode/shared";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { getTaskGroupDisplayTitle } from "@/workspace-grouped-tasks/group-title.js";
 import {
   TASK_GROUP_COLORS,
@@ -30,7 +30,7 @@ import {
   TaskGroupColorMark,
 } from "@/workspace-grouped-tasks/shared.js";
 
-type StickyGroupNode = Extract<ZCodeGroupedTaskViewNode, { type: "group" }>;
+type StickyGroupNode = Extract<KCodeGroupedTaskViewNode, { type: "group" }>;
 
 export function StickyGroupHeader({
   node,
@@ -46,10 +46,10 @@ export function StickyGroupHeader({
   tooltipsDisabled?: boolean;
   onCreateTask: () => void;
   onToggleCollapsed: (groupId: string) => void;
-  onUpdateGroupColor: (groupId: string, color: ZCodeTaskGroupColor) => void;
+  onUpdateGroupColor: (groupId: string, color: KCodeTaskGroupColor) => void;
   onUngroupGroup: (groupId: string) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const taskCount = node.tasks.length;
   // 系统分组（cron / 闲时）标题按语言环境本地化展示，与 GroupItem 保持一致。
   const displayTitle = getTaskGroupDisplayTitle(node.group, {
@@ -62,7 +62,7 @@ export function StickyGroupHeader({
     node.group.id === CRON_DEFAULT_GROUP_ID || node.group.id === OFF_PEAK_DEFAULT_GROUP_ID;
   const handleToggle = () => onToggleCollapsed(node.group.id);
   const handleGroupColorChange = (color: string) => {
-    onUpdateGroupColor(node.group.id, color as ZCodeTaskGroupColor);
+    onUpdateGroupColor(node.group.id, color as KCodeTaskGroupColor);
   };
   const newTaskButton = (
     <Button

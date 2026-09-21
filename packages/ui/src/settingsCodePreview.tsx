@@ -18,7 +18,7 @@ import {
   ThemeSelect,
 } from "@/settings/SettingsPageParts.js";
 import { getCodePreviewTheme } from "@/lib/codePreviewPreferences.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import type { CodePreviewSettings } from "@/store/index.js";
 import { THEME_MODES } from "@/settings/settingsPageConfig.js";
 import { MAX_UI_FONT_SIZE_PX, MIN_UI_FONT_SIZE_PX } from "@/lib/uiFontSize.js";
@@ -93,7 +93,7 @@ export function AppearanceSectionContent({
   uiFontSizePx: number;
   setUiFontSizePx: (fontSizePx: number) => void;
 }) {
-  const { intl } = useZCodeIntl();
+  const { intl } = useKCodeIntl();
   const activePreviewMode = resolveTheme(theme);
 
   return (

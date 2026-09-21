@@ -35,7 +35,7 @@ function findPackageDir(packageName, startDirs) {
   throw new Error(`Unable to find package directory for ${packageName}`);
 }
 
-const desktopDir = findPackageDir("@zcode/desktop", [
+const desktopDir = findPackageDir("@kcode/desktop", [
   moduleDir,
   resolve(moduleDir, ".."),
   process.cwd(),
@@ -75,7 +75,7 @@ function resolveCommitId() {
       .toString()
       .trim();
   } catch {
-    return process.env.ZCODE_COMMIT ?? "unknown";
+    return process.env.KCODE_COMMIT ?? "unknown";
   }
 }
 

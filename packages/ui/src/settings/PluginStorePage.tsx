@@ -5,13 +5,13 @@ import { RefreshCw, Settings } from "lucide-react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
-import { useZCodeIntl } from "@/i18n/IntlProvider.js";
+import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useServices } from "@/hooks/useServices.js";
 import { usePluginStoreOrder } from "@/hooks/usePluginStoreOrder.js";
-import { useZCodeSessionService } from "@/hooks/useZCodeSessionService.js";
+import { useKCodeSessionService } from "@/hooks/useKCodeSessionService.js";
 import { usePluginManagementStore } from "@/store/pluginManagementStore.js";
 import type { CreateTaskRequest } from "@/app-shell/types.js";
-import { invalidateDeferredDraftSessionForSkillChange } from "@/lib/zcodeDraftSkillInvalidation.js";
+import { invalidateDeferredDraftSessionForSkillChange } from "@/lib/kcodeDraftSkillInvalidation.js";
 import { refreshSharedSkillStoreForWorkspace } from "@/lib/skillStoreRefresh.js";
 import {
   PluginDetailRow,
@@ -34,7 +34,7 @@ import {
   resolvePluginDisplayName,
   type StorePluginItem,
 } from "@/settings/pluginStoreListing.js";
-import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "@zcode/shared";
+import { KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "@kcode/shared";
 import { PluginUninstallConfirmDialog } from "@/settings/PluginUninstallConfirmDialog.js";
 import { usePluginUninstall } from "@/settings/usePluginUninstall.js";
 import { claimMarketplaceAutoRefresh } from "@/settings/officialMarketplaceAutoRefresh.js";
@@ -60,10 +60,10 @@ export function PluginStorePage({
   onCreateTask,
   onManageInstalled,
 }: PluginStorePageProps) {
-  const { intl, locale } = useZCodeIntl();
+  const { intl, locale } = useKCodeIntl();
   const { order: storeOrder, refresh: refreshStoreOrder } = usePluginStoreOrder();
   const { pluginManagementService, skillsService } = useServices();
-  const zcodeSessionService = useZCodeSessionService(
+  const kcodeSessionService = useKCodeSessionService(
     workspacePath ?? undefined,
     undefined,
     workspaceIdentity,
@@ -125,16 +125,16 @@ export function PluginStorePage({
     });
   }, [initialize, pluginManagementService, workspaceIdentity, workspacePath]);
 
-  // 目录自动刷新（Catalog Auto-Refresh）：只针对 ZCode 官方市场。每次进入商店页都刷新 CDN 目录，
+  // 目录自动刷新（Catalog Auto-Refresh）：只针对 KCode 官方市场。每次进入商店页都刷新 CDN 目录，
   // 否则新上架插件要等用户手动点刷新才可见；以 10 分钟窗口节流，并在发起时占位防抖（失败/在飞不重复），
   // 判据见 officialMarketplaceAutoRefresh。状态放模块级而非组件 ref，因为每次进入都是重新挂载。
   useEffect(() => {
-    const official = marketplaces.find((item) => item.id === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID);
+    const official = marketplaces.find((item) => item.id === KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID);
     if (
       official &&
-      claimMarketplaceAutoRefresh(ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID, official.lastUpdated)
+      claimMarketplaceAutoRefresh(KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID, official.lastUpdated)
     ) {
-      void updateMarketplace(ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID, pluginManagementService);
+      void updateMarketplace(KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID, pluginManagementService);
     }
   }, [marketplaces, pluginManagementService, updateMarketplace]);
 
@@ -254,7 +254,7 @@ export function PluginStorePage({
   // 避免会话里残留悬挂或旧版本能力。
   const refreshAfterPluginChange = useCallback(async () => {
     await invalidateDeferredDraftSessionForSkillChange({
-      zcodeSessionService,
+      kcodeSessionService,
       workspacePath,
       workspaceIdentity: normalizedWorkspaceIdentity ?? undefined,
       reason: "settings-plugin-enabled",
@@ -264,7 +264,7 @@ export function PluginStorePage({
       workspaceIdentity: normalizedWorkspaceIdentity,
       skillsService,
     });
-  }, [normalizedWorkspaceIdentity, skillsService, workspacePath, zcodeSessionService]);
+  }, [normalizedWorkspaceIdentity, skillsService, workspacePath, kcodeSessionService]);
 
   const uninstall = usePluginUninstall({
     pluginService: pluginManagementService,

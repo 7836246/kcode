@@ -1,5 +1,5 @@
-import type { IDisposable } from "@zcode/rpc";
-import { ZCODE_AGENT_RUNTIME_UNAVAILABLE_CODE, type IZCodeAgentService } from "@zcode/services";
+import type { IDisposable } from "@kcode/rpc";
+import { KCODE_AGENT_RUNTIME_UNAVAILABLE_CODE, type IKCodeAgentService } from "@kcode/services";
 import {
   PROTOCOL_V4_LIMITS,
   sessionsIndexTopic,
@@ -8,21 +8,21 @@ import {
   type SessionsIndexTopicFrame,
   type SessionsIndexTopicWireCandidate,
   type SessionSummary,
-} from "@zcode/shared/zcode-protocol-v4";
+} from "@kcode/shared/kcode-protocol-v4";
 
 const SUBSCRIBER_SCOPE = "window-controller";
 const MAX_STAGED_WIRES = 1_024;
 const MAX_STAGED_BYTES = 32 * 1024 * 1024;
 
 type SessionsIndexAgentService = Pick<
-  IZCodeAgentService,
+  IKCodeAgentService,
   | "subscribeSessionsIndexV4"
   | "resyncSessionsIndexV4"
   | "unsubscribeSessionsIndexV4"
   | "onDynamicSessionsIndexFrame"
   | "onAgentRuntimeRestarted"
 > &
-  Partial<Pick<IZCodeAgentService, "onAgentRuntimeLifecycle">>;
+  Partial<Pick<IKCodeAgentService, "onAgentRuntimeLifecycle">>;
 
 export interface WindowHostSessionsIndexObserver {
   start(): Promise<void>;
@@ -33,7 +33,7 @@ function isRuntimeUnavailableError(error: unknown): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
-    (error as { code?: unknown }).code === ZCODE_AGENT_RUNTIME_UNAVAILABLE_CODE
+    (error as { code?: unknown }).code === KCODE_AGENT_RUNTIME_UNAVAILABLE_CODE
   );
 }
 

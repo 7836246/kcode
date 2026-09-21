@@ -3,15 +3,15 @@ import type {
   McpServerConfig,
   McpSource,
   NativeMcpServerRecord,
-  ZCodeMcpServer,
-} from "@zcode/shared";
+  KCodeMcpServer,
+} from "@kcode/shared";
 
-const MCP_CONFIG_KEY = "zcode-mcp-config";
-export const MCP_DELETED_PRELOAD_KEY = "zcode-mcp-deleted-preload";
+const MCP_CONFIG_KEY = "kcode-mcp-config";
+export const MCP_DELETED_PRELOAD_KEY = "kcode-mcp-deleted-preload";
 
 export const DEFAULT_MCP_CONFIG: McpConfig = {
   mcp: { mcpServers: {} },
-  zcodeagentmcp: { mcpServers: {}, projects: {} },
+  kcodeagentmcp: { mcpServers: {}, projects: {} },
 };
 
 export function safeReadJson<T>(key: string, fallback: T): T {
@@ -90,7 +90,7 @@ export function makeServerId(
   directorySource?: NonNullable<NativeMcpServerRecord["location"]>["source"],
 ): string {
   const sourceKey =
-    source === "zcodeagentmcp" && directorySource && directorySource !== "zcode"
+    source === "kcodeagentmcp" && directorySource && directorySource !== "kcode"
       ? `${source}-${directorySource}`
       : source;
   return `${sourceKey}-${toIdKey(toScopeKey(projectPath))}-${toIdKey(name)}`;
@@ -101,8 +101,8 @@ export function buildServerList(
   nativeServers: NativeMcpServerRecord[],
   enabledStates: Record<string, boolean>,
   deletedPreload: Set<string>,
-  existingServers: ZCodeMcpServer[],
-): ZCodeMcpServer[] {
+  existingServers: KCodeMcpServer[],
+): KCodeMcpServer[] {
   const existingById = new Map(existingServers.map((s) => [s.id, s]));
 
   function makeServer(
@@ -110,12 +110,12 @@ export function buildServerList(
     name: string,
     serverConfig: McpServerConfig,
     source: McpSource,
-    scope: ZCodeMcpServer["scope"],
+    scope: KCodeMcpServer["scope"],
     enabledBySource?: boolean,
     projectPath?: string,
-    file?: ZCodeMcpServer["file"],
-    location?: ZCodeMcpServer["location"],
-  ): ZCodeMcpServer {
+    file?: KCodeMcpServer["file"],
+    location?: KCodeMcpServer["location"],
+  ): KCodeMcpServer {
     const prev = existingById.get(serverId);
     const configChanged = prev ? !isSameMcpServerConfig(prev.config, serverConfig) : true;
     return {
@@ -138,7 +138,7 @@ export function buildServerList(
     };
   }
 
-  const servers: ZCodeMcpServer[] = [];
+  const servers: KCodeMcpServer[] = [];
 
   for (const server of nativeServers) {
     const serverId = makeServerId(
@@ -171,7 +171,7 @@ function isSameMcpServerConfig(left: McpServerConfig, right: McpServerConfig): b
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-export function getServerPriority(server: ZCodeMcpServer): number {
+export function getServerPriority(server: KCodeMcpServer): number {
   if (server.scope === "workspace") return 2;
   if (server.scope === "user") return 1;
   return 0;

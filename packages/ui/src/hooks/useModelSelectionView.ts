@@ -3,7 +3,7 @@ import type {
   IModelSelectionService,
   ModelSelectionView,
   ModelSelectionViewInput,
-} from "@zcode/services";
+} from "@kcode/services";
 import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js";
 import { logger } from "@/logger.js";
 

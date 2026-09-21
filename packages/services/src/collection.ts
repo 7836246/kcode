@@ -1,4 +1,4 @@
-import { ProxyChannel, type IChannelServer } from "@zcode/rpc";
+import { ProxyChannel, type IChannelServer } from "@kcode/rpc";
 import type { ServiceDescriptor } from "./descriptors.js";
 
 /**

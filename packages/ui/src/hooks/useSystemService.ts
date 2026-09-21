@@ -7,7 +7,7 @@ import type {
   IntranetProbeResult,
   IntranetProbeTarget,
   SystemInfo,
-} from "@zcode/shared";
+} from "@kcode/shared";
 import { logger } from "@/logger.js";
 import { useServices } from "./useServices.js";
 

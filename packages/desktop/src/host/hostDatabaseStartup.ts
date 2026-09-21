@@ -1,9 +1,9 @@
 import {
   getTasksIndexDatabasePath,
   markTasksStoragePrepared,
-  resolveZCodeAgentSpawnCwd,
-} from "@zcode/services/storage-startup";
-import type { DatabaseStartupState } from "@zcode/shared";
+  resolveKCodeAgentSpawnCwd,
+} from "@kcode/services/storage-startup";
+import type { DatabaseStartupState } from "@kcode/shared";
 import { DatabaseStartupCoordinator } from "./databaseStartupCoordinator.js";
 import { StartupDiskSampler } from "./startupDiskSampler.js";
 import { prepareHostStorage, prepareSessionStorage } from "./storagePreparationProcesses.js";
@@ -61,7 +61,7 @@ export function createHostDatabaseStartup(options: {
         const directories = new Set<string>();
         for (const candidate of candidates) {
           // 历史项目 ENOTDIR/无权限不是数据库失败；与普通 Agent 使用同一 cwd 选择规则。
-          const { cwd } = await resolveZCodeAgentSpawnCwd({
+          const { cwd } = await resolveKCodeAgentSpawnCwd({
             requestedCwd: candidate,
             workspacePath: candidate,
             spawnFallbackCwd: options.cwd,
