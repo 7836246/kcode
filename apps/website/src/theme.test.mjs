@@ -9,8 +9,8 @@ test("只接受 light / dark 作为已存主题", () => {
   assert.equal(readStoredTheme(null), null);
 });
 
-test("无记录时跟随系统", () => {
-  assert.equal(resolveTheme(null, true), "dark");
-  assert.equal(resolveTheme(null, false), "light");
-  assert.equal(resolveTheme("light", true), "light");
+test("无记录时默认夜间", () => {
+  assert.equal(resolveTheme(null), "dark");
+  assert.equal(resolveTheme("system"), "dark");
+  assert.equal(resolveTheme("light"), "light");
 });

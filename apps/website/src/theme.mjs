@@ -1,12 +1,11 @@
 export const THEME_STORAGE_KEY = "kcode-theme";
 
 /** @param {string | null} stored */
-/** @param {boolean} prefersDark */
-export function resolveTheme(stored, prefersDark) {
+export function resolveTheme(stored) {
   if (stored === "light" || stored === "dark") {
     return stored;
   }
-  return prefersDark ? "dark" : "light";
+  return "dark";
 }
 
 /** @param {string | null} raw */

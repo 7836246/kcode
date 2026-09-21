@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="__variable_fb8f2c __variable_f910ec" lang="zh-CN">
+<html class="dark __variable_fb8f2c __variable_f910ec" lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,20 +7,41 @@
       (function () {
         try {
           var stored = localStorage.getItem("kcode-theme");
-          var dark =
-            stored === "dark" ||
-            (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          var dark = stored !== "light";
           document.documentElement.classList.toggle("dark", dark);
           document.documentElement.style.colorScheme = dark ? "dark" : "light";
         } catch (error) {
           document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = "dark";
         }
       })();
     </script>
-    <title>KCode</title>
+    <title>KCode | 开源 AI 编程工作台</title>
     <meta
       name="description"
-      content="KCode 是开源 AI 编程工作台。自行配置模型供应商，在桌面、浏览器和终端里完成任务。"
+      content="KCode 是开源 AI 编程工作台。自行配置模型供应商，在桌面、浏览器和终端里用 Agent 完成编码与长任务。Apache-2.0，安装包从 GitHub Releases 提供。"
+    />
+    <meta name="keywords" content="KCode,AI编程,开源Agent,GitHub Releases,自己的模型,桌面端,远程控制" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://kcode.wiki/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://kcode.wiki/?lang=zh" />
+    <link rel="alternate" hreflang="en" href="https://kcode.wiki/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://kcode.wiki/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KCode" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="KCode | 开源 AI 编程工作台" />
+    <meta
+      property="og:description"
+      content="KCode 是开源 AI 编程工作台。自行配置模型供应商，在桌面、浏览器和终端里用 Agent 完成编码与长任务。Apache-2.0，安装包从 GitHub Releases 提供。"
+    />
+    <meta property="og:url" content="https://kcode.wiki/" />
+    <meta property="og:image" content="https://kcode.wiki/images/img-goal@2x.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="KCode | 开源 AI 编程工作台" />
+    <meta
+      name="twitter:description"
+      content="KCode 是开源 AI 编程工作台。自行配置模型供应商，在桌面、浏览器和终端里用 Agent 完成编码与长任务。Apache-2.0，安装包从 GitHub Releases 提供。"
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#161616" />

@@ -24,7 +24,8 @@
 - 官网静态资源由 `deploy-website` 同步到 `kcode.wiki` 这台源站；不走 GitHub Pages。下载与更新日志继续读同一仓库的 Releases，跟桌面 `v*` tag 联动
 - `kcode.wiki` / `www.kcode.wiki` 解析到源站 `23.94.223.164`，Cloudflare 橙云代理；`/docs` 与 `/changelog` 由源站 Nginx 回 `index.html`
 - 默认中文，可切英文；不设账号
-- 日夜模式由 `theme` 唯一写入 `documentElement` 与 `localStorage`；无记录时跟随系统
+- 日夜模式由 `theme` 唯一写入 `documentElement` 与 `localStorage`；无记录时默认夜间，不跟随系统
+- TDK 由 `resolvePageSeo` 按路由和语言投影到 `title` / `description` / `keywords`、canonical 与 Open Graph；首页静态 HTML 先写中文默认值，方便不执行脚本的抓取
 - 原站 PNG / hero-visual 按深色产品壳绘制。浅色页只换营销 chrome；能力卡图底与 `.hero-visual-theme` 锁定深色 token，避免黑图落在白底上
 - 反色主按钮上的次级文字用 `text-background` 透明度，不用 `text-muted-foreground`
 - 文档信息架构对齐 ZCode Docs（开始使用 / 核心功能 / 帮助），正文按 KCode 事实改写，不写官方登录或套餐
@@ -37,7 +38,7 @@
 
 ## 所有者
 
-`apps/website` 是官网唯一实现。下载地址由 `resolveReleaseDownloads` 投影，不在组件里手写资产名。更新日志由 `resolveChangelog` 投影 GitHub Releases。主题由 `resolveTheme` / `applyTheme` 投影。文档正文由 `docsContent` 拥有，侧栏只读目录。`deploy-website` 是源站发布的唯一入口，用 SSH 同步 `/var/www/kcode.wiki`，不打桌面安装包。
+`apps/website` 是官网唯一实现。下载地址由 `resolveReleaseDownloads` 投影，不在组件里手写资产名。更新日志由 `resolveChangelog` 投影 GitHub Releases。主题由 `resolveTheme` / `applyTheme` 投影。文档正文由 `docsContent` 拥有，侧栏只读目录。TDK 由 `resolvePageSeo` 投影，`applyPageSeo` 写入 document。`deploy-website` 是源站发布的唯一入口，用 SSH 同步 `/var/www/kcode.wiki`，不打桌面安装包。
 
 ## 验收
 
@@ -48,7 +49,8 @@
 - 窄屏下顶栏收进菜单，下载列表可点
 - Hero 是原站同款工作台窗体，不是自制简图
 - 三张能力卡使用 `img-goal` / `img-bot` / `img-glm53`，不是纯文字或重绘 HTML
-- 顶栏可切换日夜，刷新后保持；无记录时跟随系统
+- 顶栏可切换日夜，刷新后保持；无记录时是夜间
+- 首页、文档、更新日志的 title / description / keywords 随语言和路由变；源码里能看到中文默认 TDK
 - 浅色模式下能力卡图和 Hero 工作台仍是深色产品壳，不是白底上的黑块
 - 浅色主下载按钮的标题和平台行都可读
 - `/docs` 与 `/docs/install` 能打开文档，侧栏可跳转

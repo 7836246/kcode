@@ -10,6 +10,10 @@ export const SITE_ORIGIN = "https://kcode.wiki";
 export const websiteCopy = {
   zh: {
     documentTitle: "KCode",
+    seoTitle: "KCode | 开源 AI 编程工作台",
+    seoDescription:
+      "KCode 是开源 AI 编程工作台。自行配置模型供应商，在桌面、浏览器和终端里用 Agent 完成编码与长任务。Apache-2.0，安装包从 GitHub Releases 提供。",
+    seoKeywords: "KCode,AI编程,开源Agent,GitHub Releases,自己的模型,桌面端,远程控制",
     brand: "KCODE",
     navDownload: "下载",
     navSource: "源码",
@@ -77,6 +81,10 @@ export const websiteCopy = {
   },
   en: {
     documentTitle: "KCode",
+    seoTitle: "KCode | Open-source AI coding workbench",
+    seoDescription:
+      "Bring your own model provider. Run agents on desktop, in the browser, or the terminal. Apache-2.0 installers live on GitHub Releases.",
+    seoKeywords: "KCode,AI coding,open source agent,GitHub Releases,BYO provider,desktop,remote control",
     brand: "KCODE",
     navDownload: "Download",
     navSource: "Source",

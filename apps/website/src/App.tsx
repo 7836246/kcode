@@ -6,7 +6,9 @@ import { FeatureSection } from "./FeatureSection.js";
 import { Hero } from "./Hero.js";
 import { SiteFooter } from "./SiteFooter.js";
 import { SiteHeader } from "./SiteHeader.js";
-import { type WebsiteLocale, websiteCopy } from "./content.js";
+import { SITE_ORIGIN, type WebsiteLocale, websiteCopy } from "./content.js";
+import { getDocPage } from "./docs/pages.js";
+import { applyPageSeo, resolvePageSeo } from "./seo.js";
 import {
   detectDownloadTarget,
   fetchGithubReleases,
@@ -14,7 +16,7 @@ import {
   resolveChangelog,
   resolveReleaseDownloads,
 } from "./release.js";
-import { parseSitePath } from "./siteRoute.js";
+import { docsPath, parseSitePath } from "./siteRoute.js";
 import { applyTheme, persistTheme, readStoredTheme, resolveTheme, THEME_STORAGE_KEY, type SiteTheme } from "./theme.js";
 
 function readInitialLocale(): WebsiteLocale {
@@ -26,10 +28,7 @@ function readInitialLocale(): WebsiteLocale {
 }
 
 function readInitialTheme(): SiteTheme {
-  return resolveTheme(
-    readStoredTheme(window.localStorage.getItem(THEME_STORAGE_KEY)),
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
-  );
+  return resolveTheme(readStoredTheme(window.localStorage.getItem(THEME_STORAGE_KEY)));
 }
 
 export function App() {
@@ -63,13 +62,26 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
-    document.title =
-      route.page === "docs"
-        ? `${copy.navDocs} · ${copy.documentTitle}`
-        : route.page === "changelog"
-          ? `${copy.navChangelog} · ${copy.documentTitle}`
-          : copy.documentTitle;
-  }, [copy.documentTitle, copy.navChangelog, copy.navDocs, locale, route.page]);
+    const doc = route.page === "docs" ? getDocPage(route.slug, locale) : null;
+    const path =
+      route.page === "home" ? "/" : route.page === "changelog" ? "/changelog" : docsPath(route.slug);
+    applyPageSeo(
+      resolvePageSeo({
+        page: route.page,
+        path,
+        origin: SITE_ORIGIN,
+        seoTitle: copy.seoTitle,
+        seoDescription: copy.seoDescription,
+        seoKeywords: copy.seoKeywords,
+        changelogTitle: copy.changelogTitle,
+        changelogLead: copy.changelogLead,
+        brand: copy.documentTitle,
+        docTitle: doc?.title ?? null,
+        docLead: doc?.lead ?? null,
+      }),
+      locale,
+    );
+  }, [copy, locale, route]);
 
   useEffect(() => {
     const next = new URL(window.location.href);
@@ -85,16 +97,6 @@ export function App() {
     const onPop = () => setPath(window.location.pathname);
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
-  useEffect(() => {
-    if (readStoredTheme(window.localStorage.getItem(THEME_STORAGE_KEY))) {
-      return;
-    }
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setTheme(resolveTheme(null, media.matches));
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
   }, []);
 
   useEffect(() => {

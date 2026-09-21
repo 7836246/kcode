@@ -8,8 +8,8 @@ export function readStoredTheme(raw: string | null): SiteTheme | null {
   return readStoredThemeRaw(raw) as SiteTheme | null;
 }
 
-export function resolveTheme(stored: string | null, prefersDark: boolean): SiteTheme {
-  return resolveThemeRaw(stored, prefersDark) as SiteTheme;
+export function resolveTheme(stored: string | null): SiteTheme {
+  return resolveThemeRaw(stored) as SiteTheme;
 }
 
 export function applyTheme(theme: SiteTheme): void {
