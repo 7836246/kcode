@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+# 去掉 Cursor 自动写入的署名，提交人只保留 KCode。
+msg_file="$1"
+if [ ! -f "$msg_file" ]; then
+  exit 0
+fi
+
+tmp_file="${msg_file}.kcode-strip"
+# 不区分大小写删掉 Cursor 相关行，避免钩子或编辑器回写。
+grep -v -E -i '^[[:space:]]*(Co-authored-by:[[:space:]]*Cursor|Made-with:[[:space:]]*Cursor)|cursoragent@cursor.com' "$msg_file" > "$tmp_file" || true
+mv "$tmp_file" "$msg_file"

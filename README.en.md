@@ -121,6 +121,18 @@ Root [.env.example](.env.example) has service-URL and build placeholders. Copy i
 
 See [config/README.md](config/README.md) for the default client configuration.
 
+## Downloads and Releases
+
+Installers are published on [GitHub Releases](https://github.com/7836246/kcode/releases):
+
+| Platform | Files |
+| --- | --- |
+| macOS Apple Silicon / Intel | `.dmg` |
+| Windows x64 / ARM64 | `.exe` |
+| Linux x64 / ARM64 | `.deb`, `.rpm`, `.AppImage` |
+
+Pushing a `v*` tag (for example `v0.0.1`) runs `.github/workflows/release-desktop.yml`, which calls `pnpm bundle:desktop` on each runner and uploads the artifacts. You can also rerun the workflow from Actions against an existing tag. CI builds are unsigned.
+
 ## Packaging
 
 See [third-party/README.md](third-party/README.md) for notices and distribution checks.

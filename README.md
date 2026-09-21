@@ -121,6 +121,18 @@ pnpm verify:pre-push
 
 客户端默认配置见 [config/README.md](config/README.md)。
 
+## 下载与发布
+
+正式安装包会挂到 [GitHub Releases](https://github.com/7836246/kcode/releases)：
+
+| 平台 | 文件 |
+| --- | --- |
+| macOS Apple Silicon / Intel | `.dmg` |
+| Windows x64 / ARM64 | `.exe` |
+| Linux x64 / ARM64 | `.deb`、`.rpm`、`.AppImage` |
+
+打 `v*` 标签（例如 `v0.0.1`）会触发 `.github/workflows/release-desktop.yml`，在对应系统上执行 `pnpm bundle:desktop` 并上传。也可在 Actions 里手动选已有 tag 重跑。当前 CI 打的是未签名包。
+
 ## 打包
 
 第三方声明和发行校验见 [third-party/README.md](third-party/README.md)。

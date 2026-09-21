@@ -1,0 +1,109 @@
+name: release-desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "已存在的版本 tag，例如 v0.0.1"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  COREPACK_ENABLE_PROJECT_SPEC: "0"
+  KCODE_ENV: production
+  CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+jobs:
+  bundle:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target_os: mac
+            target_arch: arm64
+          - os: macos-13
+            target_os: mac
+            target_arch: x64
+          - os: windows-latest
+            target_os: win
+            target_arch: x64
+          - os: windows-11-arm
+            target_os: win
+            target_arch: arm64
+          - os: ubuntu-24.04
+            target_os: linux
+            target_arch: x64
+          - os: ubuntu-24.04-arm
+            target_os: linux
+            target_arch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+
+      - name: Linux packaging tools
+        if: matrix.target_os == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends rpm fakeroot dpkg xz-utils
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle
+        run: pnpm bundle:desktop -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kcode-${{ matrix.target_os }}-${{ matrix.target_arch }}
+          path: |
+            packages/desktop/dist/*.dmg
+            packages/desktop/dist/*.exe
+            packages/desktop/dist/*.deb
+            packages/desktop/dist/*.rpm
+            packages/desktop/dist/*.AppImage
+            packages/desktop/dist/*.pkg.tar.zst
+          if-no-files-found: error
+
+  publish:
+    needs: bundle
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: release-assets/*
+          fail_on_unmatched_files: true
