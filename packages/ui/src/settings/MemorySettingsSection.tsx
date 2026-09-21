@@ -66,7 +66,10 @@ export function MemorySettingsSection({
   memoryService: MemoryCatalogService;
   settingService: Pick<
     ISettingService,
-    "readManagedSystemRoleContent" | "writeManagedSystemRoleContent"
+    | "readManagedSystemRoleContent"
+    | "writeManagedSystemRoleContent"
+    | "createManagedSystemRolePreset"
+    | "deleteManagedSystemRolePreset"
   >;
   onManagedSystemRoleEnabledChange: (enabled: boolean) => Promise<void>;
   onMemoryEnabledChange: (enabled: boolean) => Promise<void>;

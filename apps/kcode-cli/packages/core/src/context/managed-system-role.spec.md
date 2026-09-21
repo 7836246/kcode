@@ -8,6 +8,9 @@ KCode 自带 Keysmith 那条「真 system-role」路径，不再给打包 runtim
 - 仅当开关打开且 `~/.kcode/system-role.md` 有非空正文时，才作为 `customSystemPrompt` 进入 system 段。`KCODE_SYSTEM_ROLE_FILE` 改正文路径，`KCODE_SYSTEM_ROLE_ENABLED` 可覆盖开关。
 - 首次打开开关且正文文件不存在时，写入一份默认模板。关闭开关保留正文，只停用注入。
 - 开关打开后，设置页提供编辑/预览。草稿只在页面里；保存才写 `system-role.md`。预览看的是当前草稿，不是第二份正文。空正文保存后不再注入。
+- 编辑和预览固定高度，正文过长只在框内滚动，不把下方记忆内容顶出视口。
+- 预设可选：`默认`（ZCode 原版受管角色）、`破限`（本仓库的直接执行角色，不搬 Keysmith 原文）、以及用户自建预设。点选预设只替换草稿；保存才写入 `system-role.md`。
+- 用户可把当前草稿另存为自定义预设，写入 `~/.kcode/system-role-presets.json`。只能删除自定义预设，不能删内置两项。
 - 工作流子代理（`workflowActor`）不读这份文件，保持与 `customSystemPrompt` 互斥。
 - 受管提示词生效时，`AGENTS.md` / Project Memory 只描述环境，不能覆盖 system-role。
 - 不读账号、密钥。新开对话才生效。
@@ -31,3 +34,7 @@ KCode 自带 Keysmith 那条「真 system-role」路径，不再给打包 runtim
 - 同一情况下 AGENTS.md 不再出现 `OVERRIDE any default behavior`。
 - 没有该文件或开关关闭时，默认身份和 AGENTS.md 覆盖句保持原样。
 - 带 `workflowActor` 的子代理会话不读该文件。
+- 编辑和预览框高度固定；长正文只在框内滚动，不把下方记忆内容顶出视口。
+- 预设列表始终包含内置「默认」和「破限」；点选只替换草稿，不立刻写 `system-role.md`。
+- 添加自定义预设会立刻写入 `~/.kcode/system-role-presets.json`；删除只作用于自定义项。
+- 「破限」使用本仓库的直接执行角色，不包含 Keysmith / Pier 原文。

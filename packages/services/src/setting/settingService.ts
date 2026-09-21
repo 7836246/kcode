@@ -20,6 +20,8 @@ import { isEffectiveDevelopmentNodeEnv } from "../runtime-tools/nodeEnv.js";
 import { maybeThrowInjectedFsFault } from "../fs/fsFaultInjection.js";
 import { atomicWriteText } from "../fs/atomicFileUtils.js";
 import {
+  createManagedSystemRolePreset,
+  deleteManagedSystemRolePreset,
   loadManagedSystemRoleEditorContent,
   syncManagedSystemRoleProjection,
   writeManagedSystemRoleContent,
@@ -389,6 +391,8 @@ export function createSettingServiceWithMigrations(): {
 
     readManagedSystemRoleContent: loadManagedSystemRoleEditorContent,
     writeManagedSystemRoleContent,
+    createManagedSystemRolePreset,
+    deleteManagedSystemRolePreset,
   };
 
   let inFlight: Promise<readonly ProviderFamilyDomain[]> | null = null;

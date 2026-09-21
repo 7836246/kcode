@@ -378,6 +378,11 @@ export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_RESTORE = "settings-managed-system
 export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_TAB_EDIT = "settings-managed-system-role-tab-edit";
 export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_TAB_PREVIEW =
   "settings-managed-system-role-tab-preview";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_PRESET = "settings-managed-system-role-preset";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_ADD_PRESET =
+  "settings-managed-system-role-add-preset";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_PRESET_NAME =
+  "settings-managed-system-role-preset-name";
 /** Memory 设置模块刷新按钮 */
 export const TID_SETTINGS_MEMORY_REFRESH = "settings-memory-refresh";
 /** Memory Workspace Scope 菜单触发器 */

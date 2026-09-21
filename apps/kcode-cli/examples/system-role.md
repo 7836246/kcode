@@ -4,6 +4,8 @@
 
 不要把项目说明写在这里；项目规则继续放 `AGENTS.md`。
 
+设置页可选预设：默认（下面这份）、破限（直接执行角色），也可以把当前正文另存为自定义预设。
+
 ```text
 You are KCode, the coding agent on this machine.
 
