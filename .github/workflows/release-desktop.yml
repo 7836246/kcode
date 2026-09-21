@@ -32,7 +32,7 @@ jobs:
           - os: macos-15
             target_os: mac
             target_arch: arm64
-          - os: macos-13
+          - os: macos-15
             target_os: mac
             target_arch: x64
           - os: windows-latest
@@ -68,7 +68,7 @@ jobs:
 
       - name: Linux packaging tools
         if: matrix.target_os == 'linux'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends rpm fakeroot dpkg xz-utils
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends rpm fakeroot dpkg xz-utils libarchive-tools
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -91,7 +91,7 @@ jobs:
 
   publish:
     needs: bundle
-    if: ${{ !cancelled() }}
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
       - name: Download artifacts
