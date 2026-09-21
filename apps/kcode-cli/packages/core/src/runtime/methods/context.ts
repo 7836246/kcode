@@ -25,6 +25,7 @@ import { resolveEnabledProjectMemoryRoot } from "../helpers/project-memory.js";
 import { buildContextHistoryEntries } from "./context-history-entries.js";
 import { resolveRuntimeEmbeddedSearchEnabled } from "./embedded-search-branch.js";
 import { getContextSourceShellDisplayName } from "./session-shell-environment.js";
+import { readManagedSystemRole } from "../../context/managed-system-role.js";
 
 export { buildContextHistoryEntries };
 
@@ -133,7 +134,11 @@ export function createContextBuilderFromSnapshot(
     agentProfiles: this.config.subagents?.profiles,
     embeddedSearchEnabled: resolveRuntimeEmbeddedSearchEnabled(this),
     skillMetadataBudget: this.config.skillMetadataBudget,
-    customSystemPrompt: this.config.systemPrompt,
+    // 受管 system-role 仅在开关打开且正文非空时注入；
+    // workflowActor 仍与 customSystemPrompt 互斥，不读这份文件。
+    customSystemPrompt: this.config.workflowActor
+      ? this.config.systemPrompt
+      : (readManagedSystemRole() ?? this.config.systemPrompt),
     workflowActor: this.config.workflowActor,
     language: this.config.language,
     outputStyle: this.config.outputStyle,

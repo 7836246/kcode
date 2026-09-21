@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import {
   KCODE_OFFICIAL_PLUGIN_MARKETPLACE,
@@ -35,6 +35,16 @@ export function writeCdnOfficialMarketplacePartitionSync(input: {
   return rebuildOfficialMarketplaceSync(input.storageRoot);
 }
 
+/** 官方市场改为本地 bundled 后，删除 leftover CDN 分片再按内置目录重建。 */
+export function clearCdnOfficialMarketplacePartitionSync(
+  storageRoot: string,
+): Record<string, unknown> | undefined {
+  const cdnPath = partitionPath(storageRoot, CDN_PARTITION_FILE);
+  if (!existsSync(cdnPath)) return undefined;
+  unlinkSync(cdnPath);
+  return rebuildOfficialMarketplaceSync(storageRoot);
+}
+
 export function loadBundledOfficialPluginRootsSync(
   storageRoot: string,
 ): string[] | undefined {
@@ -63,26 +73,17 @@ export function loadBundledOfficialPluginRootsSync(
   });
 }
 
-function rebuildOfficialMarketplaceSync(storageRoot: string): Record<string, unknown> {
+export function rebuildOfficialMarketplaceSync(storageRoot: string): Record<string, unknown> {
   const bundledPartition = readBundledPartition(storageRoot);
-  const cdnManifest = readJsonRecord(partitionPath(storageRoot, CDN_PARTITION_FILE));
   const bundledManifest = bundledPartition?.manifest;
-  const cdnPlugins = readPluginEntries(cdnManifest);
-  const cdnPluginNames = new Set(cdnPlugins.map(readPluginName).filter(isDefined));
-  const bundledPlugins = readPluginEntries(bundledManifest).filter((plugin) => {
-    const name = readPluginName(plugin);
-    return name !== undefined && !cdnPluginNames.has(name);
-  });
+  const bundledPlugins = readPluginEntries(bundledManifest);
 
-  // 内置插件与 CDN 插件曾使用两个 marketplace id，UI 会把内置市场当成
-  // 无 source 的独立市场并在刷新时报 not found。两个分片必须独立持久化后再合并，
-  // 否则应用启动时的 seed 会覆盖 CDN 目录，或 CDN 刷新会覆盖内置目录。同名时以
-  // 可刷新的 CDN 市场条目为准，但只过滤合并目录，不删除应用内置缓存。
+  // 官方市场不再合并 CDN 分片。 leftover cdn-marketplace.json 即使还在磁盘上，
+  // 也不能再进入公开目录，否则商店会继续展示 Z.ai 远程清单。
   const merged = {
     ...(bundledManifest ?? {}),
-    ...(cdnManifest ?? {}),
     name: KCODE_OFFICIAL_PLUGIN_MARKETPLACE,
-    plugins: [...cdnPlugins, ...bundledPlugins],
+    plugins: bundledPlugins,
   };
   writeJsonFileSync(partitionPath(storageRoot, MERGED_MARKETPLACE_FILE), merged);
   return merged;
@@ -105,10 +106,6 @@ function readPluginEntries(
 
 function readPluginName(plugin: Record<string, unknown>): string | undefined {
   return typeof plugin.name === "string" && plugin.name.length > 0 ? plugin.name : undefined;
-}
-
-function isDefined<T>(value: T | undefined): value is T {
-  return value !== undefined;
 }
 
 function isStrictDescendant(parentPath: string, childPath: string): boolean {

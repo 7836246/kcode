@@ -1717,6 +1717,21 @@ const zhCN: Record<string, string> = {
   "settings.memory.workspaceMemory": "工作区记忆",
   "settings.memoryDescription":
     "在工作区中保存并复用长期上下文，新会话生效。开启后可能增加模型调用和 Token 成本。",
+  "settings.managedSystemRole": "自定义系统角色",
+  "settings.managedSystemRoleDescription":
+    "开启后可以编辑、预览这段 system 角色。关闭只停用注入，不删除文件。保存后需新开对话才生效。",
+  "settings.managedSystemRole.edit": "编辑",
+  "settings.managedSystemRole.preview": "预览",
+  "settings.managedSystemRole.save": "保存",
+  "settings.managedSystemRole.restore": "恢复默认",
+  "settings.managedSystemRole.editorLabel": "自定义系统角色正文",
+  "settings.managedSystemRole.editorHint":
+    "这里编辑的是 ~/.kcode/system-role.md。预览显示当前草稿；保存后新对话才会用上。",
+  "settings.managedSystemRole.dirtyHint": "有未保存的修改",
+  "settings.managedSystemRole.previewEmpty": "正文为空，开启后也不会注入。",
+  "settings.managedSystemRole.savedHint": "已保存。新开对话后生效。",
+  "settings.managedSystemRole.loadFailed": "无法读取自定义系统角色。",
+  "settings.managedSystemRole.saveFailed": "保存自定义系统角色失败。",
   "settings.memory.viewer.localOnly":
     "记忆详情仅支持在本地桌面端查看，请前往本地桌面端的“记忆”设置。",
   "settings.memory.viewer.title": "已保存的工作区记忆",

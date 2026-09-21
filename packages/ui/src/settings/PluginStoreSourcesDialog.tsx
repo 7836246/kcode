@@ -102,23 +102,25 @@ export function PluginStoreSourcesDialog({
                       <PluginStoreSourceRefreshFailure failure={marketplace.refreshFailure} />
                     ) : null}
                   </div>
-                  <Button
-                    type="button"
-                    data-testid="plugin-store-source-update"
-                    data-marketplace-id={marketplace.id}
-                    variant="ghost"
-                    size="icon-lg"
-                    aria-label={intl.formatMessage({
-                      id: "settings.plugins.store.sources.update",
-                    })}
-                    disabled={updating}
-                    onClick={() => onUpdateMarketplace(marketplace.id)}
-                  >
-                    <RefreshCw
-                      className={updating ? "size-3.5 animate-spin" : "size-3.5"}
-                      aria-hidden="true"
-                    />
-                  </Button>
+                  {isRemovableMarketplace(marketplace) ? (
+                    <Button
+                      type="button"
+                      data-testid="plugin-store-source-update"
+                      data-marketplace-id={marketplace.id}
+                      variant="ghost"
+                      size="icon-lg"
+                      aria-label={intl.formatMessage({
+                        id: "settings.plugins.store.sources.update",
+                      })}
+                      disabled={updating}
+                      onClick={() => onUpdateMarketplace(marketplace.id)}
+                    >
+                      <RefreshCw
+                        className={updating ? "size-3.5 animate-spin" : "size-3.5"}
+                        aria-hidden="true"
+                      />
+                    </Button>
+                  ) : null}
                   {isRemovableMarketplace(marketplace) ? (
                     <Button
                       type="button"

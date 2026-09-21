@@ -10,7 +10,11 @@ import {
   KCODE_OFFICIAL_PLUGIN_MARKETPLACE,
   normalizeOfficialMarketplaceId,
 } from "@kcode/contracts";
-import { DEFAULT_PLUGIN_MARKETPLACES, sanitizeKCodeRuntimeEnv } from "@kcode/shared";
+import {
+  createOfficialBundledMarketplaceSource,
+  DEFAULT_PLUGIN_MARKETPLACES,
+  sanitizeKCodeRuntimeEnv,
+} from "@kcode/shared";
 import { loadPluginMcpServerDefinitions, resolvePluginMcpServers } from "./mcp.js";
 import {
   appendPluginSourceCleanupError,
@@ -24,7 +28,10 @@ import {
 import { enumeratePluginComponents, type PluginComponentGroup } from "./plugin-components.js";
 import { applyNetworkEgressEnv } from "../network/subprocess-env.js";
 import { createNodeWebFetchHttpClientAdapter } from "../http/index.js";
-import { writeCdnOfficialMarketplacePartitionSync } from "./official-marketplace.js";
+import {
+  clearCdnOfficialMarketplacePartitionSync,
+  rebuildOfficialMarketplaceSync,
+} from "./official-marketplace.js";
 import {
   isZipPluginUrlSource,
   readZipPluginSourceSha256,
@@ -74,6 +81,7 @@ export type MarketplaceSource =
   | { package: string; source: "npm" }
   | { source: "file"; path: string }
   | { source: "directory"; path: string }
+  | { source: "bundled" }
   | { hostPattern: string; source: "hostPattern" }
   | { pathPattern: string; source: "pathPattern" }
   | { source: "settings"; marketplace: PluginMarketplaceManifest };
@@ -102,7 +110,7 @@ export interface PluginMarketplaceManifest {
   plugins: PluginMarketplaceEntry[];
   allowCrossMarketplaceDependenciesOn?: string[];
   pluginRoot?: string;
-  // 商店「公开」分段 Featured 区的策展名单（插件 name，按序）；由目录 JSON 顶层 featured 字段远程控制。
+  // 商店「公开」分段 Featured 区的策展名单（插件 name，按序）；来自 bundled manifest 顶层 featured。
   featured?: string[];
   raw: Record<string, unknown>;
 }
@@ -282,25 +290,57 @@ export function loadKnownMarketplacesSync(storageRoot: string): KnownMarketplace
 
 export function ensureDefaultPluginMarketplaces(storageRoot: string): KnownMarketplaceRecord[] {
   const known = loadKnownMarketplacesSync(storageRoot);
-  const existingIds = new Set(known.map((record) => record.id));
   const now = new Date().toISOString();
-  const missing = DEFAULT_PLUGIN_MARKETPLACES.filter(
-    (marketplace) => !existingIds.has(marketplace.id),
-  ).map(
-    (marketplace): KnownMarketplaceRecord => ({
-      id: marketplace.id,
-      source: defaultMarketplaceSourceFromString(marketplace.source),
-      name: marketplace.name,
-      description: marketplace.description,
-      addedAt: now,
-      ...(marketplace.lastUpdated ? { lastUpdated: marketplace.lastUpdated } : {}),
-      pluginCount: marketplace.pluginCount,
-    }),
-  );
-  if (missing.length === 0) return known;
-  const next = [...known, ...missing];
-  writeKnownMarketplacesSync(storageRoot, next);
-  return next;
+  let next = [...known];
+  let changed = false;
+
+  for (const marketplace of DEFAULT_PLUGIN_MARKETPLACES) {
+    const existingIndex = next.findIndex((record) => record.id === marketplace.id);
+    if (existingIndex === -1) {
+      next.push({
+        id: marketplace.id,
+        source: officialMarketplaceSourceForDefault(marketplace),
+        name: marketplace.name,
+        description: marketplace.description,
+        addedAt: now,
+        ...(marketplace.lastUpdated ? { lastUpdated: marketplace.lastUpdated } : {}),
+        pluginCount: marketplace.pluginCount,
+      });
+      changed = true;
+      continue;
+    }
+    const existing = next[existingIndex];
+    if (existing && shouldRewriteOfficialMarketplaceSource(existing)) {
+      const { lastRefreshFailure: _lastRefreshFailure, ...rest } = existing;
+      next[existingIndex] = {
+        ...rest,
+        source: createOfficialBundledMarketplaceSource(),
+        description: marketplace.description,
+      };
+      changed = true;
+    }
+  }
+
+  // leftover CDN 分片必须在登记官方 known record 时清掉，否则公开目录仍会混入 Z.ai 清单。
+  clearCdnOfficialMarketplacePartitionSync(storageRoot);
+  if (changed) {
+    writeKnownMarketplacesSync(storageRoot, next);
+    return next;
+  }
+  return known;
+}
+
+function officialMarketplaceSourceForDefault(
+  marketplace: (typeof DEFAULT_PLUGIN_MARKETPLACES)[number],
+): MarketplaceSource {
+  if (isOfficialMarketplaceId(marketplace.id) || !marketplace.source) {
+    return createOfficialBundledMarketplaceSource();
+  }
+  return defaultMarketplaceSourceFromString(marketplace.source);
+}
+
+function shouldRewriteOfficialMarketplaceSource(record: KnownMarketplaceRecord): boolean {
+  return isOfficialMarketplaceId(record.id) && record.source.source !== "bundled";
 }
 
 export async function ensureMarketplaceManifestAvailable(input: {
@@ -321,6 +361,10 @@ export async function ensureMarketplaceManifestAvailable(input: {
     (item) => item.id === input.marketplace,
   );
   if (!record) return null;
+  // 官方市场只由内置播种维护，缺失 manifest 时不再按 known source 拉远端。
+  if (isOfficialMarketplaceId(input.marketplace)) {
+    return record;
+  }
   // 受信任的内部懒加载：用 known record 的规范 source 拉取，并以 record.id 作为 trustedId，
   // 使官方 id 只能由本来就是该官方 id 的记录刷新得到。
   return await addMarketplace({
@@ -377,12 +421,7 @@ export async function addMarketplace(input: {
     }
     const persistedManifest =
       loaded.manifest.name === KCODE_OFFICIAL_PLUGIN_MARKETPLACE
-        ? parseRequiredMarketplaceManifest(
-            writeCdnOfficialMarketplacePartitionSync({
-              manifest: loaded.manifest.raw,
-              storageRoot: input.storageRoot,
-            }),
-          )
+        ? parseRequiredMarketplaceManifest(rebuildOfficialMarketplaceSync(input.storageRoot))
         : loaded.manifest;
     // 旧流程先删 marketplace target 再复制 source，刷新失败会丢失最后成功快照。
     // source tree 与规范 manifest 在同一 staging 目录准备完毕后一次 rename 激活。
@@ -514,6 +553,10 @@ export async function updateMarketplace(input: {
   for (const record of selected) {
     throwIfPluginOperationAborted(input.signal);
 
+    // 官方市场不再走远端刷新；个人来源仍按 known source 拉取。
+    if (isOfficialMarketplaceId(record.id)) {
+      continue;
+    }
     // 受信任的刷新会重新拉取已知 marketplace 自带的 source；record.id 作为 trustedId，
     // 使官方 id 只能由原本就是该 id 的记录刷新得到。
     try {
@@ -1541,6 +1584,13 @@ async function loadMarketplaceFromSource(
         await activation.finalize();
       }
       return { manifest, sourceRoot: source.path };
+    }
+    case "bundled": {
+      const parsed = loadMarketplaceManifestSync(storageRoot, KCODE_OFFICIAL_PLUGIN_MARKETPLACE);
+      if (!parsed) {
+        throw new Error("Official bundled marketplace is not available");
+      }
+      return { manifest: parsed };
     }
     case "url": {
       const parsed = await requestMarketplaceJson(source.url, source.headers, options.signal);

@@ -100,7 +100,8 @@ export class ContextBuilder {
     // 1. CLI / product prefix. Keep this as the short leading identity block.
     // 「You are KCode, an interactive coding agent」对一个
     // 只对脚本说话、可能连读文件工具都没有的子代理是错的身份，且走在正确身份段前面。
-    if (!isWorkflowActor) {
+    // 受管 system-role 已经是真 system 身份，再前置这句会把它压成附属说明。
+    if (!isWorkflowActor && !hasCustomSystemPrompt) {
       sections.push(buildCliPrefixSection());
     }
 
@@ -191,6 +192,7 @@ export class ContextBuilder {
       userInstructions: this.config.userInstructions,
       memoryIndexContent: this.config.memoryIndexContent,
       memoryRoot: this.config.memoryRoot,
+      hasCustomSystemPrompt,
     });
     if (requestUserContextSection) {
       sections.push(requestUserContextSection);

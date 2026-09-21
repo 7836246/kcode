@@ -11,11 +11,13 @@ import type {
   ResolvedUserInstructions,
 } from "../types.js";
 import { estimateTokens } from "../utils.js";
+import { buildAgentsMdLead } from "../managed-system-role.js";
 
 export function buildRequestUserContextSection(input: {
   userInstructions?: ResolvedUserInstructions;
   memoryIndexContent?: string;
   memoryRoot?: string;
+  hasCustomSystemPrompt?: boolean;
 }): ContextSection | null {
   const content = buildRequestUserContextContent(input);
   if (!content) {
@@ -38,6 +40,7 @@ function buildRequestUserContextContent(input: {
   userInstructions?: ResolvedUserInstructions;
   memoryIndexContent?: string;
   memoryRoot?: string;
+  hasCustomSystemPrompt?: boolean;
 }): string | null {
   const sections: string[] = [];
 
@@ -64,7 +67,7 @@ function buildRequestUserContextContent(input: {
     // 聚合字段标题不能绑定到 AGENTS.md，否则仅有 Project Memory 时缺少标题。
 
     "# agentsMd",
-    "Codebase and user instructions are shown below. Be sure to adhere to these instructions. IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow them exactly as written.",
+    buildAgentsMdLead(input.hasCustomSystemPrompt === true),
     "",
     sections.join("\n\n"),
   ].join("\n");

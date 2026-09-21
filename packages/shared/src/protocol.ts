@@ -323,6 +323,8 @@ export interface AppSettings {
   nativeSearchEnhancementsEnabled?: boolean;
   /** 新建或冷恢复 Session 是否启用 Memory；默认关闭。 */
   memoryEnabled?: boolean;
+  /** 是否启用 ~/.kcode/system-role.md 作为自定义 system 段；默认关闭。 */
+  managedSystemRoleEnabled?: boolean;
   onboardingOccupation?:
     | "office"
     | "developer"

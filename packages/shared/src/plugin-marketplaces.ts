@@ -1,6 +1,7 @@
 export interface DefaultPluginMarketplace {
   id: string;
-  source: string;
+  /** 省略表示本地 bundled，不登记远端 source。 */
+  source?: string;
   name: string;
   description: string;
   pluginCount: number;
@@ -8,6 +9,32 @@ export interface DefaultPluginMarketplace {
 }
 
 export const KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID = "kcode-plugins-official";
+
+export const OFFICIAL_PLUGIN_MARKETPLACE_SOURCE_KIND = "bundled" as const;
+
+/** 旧版官方市场默认 source；ensure 时改写成 bundled，不再拉取。 */
+export const RETIRED_OFFICIAL_PLUGIN_MARKETPLACE_URL =
+  "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json";
+
+export function createOfficialBundledMarketplaceSource(): {
+  source: typeof OFFICIAL_PLUGIN_MARKETPLACE_SOURCE_KIND;
+} {
+  return { source: OFFICIAL_PLUGIN_MARKETPLACE_SOURCE_KIND };
+}
+
+export function isRetiredOfficialPluginMarketplaceUrl(url: string): boolean {
+  const trimmed = url.trim();
+  if (trimmed === RETIRED_OFFICIAL_PLUGIN_MARKETPLACE_URL) return true;
+  try {
+    const parsed = new URL(trimmed);
+    return (
+      parsed.hostname === "cdn-zcode.z.ai" &&
+      parsed.pathname.includes("/official-plugin/marketplace.json")
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** Settings 三类资源发现共用；Bootstrap 单测与官方 definition 的 defaultEnabled 机械对照。 */
 export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set([
@@ -31,17 +58,15 @@ export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set(
 
 export const DEFAULT_PLUGIN_MARKETPLACES: DefaultPluginMarketplace[] = [
   {
-    // KCode 官方唯一市场：本地 seed 分片与 CDN 分片在 Agent storage 内合并。
-    // CDN 若仍声明 zcode-plugins-official，解析时改写成该 canonical id。
+    // KCode 官方唯一市场：只合并本地 seed 分片。不再登记远端 CDN source。
     id: KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
-    source: "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json",
     name: KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
-    description: "Official KCode plugins marketplace: built-in and community plugins for KCode.",
+    description: "Official KCode plugins marketplace: built-in plugins bundled with KCode.",
     pluginCount: 0,
   },
 ];
 
-// 商店「公开」分段只有一个 KCode 官方市场 id，内置与 CDN 不再拆分身份。
+// 商店「公开」分段只有一个 KCode 官方市场 id，只展示内置插件。
 export const PUBLIC_STORE_MARKETPLACE_IDS = [KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID] as const;
 
 export function isPublicStoreMarketplaceId(id: string): boolean {

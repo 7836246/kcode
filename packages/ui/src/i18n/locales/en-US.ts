@@ -1820,6 +1820,21 @@ const enUS: Record<string, string> = {
   "settings.memory.workspaceMemory": "Workspace Memory",
   "settings.memoryDescription":
     "Save and reuse long-term context in workspaces. Applies to new sessions and may increase model requests and token costs.",
+  "settings.managedSystemRole": "Custom system role",
+  "settings.managedSystemRoleDescription":
+    "When enabled, you can edit and preview this system role. Turning it off keeps the file and only stops injection. Save, then start a new conversation.",
+  "settings.managedSystemRole.edit": "Edit",
+  "settings.managedSystemRole.preview": "Preview",
+  "settings.managedSystemRole.save": "Save",
+  "settings.managedSystemRole.restore": "Restore default",
+  "settings.managedSystemRole.editorLabel": "Custom system role text",
+  "settings.managedSystemRole.editorHint":
+    "This edits ~/.kcode/system-role.md. Preview shows the current draft; a new conversation picks up the saved text.",
+  "settings.managedSystemRole.dirtyHint": "Unsaved changes",
+  "settings.managedSystemRole.previewEmpty": "Empty text will not be injected.",
+  "settings.managedSystemRole.savedHint": "Saved. Takes effect on a new conversation.",
+  "settings.managedSystemRole.loadFailed": "Could not load the custom system role.",
+  "settings.managedSystemRole.saveFailed": "Could not save the custom system role.",
   "settings.memory.viewer.disabled": "Enable Workspace Memory to view saved memories.",
   "settings.memory.viewer.localOnly":
     "Memory details are available only in the local desktop app. Open Memory settings there to view them.",

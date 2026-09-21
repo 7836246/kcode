@@ -14,6 +14,8 @@ export interface ISettingService {
   /** Change the data base directory: copy data from old → new location, then persist the setting. */
   updateDataBaseDir(newDir: string | undefined): Promise<void>;
   ensureDefaultProject(homedir: string): Promise<{ path: string; created: boolean }>;
+  readManagedSystemRoleContent(): Promise<{ content: string; template: string }>;
+  writeManagedSystemRoleContent(content: string): Promise<void>;
 }
 
 export const ISettingService = createServiceDescriptor<ISettingService>(ServiceChannels.Setting);

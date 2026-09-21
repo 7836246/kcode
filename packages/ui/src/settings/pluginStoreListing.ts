@@ -295,7 +295,7 @@ export function buildStoreItems(input: {
   return [...items.values()];
 }
 
-/** 公开分段：Featured（CDN featured 名单按序）+ 分类聚合（无分类归 other，排最后）。 */
+/** 公开分段：Featured（bundled featured 名单按序）+ 分类聚合（无分类归 other，排最后）。 */
 export function selectFeaturedItems(
   publicItems: StorePluginItem[],
   marketplaces: KCodePluginMarketplaceSummary[],

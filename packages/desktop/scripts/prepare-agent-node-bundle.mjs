@@ -111,6 +111,24 @@ const officialPluginPackages = [
     runtimeBuildScript: "scripts/build.mjs",
     stagedPath: "packages/node-repl-host",
   },
+  {
+    // 内容型插件：商店「创建插件」依赖 filesystem seed 出 plugin-creator 技能。
+    // 无 MCP runtime，但不能只写 definition 不带包，否则 skills.list 永远找不到它。
+    packageName: "plugin-creator-plugin",
+    relativePath: "apps/kcode-cli/packages/plugin-creator-plugin",
+    requiresRuntime: false,
+    requiredSeedPaths: [
+      "skills/plugin-creator/SKILL.md",
+      "skills/plugin-creator/scripts/create-basic-plugin.mjs",
+      "skills/plugin-creator/scripts/marketplace-files.mjs",
+      "skills/plugin-creator/scripts/upsert-dev-marketplace.mjs",
+      "skills/plugin-creator/scripts/scaffold-files.mjs",
+      "skills/plugin-creator/scripts/validate-plugin.mjs",
+      "skills/plugin-creator/references/plugin-json-spec.md",
+      "skills/plugin-creator/references/installing-and-updating.md",
+    ],
+    stagedPath: "packages/plugin-creator-plugin",
+  },
 ];
 const includedOfficialPluginTopLevelPaths = new Set([
   ".mcp.json",

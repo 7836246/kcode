@@ -291,7 +291,7 @@ export function getKCodePluginsOverview(
   const installedIds = new Set(installed.map((record) => record.id));
 
   // 每个市场的 manifest 只读一次：同时取 entries（目录条目）与 featured（策展名单）。
-  // kcode-plugins-official 的内置与 CDN 分片已在 adapter 层合并为唯一 canonical manifest。
+  // kcode-plugins-official 的 canonical manifest 只来自内置 bundled 分片。
   const catalogs: Array<{
     summary: KCodeMarketplaceSummaryData;
     entries: PluginMarketplaceEntry[];

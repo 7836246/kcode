@@ -1,3 +1,4 @@
+/* oxlint-disable eslint(max-lines) -- 设置写队列、旧账号迁移和落盘必须留在同一 owner，拆文件会拆散提交顺序。 */
 import { access, readFile, mkdir, rename } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -18,6 +19,11 @@ import { copyDataDirectory, getDataBaseDir, validateDataBaseDirTarget } from "..
 import { isEffectiveDevelopmentNodeEnv } from "../runtime-tools/nodeEnv.js";
 import { maybeThrowInjectedFsFault } from "../fs/fsFaultInjection.js";
 import { atomicWriteText } from "../fs/atomicFileUtils.js";
+import {
+  loadManagedSystemRoleEditorContent,
+  syncManagedSystemRoleProjection,
+  writeManagedSystemRoleContent,
+} from "./managedSystemRoleProjection.js";
 import { withSettingsWriteQueueTimeout } from "./settingsWriteQueue.js";
 import {
   migrateLegacyAccountConnectionSettings,
@@ -331,6 +337,12 @@ export function createSettingServiceWithMigrations(): {
           enterCommitPhase,
           Object.hasOwn(patch, "providerFamilyConnectionSelections"),
         );
+        await syncManagedSystemRoleProjection({
+          enabledInPatch: Object.hasOwn(validatedPatch, "managedSystemRoleEnabled"),
+          enabled: merged.managedSystemRoleEnabled === true,
+          shouldCommit: shouldCommit(),
+          onError: (error) => log("managed system-role projection failed:", error),
+        });
       };
 
       await enqueueSettingsWrite(runUpdate);
@@ -374,6 +386,9 @@ export function createSettingServiceWithMigrations(): {
 
       return { path, created: !existedBefore };
     },
+
+    readManagedSystemRoleContent: loadManagedSystemRoleEditorContent,
+    writeManagedSystemRoleContent,
   };
 
   let inFlight: Promise<readonly ProviderFamilyDomain[]> | null = null;

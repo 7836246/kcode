@@ -34,10 +34,8 @@ import {
   resolvePluginDisplayName,
   type StorePluginItem,
 } from "@/settings/pluginStoreListing.js";
-import { KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "@kcode/shared";
 import { PluginUninstallConfirmDialog } from "@/settings/PluginUninstallConfirmDialog.js";
 import { usePluginUninstall } from "@/settings/usePluginUninstall.js";
-import { claimMarketplaceAutoRefresh } from "@/settings/officialMarketplaceAutoRefresh.js";
 import { consumePluginStoreOpenTarget } from "@/lib/pluginStoreNavigation.js";
 import { SettingsBreadcrumbReporter } from "@/settings/SettingsHeaderBreadcrumb.js";
 import {
@@ -124,19 +122,6 @@ export function PluginStorePage({
       pluginService: pluginManagementService,
     });
   }, [initialize, pluginManagementService, workspaceIdentity, workspacePath]);
-
-  // 目录自动刷新（Catalog Auto-Refresh）：只针对 KCode 官方市场。每次进入商店页都刷新 CDN 目录，
-  // 否则新上架插件要等用户手动点刷新才可见；以 10 分钟窗口节流，并在发起时占位防抖（失败/在飞不重复），
-  // 判据见 officialMarketplaceAutoRefresh。状态放模块级而非组件 ref，因为每次进入都是重新挂载。
-  useEffect(() => {
-    const official = marketplaces.find((item) => item.id === KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID);
-    if (
-      official &&
-      claimMarketplaceAutoRefresh(KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID, official.lastUpdated)
-    ) {
-      void updateMarketplace(KCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID, pluginManagementService);
-    }
-  }, [marketplaces, pluginManagementService, updateMarketplace]);
 
   const items = useMemo(
     () =>
@@ -237,9 +222,8 @@ export function PluginStorePage({
     });
   }, []);
 
-  // 顶栏刷新 = 真网络更新：updateMarketplace(null) 重拉全部市场 manifest（含 CDN 与 git 源，
-  // 操作内部完成后会重载概览），随后按更新徽标数量给完成提示。只做本地重载时，
-  // 用户点了刷新看不到 CDN 新插件（与规格「刷新→update(null)」不符）。
+  // 顶栏刷新 = 个人来源的真网络更新：updateMarketplace(null) 重拉非官方市场 manifest。
+  // 官方市场已改为本地 bundled，adapter 会跳过，不请求远端目录。
   const handleRefresh = async () => {
     void refreshStoreOrder(true);
     setRefreshing(true);

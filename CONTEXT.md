@@ -7,7 +7,7 @@
 ### 市场与来源
 
 **Official Marketplace（官方市场）**:
-KCode 官方运营的唯一分发渠道，市场 id 为 `kcode-plugins-official`，内容 = 内置插件 + CDN 插件。是"分发渠道"而非"作者归属"——其中可以收录社区作者的插件。上游 CDN 若仍声明 `zcode-plugins-official`，解析时改写成规范 id，不单独开第二个官方市场。
+KCode 官方分发渠道，市场 id 为 `kcode-plugins-official`，内容 = 仅 Builtin Plugin。由应用包内置播种，不拉取远端目录。是"分发渠道"而非"作者归属"。上游清单若仍声明 `zcode-plugins-official`，解析时改写成规范 id，不单独开第二个官方市场。后续自建仓库走 Personal Source，不占用该 id。
 _Avoid_: "官方"泛指一切受信市场
 
 **Builtin Plugin（内置插件）**:
@@ -15,7 +15,7 @@ _Avoid_: "官方"泛指一切受信市场
 _Avoid_: 预装插件、bundled plugin（口语可用，文档统一"内置"）
 
 **CDN Plugin（CDN 插件）**:
-官方市场中通过官方 CDN 以 sha256 校验的 zip 包分发、按需下载安装的插件。
+已退役的官方远端目录条目。旧版曾从 Z.ai CDN 合并进官方市场；当前官方市场不再收录，ensure 时删除 leftover `cdn-marketplace.json`。用户自行添加的 Personal Source 仍可按 URL/git 分发 zip。
 _Avoid_: 网络插件、在线插件
 
 **Personal Source（个人来源）**:
@@ -23,7 +23,7 @@ _Avoid_: 网络插件、在线插件
 _Avoid_: 无
 
 **Catalog Auto-Refresh（目录自动刷新）**:
-进入商店页时对 Official Marketplace 目录的节流后台刷新，用户无感知；只覆盖官方市场。
+已关闭。官方市场改为本地内置目录后，进入商店页不再对官方市场做后台网络刷新。
 _Avoid_: 与 Manual Refresh 混用；把它称作"检查更新"（更新角标只是刷新的副产物）
 
 **Manual Refresh（手动刷新）**:
@@ -41,7 +41,7 @@ _Avoid_: 官方 tab、商店 tab
 _Avoid_: 第三方 tab、我的 tab
 
 **Featured（精选）**:
-公开分段顶部的策展区，名单由官方 CDN 目录的 `featured` 字段远程控制。仅存在于公开分段。
+公开分段顶部的策展区，名单来自官方 bundled manifest 的 `featured` 字段。当前内置播种不声明该字段，故默认不展示精选。仅存在于公开分段。
 _Avoid_: 与 Recommended 混用
 
 **Installed Strip（已安装条）**:

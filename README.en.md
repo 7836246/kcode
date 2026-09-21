@@ -7,207 +7,186 @@
   <a href="README.md">简体中文</a> | English
 </p>
 
-**KCode** is an independent project based on [ZCode](https://github.com/zai-org/ZCode). It is renamed to distinguish it from the official product and is **not affiliated with Z.ai**.
+**KCode** is an open-source AI coding workspace with desktop, browser, and terminal Agent interfaces. Configure your own model providers; you do not need a Zhipu or Z.ai account.
 
-Upstream copyright belongs to Z.AI Co., Ltd under [Apache-2.0](LICENSE). This repository keeps the original `LICENSE`, `NOTICE.md`, and third-party notices; keep them when you redistribute.
+This repository is based on [ZCode](https://github.com/zai-org/ZCode) and is renamed to distinguish it from the official product. It is **not affiliated with Z.ai**. Upstream copyright belongs to Z.AI Co., Ltd under [Apache-2.0](LICENSE). Keep `LICENSE`, `NOTICE.md`, and the third-party notices when you redistribute.
 
-KCode is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code. Product name, packages, commands, icons, and environment variables are unified as KCode. Official API hosts and OAuth app IDs still point at the upstream services.
+| Interface | Purpose | Development command |
+| --- | --- | --- |
+| Desktop | Electron desktop app | `pnpm dev:desktop` |
+| Web | Browser workspace and local backend | `pnpm dev:web` |
+| Agent CLI | Terminal `kcode`, also the Agent runtime for Desktop and Web | `pnpm --filter @kcode/cli dev` |
 
-| Interface                    | Purpose                                                                                   | Development command            |
-| ---------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------ |
-| Desktop                      | Electron desktop application                                                              | `pnpm dev:desktop`             |
-| Web / KCode CLI distribution | Terminal and browser workspace; packages the TUI, Web client, backend, and Agent together | `pnpm dev:web`                 |
-| Agent CLI                    | The `kcode` terminal interface, which also provides the Agent runtime for Desktop and Web | `pnpm --filter @kcode/cli dev` |
+## Current Scope
+
+- Product name, packages, commands, icons, and environment variables are unified as KCode.
+- Model calls go to providers you configure. There is no Zhipu login page or plan-upgrade entry.
+- The official plugin marketplace `kcode-plugins-official` uses the bundled catalog only and does not fetch the Z.ai CDN. Add a self-hosted catalog later as a personal source (git / URL / local directory).
+- Store → Create Plugin uses the bundled `plugin-creator` skill.
+- Settings → Memory can enable a custom system role. The default file is `~/.kcode/system-role.md`. See [apps/kcode-cli/examples/system-role.md](apps/kcode-cli/examples/system-role.md).
+- Upstream OAuth and business-API placeholders may still exist in the source. You do not need them for open-source use.
 
 ## Setup
 
-Install Git, Node.js **24.14.0**, and pnpm **10.33.2**. [mise.toml](mise.toml) is the source of truth for tool versions. Run all development and packaging commands below from the repository root.
+Install Git, Node.js **24.14.0**, and pnpm **10.33.2**. [mise.toml](mise.toml) is the source of truth. Run commands from the repository root.
 
 ```bash
 pnpm bootstrap
 ```
 
-`pnpm bootstrap` installs workspace dependencies, prepares local desktop runtime assets, and runs `build:bootstrap`.
+This installs workspace dependencies, prepares local desktop runtime assets, and runs `build:bootstrap`. Agent source lives in [apps/kcode-cli/](apps/kcode-cli/) and is cloned with the repo. There is no submodule.
 
-The Agent CLI and runtime source code lives in [apps/kcode-cli/](apps/kcode-cli/) as a regular directory included when you clone this repository. No separate checkout or Git submodule initialization is required.
+| Command | Purpose |
+| --- | --- |
+| `pnpm install` | Install dependencies only |
+| `pnpm prepare:desktop-runtime` | Prepare desktop runtime assets (includes remote assets by default) |
+| `pnpm prepare:remote-assets` | Prepare remote runtime assets separately |
+| `pnpm bootstrap:with-remote` | Set up dependencies plus local and remote assets, then build; skip the desktop bundle |
+| `pnpm build` | Recursively build workspace packages |
 
-Additional setup and build commands:
+Default `bootstrap` skips remote asset preparation and is enough for local desktop work. Run the remote commands when you use SSH / WSL workspaces.
 
-| Command                        | Purpose                                                                                                                             |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install`                 | Install dependencies                                                                                                                |
-| `pnpm prepare:desktop-runtime` | Prepare desktop runtime assets, including remote assets by default                                                                  |
-| `pnpm prepare:remote-assets`   | Prepare remote runtime assets separately                                                                                            |
-| `pnpm bootstrap:with-remote`   | Set up dependencies and local and remote assets, then build the relevant packages sequentially; skip the desktop application bundle |
-| `pnpm build`                   | Recursively run each workspace package's build script, including its asset preparation steps                                        |
-
-The default `bootstrap` skips remote asset preparation and is suitable for local desktop development. Run the corresponding preparation command when working with remote workspaces or validating remote distribution assets.
-
-## Development and Usage
+## Development
 
 ### Desktop
 
 ```bash
 pnpm dev:desktop
 
-# Use the test environment
-pnpm dev:desktop:test
-```
-
-`pnpm dev:desktop` defaults to `pnpm dev:desktop:prod` and uses production service configuration. The startup script prepares local runtime assets, builds the desktop Agent, then starts Electron and source watchers.
-
-Set `KCODE_DATA_BASE_DIR` to use a separate development data directory. For example, on macOS / Linux:
-
-```bash
+# Test environment with a separate data directory (macOS / Linux)
 KCODE_DATA_BASE_DIR="$HOME/.kcode-dev-home" pnpm dev:desktop:test
 ```
 
-### Web Development
+`pnpm dev:desktop` defaults to `pnpm dev:desktop:prod`. The startup script prepares local assets, builds the desktop Agent, then starts Electron.
 
-Use development mode when editing Web or backend source code:
+For remote workspaces, run `pnpm bootstrap:with-remote` first, then `pnpm dev:desktop`. Dev assets come from `packages/desktop/mock-cdn` and local build outputs and are uploaded over SFTP. They do not use a CDN.
+
+### Web
 
 ```bash
 pnpm dev:web
 
-# Set the backend workspace (macOS / Linux)
 KCODE_SERVER_WORKSPACE=/path/to/project pnpm dev:web
 ```
 
-This starts both the Web development server (default: `http://localhost:5173`) and the backend (default: `http://localhost:3030`). Open the Web development server in your browser. `/ws` and general `/api` requests are proxied to the local backend; `/api/v1/oauth/token` is proxied separately to the configured product service.
+This starts the Web dev server (default `http://localhost:5173`) and the backend (default `http://localhost:3030`). Open the former in a browser. After Agent source changes, run `pnpm --filter @kcode/cli... build` and restart the service.
 
-After changing Agent source code, run `pnpm --filter @kcode/cli... build` and restart the service. To validate the complete distribution, extract and run it as described under Packaging → KCode CLI distribution below.
+### CLI
 
-### KCode CLI distribution
-
-The command-line distribution includes the TUI, Web client, and Agent behind one `kcode` command. With no arguments it starts the TUI; a leading `--web` starts Web mode; all other arguments go to the existing Agent CLI. Both modes run locally without Electron.
+The distribution uses one `kcode` command: no args start the TUI, `--web` starts the browser UI, and other args go to the Agent CLI. Both modes run locally without Electron.
 
 ```bash
-# Start the terminal UI by default
 kcode
-
-# Start the Web interface
-kcode --web
-
-# Set the project and port without opening a browser automatically
 kcode --web --workspace /path/to/project --port 3030 --no-open
-
-# Show CLI or Web options
 kcode --help
-kcode --web --help
 ```
 
-In Web mode, it uses the current directory as the workspace, listens on `127.0.0.1` without token authentication by default, selects an available port, and opens a browser. Use the URL printed in the terminal and press `Ctrl+C` to stop the service. For LAN access, use `--host 0.0.0.0`; listening on a non-local address generates an access token by default. Use the token-bearing URL printed in the terminal. Set a token with `--token`, or disable token authentication with `--no-token`.
+Web mode uses the current directory, listens on `127.0.0.1`, and picks a free port. Use `--host 0.0.0.0` for LAN access; a non-local listen address generates an access token by default. You can also set `KCODE_SERVER_AUTH_TOKEN` or the programmatic `authToken` option.
 
-When starting the general Web service's HTTP entry directly, configure API/WebSocket authentication with `KCODE_SERVER_AUTH_TOKEN`. When creating the service programmatically, use the `authToken` option.
+`pnpm build:kcode` only builds the distribution. It does not replace an existing `kcode` on `PATH`. Check the real entry with `command -v kcode` (or `where.exe kcode` on Windows).
 
-See Packaging below for build instructions. `pnpm build:kcode` only creates the distribution; it does not replace an existing `kcode` on `PATH`. If the command still points to an older installation or another checkout, check it with `command -v kcode` on macOS / Linux or `where.exe kcode` on Windows.
-
-### CLI Source Development
-
-Use the source entry when developing the TUI or Agent:
+Developing the TUI or Agent from source:
 
 ```bash
-pnpm --filter @kcode/cli dev --help
-pnpm --filter @kcode/cli dev
-
-# Build the CLI and its workspace dependencies
 pnpm --filter @kcode/cli... build
 node apps/kcode-cli/packages/cli/dist/kcode.cjs --help
+pnpm --filter @kcode/cli dev
 ```
 
-This entry runs the Agent CLI directly and does not handle the distribution's `--web` switch. Use `pnpm dev:web` for Web development, or the extracted `bin/kcode.mjs` shown below to test the unified command.
+This entry does not handle the distribution `--web` switch. To test the unified command, use the extracted `bin/kcode.mjs` below.
+
+## Checks
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm architecture:check --changed
+pnpm verify:pre-push
+```
+
+Run at least `pnpm verify:pre-push` before a commit. Tests follow each package's `package.json` and its test files. There is no single repo-wide test command.
 
 ## Configuration
 
-The root [.env.example](.env.example) provides sample service URLs and build configuration. Copy it to `.env` as needed and place local overrides in `.env.local`. Select the Desktop development environment with `dev:desktop:test` or `dev:desktop:prod`.
+Root [.env.example](.env.example) has service-URL and build placeholders. Copy it to `.env` if needed and put local overrides in `.env.local`. These are the variables you will use most:
 
-| Setting                              | Purpose                                                                                 |
-| ------------------------------------ | --------------------------------------------------------------------------------------- |
-| `KCODE_DATA_BASE_DIR`                | Base directory for application data, stored under its `.kcode/` subdirectory            |
-| `KCODE_SERVER_WORKSPACE`             | Workspace path for the Web backend                                                      |
-| `KCODE_BUILTIN_PROVIDER_CONFIG_FILE` | Path to a local provider configuration file; uses the built-in configuration when unset |
-| `KCODE_DIST_BASE_URL`                | Download base URL used by the CLI distribution installer                                |
+| Setting | Purpose |
+| --- | --- |
+| `KCODE_DATA_BASE_DIR` | Application data root; files go under `.kcode/` |
+| `KCODE_SERVER_WORKSPACE` | Workspace path for the Web backend |
+| `KCODE_BUILTIN_PROVIDER_CONFIG_FILE` | Local provider config; built-in config is used when unset |
+| `KCODE_DIST_BASE_URL` | Download base URL for the CLI installer |
+| `KCODE_SYSTEM_ROLE_FILE` | Custom system-role file path |
+| `KCODE_SYSTEM_ROLE_ENABLED` | Override the system-role switch |
 
-Runtime variables can be set explicitly in the environment of the startup command. See [config/README.md](config/README.md) for the default configuration shipped with the client.
+See [config/README.md](config/README.md) for the default client configuration.
 
 ## Packaging
 
-See [third-party/README.md](third-party/README.md) for notice generation, distribution checks, and where the notices are included in each distribution.
+See [third-party/README.md](third-party/README.md) for notices and distribution checks.
 
 ### Desktop
 
 ```bash
 pnpm bundle:desktop
-
-# Set the target platform and CPU architecture
 pnpm bundle:desktop -- --os win --arch x64
-
 pnpm bundle:desktop -- --help
 ```
 
-The default target is macOS arm64, and the default output directory is `packages/desktop/dist/`. `--os` accepts `mac`, `win`, or `linux`; `--arch` accepts `x64` or `arm64`. Packaging and signing require the tools and configuration for the target platform.
+Default target is macOS arm64. Output goes to `packages/desktop/dist/`. `--os`: `mac` / `win` / `linux`. `--arch`: `x64` / `arm64`. Signing needs the tools for that platform.
 
-### KCode CLI distribution
+If a local unsigned macOS build is blocked:
 
-Run `pnpm build:kcode` to build the CLI/TUI, backend, and Web client, collect the TUI native libraries, workers, and runtime dependencies, then assemble the distribution. Running the distribution still requires Node.js; use the version specified in `mise.toml`.
+```bash
+sudo xattr -rd com.apple.quarantine /Applications/KCode.app
+```
 
-Before packaging, set the download base URL with `KCODE_DIST_BASE_URL` in `.env`, `.env.local`, or the process environment, or pass it through `--base-url`. The URL below is a placeholder; replace it with your hosting URL when publishing:
+### CLI distribution
+
+`pnpm build:kcode` builds the CLI / TUI, backend, and Web client, then assembles the distribution. Running it still needs Node.js at the version in `mise.toml`. Set `KCODE_DIST_BASE_URL` first, or pass `--base-url`:
 
 ```bash
 pnpm build:kcode --base-url https://downloads.example.com/kcode/
-
-# When KCODE_DIST_BASE_URL is already configured
-pnpm build:kcode
-
-# Repackage existing Agent, backend, and Web build outputs
 pnpm build:kcode --skip-build
-
-# Show options for the version, output directory, and more
 pnpm build:kcode --help
 ```
 
-The version defaults to the root `package.json` version. Output is written to `dist/kcode/`:
+Output is under `dist/kcode/`:
 
-- `releases/<version>/kcode-<version>.tar.gz`: runtime package.
-- `releases/<version>/sha256.txt`: checksum file.
-- `latest.json` and `install.sh`: version index and installer.
+- `releases/<version>/kcode-<version>.tar.gz`
+- `releases/<version>/sha256.txt`
+- `latest.json` and `install.sh`
 
-Upload the entire directory to the configured download base URL. The installer downloads the runtime package from that URL, installs it to `~/.kcode/runtime` by default, and creates the `kcode` command in `~/.local/bin`. Override these directories with `KCODE_DIST_HOME` and `KCODE_DIST_BIN_DIR`, respectively.
+The installer defaults to `~/.kcode/runtime` and creates `kcode` in `~/.local/bin`. Override those with `KCODE_DIST_HOME` and `KCODE_DIST_BIN_DIR`.
 
-Existing Lite users should switch to the new build command, environment variables, and installer. Installation does not remove old Lite directories or migrate/delete session data.
-
-To test a packaged build locally, extract and run it directly without uploading or installing it:
+Extract and run locally without uploading:
 
 ```bash
 kcode_version=$(node -p "require('./dist/kcode/latest.json').version")
 mkdir -p dist/kcode/debug
 tar -xzf "dist/kcode/releases/$kcode_version/kcode-$kcode_version.tar.gz" \
   -C dist/kcode/debug
-# Start the TUI by default
 node dist/kcode/debug/kcode/bin/kcode.mjs
-
-# Start Web mode
-node dist/kcode/debug/kcode/bin/kcode.mjs --web \
-  --workspace "$PWD" --port 3030 --no-open
+node dist/kcode/debug/kcode/bin/kcode.mjs --web --workspace "$PWD" --port 3030 --no-open
 ```
 
-Open `http://127.0.0.1:3030` to validate the complete flow, with one backend serving the Web pages and running the Agent. The port must be available; if `pnpm dev:web` is already running, choose another `--port`.
+Open `http://127.0.0.1:3030`. If `pnpm dev:web` already uses 3030, pick another `--port`.
 
 ## Repository Structure
 
-| Directory                                            | Responsibility                                                                          |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `packages/desktop`                                   | Electron Main, Host, Renderer, and desktop packaging                                    |
-| `packages/web`                                       | Web client                                                                              |
-| `packages/server`                                    | HTTP / WebSocket services and remote connections                                        |
-| `packages/kcode-server-cli`                          | Standalone server startup and process management                                        |
-| `packages/ui`                                        | Shared React components, hooks, and Zustand state                                       |
-| `packages/services`                                  | Business services and persistence                                                       |
-| `packages/shared`, `packages/rpc`, `packages/client` | Shared protocols and types, RPC framework, and Agent client SDK                         |
-| `packages/provider`, `packages/provider-node`        | Common provider capabilities and Node implementations                                   |
-| `apps/kcode-cli`                                     | Agent CLI, TUI, runtime, and tools                                                      |
-| `scripts`, `config`, `third-party`                   | Build and maintenance scripts, built-in configuration, and third-party notice materials |
+| Directory | Responsibility |
+| --- | --- |
+| `packages/desktop` | Electron Main, Host, Renderer, and desktop packaging |
+| `packages/web` | Web client |
+| `packages/server` | HTTP / WebSocket services and remote connections |
+| `packages/kcode-server-cli` | Standalone server startup and process management |
+| `packages/ui` | Shared React components, hooks, and Zustand state |
+| `packages/services` | Business services and persistence |
+| `packages/shared`, `packages/rpc`, `packages/client` | Protocols, RPC, and the Agent client SDK |
+| `packages/provider`, `packages/provider-node` | Shared provider APIs and Node implementations |
+| `apps/kcode-cli` | Agent CLI, TUI, runtime; bundled plugins live in `packages/*-plugin` |
+| `scripts`, `config`, `third-party` | Build scripts, built-in config, and third-party notices |
 
-## Project Notice
+## License
 
-See [NOTICE.md](NOTICE.md) for feature and promotion scope, maintenance policy, execution and data risks, licensing, and third-party copyright information.
+Apache-2.0. See [NOTICE.md](NOTICE.md) for feature boundaries, execution risk, data handling, and third-party copyright.

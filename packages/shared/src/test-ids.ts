@@ -369,6 +369,15 @@ export const TID_RESOURCE_MANAGER_STORAGE_CONFIRM_CANCEL =
   "resource-manager-storage-confirm-cancel";
 /** Memory 设置模块中的总开关 */
 export const TID_SETTINGS_MEMORY_SWITCH = "settings-memory-switch";
+/** 自定义 system-role 开关 */
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_SWITCH = "settings-managed-system-role-switch";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_EDITOR = "settings-managed-system-role-editor";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_PREVIEW = "settings-managed-system-role-preview";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_SAVE = "settings-managed-system-role-save";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_RESTORE = "settings-managed-system-role-restore";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_TAB_EDIT = "settings-managed-system-role-tab-edit";
+export const TID_SETTINGS_MANAGED_SYSTEM_ROLE_TAB_PREVIEW =
+  "settings-managed-system-role-tab-preview";
 /** Memory 设置模块刷新按钮 */
 export const TID_SETTINGS_MEMORY_REFRESH = "settings-memory-refresh";
 /** Memory Workspace Scope 菜单触发器 */

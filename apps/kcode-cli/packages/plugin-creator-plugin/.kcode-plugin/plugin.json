@@ -1,0 +1,8 @@
+{
+  "name": "plugin-creator",
+  "version": "0.1.1",
+  "description": "Create and validate KCode plugins, then install them from a local dev marketplace.",
+  "author": { "name": "KCode" },
+  "license": "Apache-2.0",
+  "skills": "skills"
+}

@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type IMemoryService, type ProjectMemoryWorkspaceSummary } from "@kcode/services";
-import { TID_SETTINGS_MEMORY_SWITCH } from "@kcode/shared";
+import {
+  type IMemoryService,
+  type ISettingService,
+  type ProjectMemoryWorkspaceSummary,
+} from "@kcode/services";
+import {
+  TID_SETTINGS_MANAGED_SYSTEM_ROLE_SWITCH,
+  TID_SETTINGS_MEMORY_SWITCH,
+} from "@kcode/shared";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
 import { Switch } from "@/components/ui/switch.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
+import { ManagedSystemRoleEditor } from "@/settings/ManagedSystemRoleEditor.js";
 import {
   MemorySettingsViewer,
   type MemoryViewerLoadingState,
@@ -44,20 +52,33 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function MemorySettingsSection({
+  managedSystemRoleEnabled,
   memoryEnabled,
   memoryService,
+  settingService,
+  onManagedSystemRoleEnabledChange,
   onMemoryEnabledChange,
   projectMemoryViewerAvailable,
   workspaceDisplayNames = [],
 }: {
+  managedSystemRoleEnabled: boolean;
   memoryEnabled: boolean;
   memoryService: MemoryCatalogService;
+  settingService: Pick<
+    ISettingService,
+    "readManagedSystemRoleContent" | "writeManagedSystemRoleContent"
+  >;
+  onManagedSystemRoleEnabledChange: (enabled: boolean) => Promise<void>;
   onMemoryEnabledChange: (enabled: boolean) => Promise<void>;
   projectMemoryViewerAvailable: boolean;
   workspaceDisplayNames?: readonly string[];
 }) {
   const { intl } = useKCodeIntl();
   const catalogRequestIdRef = useRef(0);
+  const [pendingManagedSystemRoleEnabled, setPendingManagedSystemRoleEnabled] = useState<
+    boolean | null
+  >(null);
+  const managedSystemRoleChecked = pendingManagedSystemRoleEnabled ?? managedSystemRoleEnabled;
   const [catalogState, setCatalogState] = useState<MemoryViewerLoadingState>("idle");
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<ProjectMemoryWorkspaceSummary[]>([]);
@@ -142,6 +163,10 @@ export function MemorySettingsSection({
     }
   }, [displayWorkspaces, selectedWorkspaceId]);
 
+  useEffect(() => {
+    setPendingManagedSystemRoleEnabled(null);
+  }, [managedSystemRoleEnabled]);
+
   const handleRefresh = useCallback(async () => {
     await runUserActionAsync({
       input: { featureId: "settings.memory", action: "refresh_memory", trigger: "button" },
@@ -153,6 +178,36 @@ export function MemorySettingsSection({
 
   return (
     <div className="space-y-6">
+      <SettingsGroupCard>
+        <SettingsRow
+          label={intl.formatMessage({
+            id: "settings.managedSystemRole",
+          })}
+          description={intl.formatMessage({
+            id: "settings.managedSystemRoleDescription",
+          })}
+          control={
+            <Switch
+              aria-label={intl.formatMessage({
+                id: "settings.managedSystemRole",
+              })}
+              checked={managedSystemRoleChecked}
+              data-testid={TID_SETTINGS_MANAGED_SYSTEM_ROLE_SWITCH}
+              onCheckedChange={(checked) => {
+                setPendingManagedSystemRoleEnabled(checked);
+                void onManagedSystemRoleEnabledChange(checked).catch(() => {
+                  setPendingManagedSystemRoleEnabled(null);
+                });
+              }}
+            />
+          }
+        />
+      </SettingsGroupCard>
+
+      {managedSystemRoleChecked ? (
+        <ManagedSystemRoleEditor ready={managedSystemRoleEnabled} settingService={settingService} />
+      ) : null}
+
       <SettingsGroupCard>
         <SettingsRow
           label={intl.formatMessage({

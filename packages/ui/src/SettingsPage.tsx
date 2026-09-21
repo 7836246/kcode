@@ -664,6 +664,7 @@ export function SettingsPage({
     return [...names];
   }, [sharedSettings?.recentProjects, workspaceTabs]);
   const memoryEnabled = sharedSettings?.memoryEnabled === true;
+  const managedSystemRoleEnabled = sharedSettings?.managedSystemRoleEnabled === true;
   const nativeSearchEnhancementsEnabled = sharedSettings?.nativeSearchEnhancementsEnabled !== false;
   const askUserQuestionAutoResolutionEnabled =
     sharedSettings?.askUserQuestionAutoResolutionEnabled !== false;
@@ -922,6 +923,28 @@ export function SettingsPage({
             .catch((cause: unknown) => {
               console.warn("[settings] 回写引导记录失败", String(cause));
             });
+        },
+        completed: {
+          resultSource: "shared_settings",
+          stateAfter: enabled ? "enabled" : "disabled",
+        },
+      });
+    },
+    [updateSharedSettings],
+  );
+  const handleManagedSystemRoleEnabledChange = useCallback(
+    async (enabled: boolean) => {
+      await runSettingsActionAsync({
+        featureId: "settings.memory",
+        action: "toggle_managed_system_role",
+        trigger: "switch",
+        operation: async () => {
+          try {
+            await updateSharedSettings({ managedSystemRoleEnabled: enabled });
+          } catch (error) {
+            console.warn("[settings] 自定义系统角色开关保存失败", String(error));
+            throw error;
+          }
         },
         completed: {
           resultSource: "shared_settings",
@@ -1814,8 +1837,13 @@ export function SettingsPage({
                           <ServiceProvider services={localHostServices}>
                             {/* Memory catalog 始终使用本地 Host，避免远程 workspace 误读本机数据。 */}
                             <MemorySettingsSection
+                              managedSystemRoleEnabled={managedSystemRoleEnabled}
                               memoryEnabled={memoryEnabled}
                               memoryService={localHostServices.memoryService}
+                              settingService={localHostServices.settingService}
+                              onManagedSystemRoleEnabledChange={
+                                handleManagedSystemRoleEnabledChange
+                              }
                               onMemoryEnabledChange={handleMemoryEnabledChange}
                               projectMemoryViewerAvailable={Boolean(isDesktop)}
                               workspaceDisplayNames={memoryWorkspaceDisplayNames}
