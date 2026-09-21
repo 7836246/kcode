@@ -31,8 +31,10 @@ import {
   buildLoginApiKeySkipSettings,
   listLoginApiKeyTemplates,
   resolveLoginApiKeyDefaultTemplateId,
+  resolveLoginApiKeyProbeModelId,
   shouldShowLoginApiKeyLink,
 } from "@/login/LoginApiKeyForm.helpers.js";
+import { connectLoginApiKeyProvider } from "@/login/loginApiKeyContinue.js";
 import { useKCodeStore } from "@/store/StoreProvider.js";
 
 interface LoginApiKeyFormProps {
@@ -43,11 +45,13 @@ interface LoginApiKeyFormProps {
 export function LoginApiKeyForm({ onSaved, onSkipped }: LoginApiKeyFormProps) {
   const { intl, locale } = useKCodeIntl();
   const platform = usePlatform();
-  const { modelSelectionService, providerSettingsService, settingService } = useServices();
+  const { fileService, modelSelectionService, providerSettingsService, settingService } =
+    useServices();
   const markApiKeyLoginSuccess = useKCodeStore((state) => state.markApiKeyLoginSuccess);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [apiKeyValue, setApiKeyValue] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [pendingProviderId, setPendingProviderId] = useState<string | null>(null);
+  const [phase, setPhase] = useState<"save" | "probe" | null>(null);
   const [skipping, setSkipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const providerSettingsRead = useProviderSettingsView();
@@ -70,45 +74,69 @@ export function LoginApiKeyForm({ onSaved, onSkipped }: LoginApiKeyFormProps) {
   const showApiKeyLink = shouldShowLoginApiKeyLink(apiKeyValue, apiKeyUrl ?? undefined);
 
   const saveApiKeyProvider = async () => {
-    const apiKey = apiKeyValue.trim();
-    if (!apiKey) {
-      setError(intl.formatMessage({ id: "login.apiKey.emptyError" }));
-      return;
-    }
-    if (!selectedTemplateId) {
-      setError(
-        intl.formatMessage(
-          { id: "login.apiKey.providerMissingError" },
-          { provider: providerLabel },
-        ),
-      );
-      return;
-    }
-
-    setSaving(true);
+    setPhase("save");
     setError(null);
     try {
-      const offeredTemplates = listLoginApiKeyTemplates(
-        (await providerSettingsService.getView()).providerTemplates,
+      const result = await connectLoginApiKeyProvider(
+        {
+          apiKey: apiKeyValue,
+          templateId: selectedTemplateId,
+          previousProviderId: pendingProviderId,
+        },
+        {
+          listTemplates: async () => (await providerSettingsService.getView()).providerTemplates,
+          createPersonalProvider: (input) => providerSettingsService.createPersonalProvider(input),
+          deletePersonalProvider: (providerId) =>
+            providerSettingsService.deletePersonalProvider(providerId),
+          readModelId: async (providerId) =>
+            resolveLoginApiKeyProbeModelId(await modelSelectionService.getView(), providerId),
+          ensureConversationWorkspace: () => fileService.ensureConversationWorkspace(),
+          testModelConnectivity: async (input) => {
+            setPhase("probe");
+            return providerSettingsService.testModelConnectivity(input);
+          },
+        },
       );
-      const template = offeredTemplates.find((item) => item.templateId === selectedTemplateId);
-      if (!template || !isApiKeyAccess(template.config.access)) {
+      if (result.status === "invalid") {
         setError(
           intl.formatMessage(
-            { id: "login.apiKey.providerMissingError" },
+            {
+              id:
+                result.reason === "empty-key"
+                  ? "login.apiKey.emptyError"
+                  : "login.apiKey.providerMissingError",
+            },
             { provider: providerLabel },
           ),
         );
         return;
       }
-
-      const created = await providerSettingsService.createPersonalProvider({
-        templateId: selectedTemplateId,
-        initialConfig: { access: { type: template.config.access.type, apiKey } },
-      });
+      setPendingProviderId(result.providerId);
+      if (result.status === "failed") {
+        logger.warn("[LoginEntry] API Key 连通性探测未通过", {
+          templateId: selectedTemplateId,
+          kind: result.kind,
+        });
+        const probeErrorId = {
+          auth: "login.apiKey.error.auth",
+          endpoint: "login.apiKey.error.endpoint",
+          model: "login.apiKey.error.model",
+        } as const;
+        setError(
+          result.kind === "other"
+            ? intl.formatMessage(
+                { id: "login.apiKey.error.other" },
+                {
+                  reason: result.detail || intl.formatMessage({ id: "login.apiKey.error.unknown" }),
+                },
+              )
+            : intl.formatMessage({ id: probeErrorId[result.kind] }),
+        );
+        return;
+      }
       const defaultModelPreference = buildLoginApiKeyDefaultModelPreferenceFromSelection(
         await modelSelectionService.getView(),
-        created.providerId,
+        result.providerId,
       );
       markApiKeyLoginSuccess(defaultModelPreference);
       await onSaved();
@@ -126,7 +154,7 @@ export function LoginApiKeyForm({ onSaved, onSkipped }: LoginApiKeyFormProps) {
         ),
       );
     } finally {
-      setSaving(false);
+      setPhase(null);
     }
   };
 
@@ -156,7 +184,7 @@ export function LoginApiKeyForm({ onSaved, onSkipped }: LoginApiKeyFormProps) {
     }
   };
 
-  const busy = saving || skipping;
+  const busy = phase !== null || skipping;
 
   return (
     <div className="space-y-4">
@@ -256,8 +284,10 @@ export function LoginApiKeyForm({ onSaved, onSkipped }: LoginApiKeyFormProps) {
           disabled={!apiKeyValue.trim() || !selectedTemplateId || busy}
           onClick={() => void saveApiKeyProvider()}
         >
-          {saving ? <Loader2Icon className="size-4 animate-spin" /> : null}
-          {intl.formatMessage({ id: "login.apiKey.continue" })}
+          {phase ? <Loader2Icon className="size-4 animate-spin" /> : null}
+          {intl.formatMessage({
+            id: phase === "probe" ? "login.apiKey.testing" : "login.apiKey.continue",
+          })}
         </Button>
         <Button
           type="button"

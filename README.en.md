@@ -30,7 +30,7 @@
 
 ## Install
 
-Installers are on [GitHub Releases](https://github.com/7836246/kcode/releases/latest). They are unsigned and usable after download.
+Installers are on [GitHub Releases](https://github.com/7836246/kcode/releases/latest). Until signing certificates are configured, builds are unsigned. Open them with the system prompt:
 
 - **macOS**: If it says the app is damaged, run `xattr -dr com.apple.quarantine /Applications/KCode.app`
 - **Windows**: If SmartScreen does not recognize it, choose More info → Run anyway

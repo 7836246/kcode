@@ -12,6 +12,7 @@ import { formatModelContextWindowLabel } from "@/lib/tokenNumberFormat.js";
 import type { ModelConfigResolution, ProviderConfigObject } from "@kcode/provider";
 import { shouldShowModelVisionBadge } from "@/lib/modelVisionBadge.js";
 import { useProviderDetailFeedback } from "@/settings/model-provider-section/ProviderDetailFeedback.js";
+import { resolveConnectivityFailureCopy } from "@/lib/modelConnectivityFailure.js";
 
 export function ModelRowInput({
   model,
@@ -166,12 +167,9 @@ export function ModelRowInput({
           dismissLabel: intl.formatMessage({ id: "common.close" }),
         });
       } else {
+        const copy = resolveConnectivityFailureCopy(result.error);
         const localizedReason =
-          result.error.code === "provider-unavailable"
-            ? intl.formatMessage({ id: "settings.modelProvider.testModel.providerUnavailable" })
-            : result.error.code === "model-unavailable"
-              ? intl.formatMessage({ id: "settings.modelProvider.testModel.modelUnavailable" })
-              : result.error.message.trim();
+          "messageId" in copy ? intl.formatMessage({ id: copy.messageId }) : copy.raw;
         const reason =
           localizedReason || intl.formatMessage({ id: "settings.modelProvider.testModel.failed" });
         showFeedback({

@@ -30,7 +30,7 @@
 
 ## 安装
 
-安装包在 [GitHub Releases](https://github.com/7836246/kcode/releases/latest)，未签名，下载后即可用。
+安装包在 [GitHub Releases](https://github.com/7836246/kcode/releases/latest)。维护者尚未配齐签名证书时，包是未签名的，下载后按系统提示放行：
 
 - **macOS**：拖进应用程序后若提示「已损坏」，执行 `xattr -dr com.apple.quarantine /Applications/KCode.app`
 - **Windows**：SmartScreen 若提示无法识别，选「更多信息」→「仍要运行」

@@ -31,7 +31,8 @@
 - 源码入口在顶栏右侧工具区，用 GitHub 图标；文案 `navSource` 只作 aria-label / title。文字导航只保留文档、更新日志、下载
 - 反色主按钮上的次级文字用 `text-background` 透明度，不用 `text-muted-foreground`
 - 文档信息架构对齐 ZCode Docs（开始使用 / 核心功能 / 帮助），正文按 KCode 事实改写，不写官方登录或套餐
-- 安装包未签名。文档写清 macOS 去隔离、Windows SmartScreen「仍要运行」、Linux AppImage 先 chmod；不承诺双击即开
+- 维护者未配齐签名证书时安装包未签名。文档写清 macOS 去隔离、Windows SmartScreen「仍要运行」、Linux AppImage 先 chmod；不承诺双击即开。配齐 GitHub secrets 后，macOS 发布会签名并公证，Windows 会签名
+- 「连接模型」写清欢迎页先测通、Key / 接口地址 / 模型三类失败、Key 存在本机、对话发到所填地址
 - 文档篇末上一篇 / 下一篇用卡片切换，和最后一节至少隔开一段再画分割线；短文也不贴在正文下面。切换后滚到页顶
 - 更新日志信息架构对齐 ZCode Changelog（版本标题 / 分组说明），条目由 `resolveChangelog` 从 GitHub Releases 投影，失败或空列表不编造
 - 路由由 `parseSitePath` 投影：`/` 首页，`/docs` 与 `/docs/:slug` 文档，`/changelog` 更新日志
@@ -60,7 +61,8 @@
 - 浅色模式下能力卡图和 Hero 工作台仍是深色产品壳，不是白底上的黑块
 - 浅色主下载按钮的标题和平台行都可读
 - `/docs` 与 `/docs/install` 能打开文档，侧栏可跳转
-- 安装页和 FAQ 写明未签名包：macOS 去隔离、Windows 仍要运行、Linux chmod
+- 安装页和 FAQ 写明未配齐证书时的未签名包：macOS 去隔离、Windows 仍要运行、Linux chmod
+- 「连接模型」能看到欢迎页测通、三类失败，以及 Key 留在本机、对话发到所填地址
 - 文档篇末上一篇 / 下一篇是两张卡片，不贴在正文最后一行下面
 - `/changelog` 列出 GitHub Release，不出现智谱登录或套餐更新
 - 文档不出现智谱登录、Coding Plan 购买或官方套餐步骤

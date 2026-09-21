@@ -543,7 +543,7 @@ const enUS: Record<string, string> = {
   "welcome.loggingIn": "Logging in...",
   "welcome.loginFailed": "Login failed",
   "login.title": "Welcome to KCode",
-  "login.description": "Use an API key to start using KCode",
+  "login.description": "Choose a provider and API key. KCode checks the connection before opening a workspace.",
   "login.expired.title": "Your session has expired",
   "login.expired.description": "To keep your account secure, please sign in again.",
   "login.expired.action": "Sign in again",
@@ -557,7 +557,15 @@ const enUS: Record<string, string> = {
   "login.apiKey.getApiKey": "Get API Key",
   "login.apiKey.cancel": "Cancel",
   "login.apiKey.continue": "Continue",
+  "login.apiKey.testing": "Testing connection",
   "login.apiKey.emptyError": "Enter an API key.",
+  "login.apiKey.error.auth": "The API key is invalid or not allowed. Check the key.",
+  "login.apiKey.error.endpoint":
+    "The endpoint could not be reached. Check the network or proxy, or pick another provider.",
+  "login.apiKey.error.model":
+    "The provider responded, but its default model is unavailable. Skip for now and change the model in Settings.",
+  "login.apiKey.error.other": "Connection failed: {reason}",
+  "login.apiKey.error.unknown": "Connection failed",
   "login.apiKey.providerMissingError":
     "Built-in provider configuration for {provider} was not found. Please try again later.",
   "login.apiKey.saveError": "Failed to save API key: {error}",
@@ -2807,8 +2815,10 @@ const enUS: Record<string, string> = {
     "Failed to connect {provider} / {model}: {reason}",
   "settings.modelProvider.testModel.localWorkspaceUnavailable":
     "A local workspace is unavailable for connectivity testing.",
-  "settings.modelProvider.testModel.error.auth": "Authentication failed",
-  "settings.modelProvider.testModel.error.model_not_found": "Model not found",
+  "settings.modelProvider.testModel.error.auth": "API key is invalid or not allowed",
+  "settings.modelProvider.testModel.error.endpoint": "Could not reach the endpoint",
+  "settings.modelProvider.testModel.error.model_not_found":
+    "The model name does not exist or is unavailable for this account",
   "settings.modelProvider.testModel.error.rate_limit": "Rate limited",
   "settings.modelProvider.testModel.error.network": "Network error",
   "settings.modelProvider.testModel.error.server": "Server error",

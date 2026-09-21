@@ -41,7 +41,7 @@ export const zhCN: KCodeCopy = {
     "Bash(git *)" 也会移除整个 Bash，不支持按命令内容匹配。
   --force-mcs      对 Anthropic provider 强制启用 mid-conversation system 投影
   --locale <locale>  UI 语言：en-US、zh-CN 或 auto
-  --mode <mode>    prompt 权限模式：build、edit、plan 或 yolo（--prompt 默认 yolo）
+  --mode <mode>    prompt 权限模式：build、edit、plan 或 yolo
   --resume <sessionId>  按 sessionId 恢复持久化 session（sess_...）
   --target <text>  在 headless 模式运行或设置 session goal
   --target-replace 替换 --target 已存在的 goal
@@ -50,6 +50,11 @@ export const zhCN: KCodeCopy = {
   --no-browser     不打开浏览器，只打印 OAuth URL
   --no-color       禁用 ANSI 颜色
   --verbose        打印更多诊断信息
+
+权限:
+  交互 TUI 默认逐次确认。
+  只传 --prompt 且不写 --mode 时使用 yolo：普通工具不再逐次确认，
+  可以改文件、执行命令并访问网络。需要确认时写 --mode build。
 
 Slash Commands:
   /help [command]       显示 slash command 帮助

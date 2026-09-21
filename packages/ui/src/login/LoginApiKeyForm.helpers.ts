@@ -17,10 +17,9 @@ export function resolveLoginApiKeyDefaultTemplateId(
   return templates[0]?.templateId ?? null;
 }
 
-export function buildLoginApiKeySkipSettings(now: number): Pick<
-  AppSettings,
-  "providerFamilyDomainUpdatedAt" | "providerFamilyDomainMigrated"
-> {
+export function buildLoginApiKeySkipSettings(
+  now: number,
+): Pick<AppSettings, "providerFamilyDomainUpdatedAt" | "providerFamilyDomainMigrated"> {
   return {
     providerFamilyDomainUpdatedAt: now,
     providerFamilyDomainMigrated: true,
@@ -34,11 +33,20 @@ export function shouldShowLoginApiKeyLink(
   return Boolean(apiKeyUrl) && apiKeyValue.trim().length === 0;
 }
 
+export function resolveLoginApiKeyProbeModelId(
+  view: ModelSelectionView,
+  providerId: string,
+): string | null {
+  return (
+    view.providers.find((provider) => provider.providerId === providerId)?.models[0]?.modelId ??
+    null
+  );
+}
+
 export function buildLoginApiKeyDefaultModelPreferenceFromSelection(
   view: ModelSelectionView,
   providerId: string,
 ): string | null {
-  const firstModel = view.providers.find((provider) => provider.providerId === providerId)
-    ?.models[0]?.modelId;
+  const firstModel = resolveLoginApiKeyProbeModelId(view, providerId);
   return firstModel ? encodeCustomModelValue(providerId, firstModel) : null;
 }
