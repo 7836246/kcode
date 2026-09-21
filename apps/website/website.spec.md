@@ -21,8 +21,8 @@
 - 域名与对外文案使用 `kcode.wiki`
 - 安装包只从 `https://github.com/7836246/kcode/releases` 提供
 - 版本优先读 GitHub latest release；失败则链到 latest 页面，不编造资产
-- 官网静态资源由 `deploy-website` 推到 GitHub Pages；不另起发布源。下载与更新日志继续读同一仓库的 Releases，跟桌面 `v*` tag 联动
-- 自定义域名 `kcode.wiki` 用 `public/CNAME`；`/docs` 与 `/changelog` 靠 Pages 的 `404.html` 回首页 SPA
+- 官网静态资源由 `deploy-website` 同步到 `kcode.wiki` 这台源站；不走 GitHub Pages。下载与更新日志继续读同一仓库的 Releases，跟桌面 `v*` tag 联动
+- `kcode.wiki` / `www.kcode.wiki` 解析到源站 `23.94.223.164`，Cloudflare 橙云代理；`/docs` 与 `/changelog` 由源站 Nginx 回 `index.html`
 - 默认中文，可切英文；不设账号
 - 日夜模式由 `theme` 唯一写入 `documentElement` 与 `localStorage`；无记录时跟随系统
 - 原站 PNG / hero-visual 按深色产品壳绘制。浅色页只换营销 chrome；能力卡图底与 `.hero-visual-theme` 锁定深色 token，避免黑图落在白底上
@@ -37,7 +37,7 @@
 
 ## 所有者
 
-`apps/website` 是官网唯一实现。下载地址由 `resolveReleaseDownloads` 投影，不在组件里手写资产名。更新日志由 `resolveChangelog` 投影 GitHub Releases。主题由 `resolveTheme` / `applyTheme` 投影。文档正文由 `docsContent` 拥有，侧栏只读目录。`deploy-website` 是 Pages 发布的唯一入口，不打桌面安装包。
+`apps/website` 是官网唯一实现。下载地址由 `resolveReleaseDownloads` 投影，不在组件里手写资产名。更新日志由 `resolveChangelog` 投影 GitHub Releases。主题由 `resolveTheme` / `applyTheme` 投影。文档正文由 `docsContent` 拥有，侧栏只读目录。`deploy-website` 是源站发布的唯一入口，用 SSH 同步 `/var/www/kcode.wiki`，不打桌面安装包。
 
 ## 验收
 
@@ -54,4 +54,5 @@
 - `/docs` 与 `/docs/install` 能打开文档，侧栏可跳转
 - `/changelog` 列出 GitHub Release，不出现智谱登录或套餐更新
 - 文档不出现智谱登录、Coding Plan 购买或官方套餐步骤
-- 推送 `main` 上官网相关文件后，GitHub Pages 更新；站点下载按钮指向当前 latest Release，不手写版本号
+- 推送 `main` 上官网相关文件后，源站 `/var/www/kcode.wiki` 更新；站点下载按钮指向当前 latest Release，不手写版本号
+- `https://kcode.wiki` 与 `/docs`、`/changelog` 能打开

@@ -10,17 +10,12 @@ on:
       - "pnpm-workspace.yaml"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: deploy-website
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -44,18 +39,20 @@ jobs:
       - name: Build website
         run: pnpm --filter @kcode/website build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/website/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-24.04
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Sync to origin
+        env:
+          WEBSITE_DEPLOY_KEY: ${{ secrets.WEBSITE_DEPLOY_KEY }}
+          WEBSITE_HOST: 23.94.223.164
+        run: |
+          if [ -z "$WEBSITE_DEPLOY_KEY" ]; then
+            echo "missing WEBSITE_DEPLOY_KEY" >&2
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$WEBSITE_DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p 22 -H "$WEBSITE_HOST" >> ~/.ssh/known_hosts
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -p 22" \
+            apps/website/dist/ \
+            "root@${WEBSITE_HOST}:/var/www/kcode.wiki/"
