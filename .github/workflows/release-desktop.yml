@@ -24,7 +24,24 @@ env:
   CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
 jobs:
+  check-version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check release tag matches package.json
+        id: resolve
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          node scripts/check-release-tag-version.mjs "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   bundle:
+    needs: check-version
     strategy:
       fail-fast: false
       matrix:
@@ -82,28 +99,37 @@ jobs:
           name: kcode-${{ matrix.target_os }}-${{ matrix.target_arch }}
           path: |
             packages/desktop/dist/*.dmg
+            packages/desktop/dist/*.zip
             packages/desktop/dist/*.exe
             packages/desktop/dist/*.deb
             packages/desktop/dist/*.rpm
             packages/desktop/dist/*.AppImage
             packages/desktop/dist/*.pkg.tar.zst
+            packages/desktop/dist/*.blockmap
+            packages/desktop/dist/latest*.yml
           if-no-files-found: error
 
   publish:
-    needs: bundle
-    if: ${{ always() && !cancelled() }}
+    needs: [check-version, bundle]
+    if: ${{ always() && !cancelled() && needs.check-version.result == 'success' }}
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: release-assets
-          merge-multiple: true
+          path: release-artifacts
+
+      - name: Collect and merge update manifests
+        run: node packages/desktop/scripts/collect-github-release-assets.mjs release-artifacts release-assets
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ needs.check-version.outputs.tag }}
           generate_release_notes: true
+          prerelease: ${{ contains(needs.check-version.outputs.tag, '-') }}
           files: release-assets/*
           fail_on_unmatched_files: true

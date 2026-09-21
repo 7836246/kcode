@@ -2,12 +2,10 @@
 import type { ISettingService } from "@kcode/services";
 import {
   DEFAULT_LOCALE,
-  DEFAULT_KCODE_ENDPOINT_ORIGIN,
   desktopMenuMessageIds,
   formatDesktopMenuMessage,
   getDesktopMenuMessage,
   PlatformChannels,
-  resolveRuntimeKCodeEndpointOrigin,
   KCODE_VERSION,
   type ElectronReleaseChannel,
   type Locale,
@@ -18,8 +16,11 @@ import {
 import { app, BrowserWindow, ipcMain, Menu } from "electron";
 import pkg, { CancellationToken } from "electron-updater";
 import semver from "semver";
+import {
+  resolveDesktopUpdateFeed,
+  toElectronUpdaterFeedURL,
+} from "../../scripts/github-release-feed.mjs";
 import { logger } from "./logger.js";
-import { getElectronReleasePlatform, ManifestUpdateProvider } from "./manifestUpdateProvider.js";
 const { autoUpdater } = pkg;
 
 export const CHECK_FOR_UPDATE_MENU_ID = "check-for-update";
@@ -114,8 +115,6 @@ interface InitAutoUpdaterOptions {
   settingService?: SettingServiceLike;
   locale?: Locale;
   updateFeedSource?: RuntimeUpdateFeedSource;
-  deviceMid?: string;
-  resolveEndpointOrigin?: () => string | Promise<string>;
 }
 
 let quitAndInstallInFlight = false;
@@ -745,32 +744,29 @@ async function syncAutoUpdateCheckChannelFromSettings(
       `[auto-update] ${reason}: check channel ${availableUpdateChannel} -> ${nextChannel}`,
     );
   }
-  // 服务端 manifest provider 会在 checkForUpdates 内部读取 preview 设置。
+  // GitHub provider 用 allowPrerelease 区分 stable / preview。
   // 如果 begin 阶段仍用默认 stable 作为 expected channel，冷启动 preview 结果会被误判为 stale。
   availableUpdateChannel = nextChannel;
   activeAutoUpdateCheckChannel = nextChannel;
+  applyDesktopUpdateAllowPrerelease(nextChannel);
 }
 
-function applyManifestUpdateProvider(options: InitAutoUpdaterOptions): void {
-  const manifestUrl = options.updateFeedSource?.url.trim();
-  autoUpdater.setFeedURL({
-    provider: "custom",
-    updateProvider: ManifestUpdateProvider,
-    endpointOrigin: DEFAULT_KCODE_ENDPOINT_ORIGIN,
-    ...(manifestUrl ? { manifestUrl } : {}),
-    releasePlatform: getElectronReleasePlatform(),
-    deviceMid: options.deviceMid,
-    resolveEndpointOrigin:
-      options.resolveEndpointOrigin ?? (() => resolveRuntimeKCodeEndpointOrigin(process.env)),
-    resolveReleaseChannel: async () => {
-      availableUpdateChannel = await resolveUpdateReleaseChannel(options.settingService);
-      return availableUpdateChannel;
-    },
+function applyDesktopUpdateAllowPrerelease(channel: ElectronReleaseChannel): void {
+  autoUpdater.allowPrerelease = channel === "preview";
+}
+
+function applyDesktopUpdateFeed(options: InitAutoUpdaterOptions): void {
+  const feed = resolveDesktopUpdateFeed({
+    isPackaged: app.isPackaged,
+    receivePreviewUpdates: availableUpdateChannel === "preview",
+    overrideUrl: options.updateFeedSource?.url,
   });
+  applyDesktopUpdateAllowPrerelease(availableUpdateChannel);
+  autoUpdater.setFeedURL(toElectronUpdaterFeedURL(feed));
   logger.info(
-    manifestUrl
-      ? `[auto-update] service manifest provider applied platform=${getElectronReleasePlatform()} manifestUrl=${redactUpdateFeedUrlForLog(manifestUrl)}`
-      : `[auto-update] service manifest provider applied platform=${getElectronReleasePlatform()}`,
+    feed.provider === "generic"
+      ? `[auto-update] generic update feed applied url=${redactUpdateFeedUrlForLog(feed.url)} allowPrerelease=${feed.allowPrerelease}`
+      : `[auto-update] GitHub update feed applied owner=${feed.owner} repo=${feed.repo} allowPrerelease=${feed.allowPrerelease}`,
   );
 }
 
@@ -1368,7 +1364,7 @@ export function refreshAutoUpdaterReleaseChannel(
   if (checkForUpdatesInFlight) {
     // 用户可能在启动检查尚未完成时切换 preview 开关。
     // 不能立刻改 availableUpdateChannel，否则旧请求返回时会把旧通道的版本标成新通道；
-    // 这里只记录待刷新通道，等当前 check 收口后再重新请求 manifest。
+    // 这里只记录待刷新通道，等当前 check 收口后再按新通道请求 GitHub Release。
     pendingManifestReleaseChannelRefresh = nextChannel;
     logger.info(
       `[auto-update] defer ${reason}: check already in flight, next channel=${nextChannel}`,
@@ -1383,9 +1379,10 @@ export function refreshAutoUpdaterReleaseChannel(
   }
 
   logger.info(
-    `[auto-update] ${reason}: refresh manifest channel ${currentChannel} -> ${nextChannel}`,
+    `[auto-update] ${reason}: refresh GitHub channel ${currentChannel} -> ${nextChannel}`,
   );
   availableUpdateChannel = nextChannel;
+  applyDesktopUpdateAllowPrerelease(nextChannel);
   clearAvailableUpdateState();
   setAutoUpdaterMenuState({ kind: "checking", enabled: false });
   const checkId = beginAutoUpdateCheck();
@@ -1504,7 +1501,7 @@ export async function initAutoUpdater(options: InitAutoUpdaterOptions = {}): Pro
   // 这里仅在 Windows 关闭“退出即自动安装”，要求用户显式点更新；其他平台保持原有行为，避免改动既有升级链路。
   autoUpdater.autoInstallOnAppQuit = process.platform !== "win32";
   autoUpdater.logger = logger;
-  applyManifestUpdateProvider(options);
+  applyDesktopUpdateFeed(options);
 
   const triggerCheckForUpdates = (reason: string) => {
     if (checkForUpdatesInFlight) {
@@ -1512,7 +1509,7 @@ export async function initAutoUpdater(options: InitAutoUpdaterOptions = {}): Pro
       return;
     }
 
-    // 发布链路即使改成“安装包先、latest 后”，CDN 生效仍可能晚于客户端的轮询节奏。
+    // 发布链路即使改成“安装包先、latest.yml 后”，GitHub Release 资产仍可能晚于客户端轮询。
     // 如果 checking / downloading 阶段继续并发触发 checkForUpdates，会把同一轮更新流重复拉起，
     // 造成无效请求、噪音日志，甚至把用户看到的菜单状态来回覆盖，所以自动轮询只在 idle 或
     // update-downloaded 态进入；后者继续轮询是为了发现取代已下载版本的新版本。

@@ -1953,8 +1953,6 @@ app.whenReady().then(async () => {
     },
     settingService: mainSettingService,
     locale: currentApplicationLocale,
-    deviceMid,
-    resolveEndpointOrigin: resolveCurrentKCodeEndpointOrigin,
     updateFeedSource: resolveUpdateFeedSourceFromStartupConfig({
       argv: process.argv,
       env: process.env,

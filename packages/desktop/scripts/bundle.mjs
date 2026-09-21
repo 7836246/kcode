@@ -13,6 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { collectRuntimeModuleClosureEntries } from "./runtime-dependency-closure.mjs";
 import { resolveDesktopProductIdentity } from "./desktop-product-identity.mjs";
+import { ELECTRON_UPDATE_MANIFEST_BY_OS } from "./github-release-feed.mjs";
 import {
   findDesktopNativePackageViolations,
   parseAsarListWithPackState,
@@ -411,6 +412,33 @@ function findBuiltArtifact(os, arch) {
   candidates.sort((left, right) => right.mtimeMs - left.mtimeMs);
   return candidates[0].path;
 }
+
+function verifyGeneratedUpdateManifest(os, arch) {
+  const manifestName = ELECTRON_UPDATE_MANIFEST_BY_OS[os];
+  if (!manifestName) {
+    throw new Error(`未配置 ${os} 的 electron-updater manifest 文件名`);
+  }
+  const manifestPath = join(desktopDistRoot, manifestName);
+  if (!existsSync(manifestPath)) {
+    throw new Error(`未生成 ${manifestName}，GitHub 在线更新缺少 manifest`);
+  }
+  if (os !== "mac") {
+    return;
+  }
+
+  // mac 安装器用 dmg，electron-updater 实际拉 zip。缺 zip 时 latest-mac.yml 也无法完成更新。
+  const archHints = artifactArchHintsByArch[arch] ?? [arch];
+  const hasZip = readdirSync(desktopDistRoot).some((name) => {
+    const lowerName = name.toLowerCase();
+    return (
+      lowerName.endsWith(".zip") &&
+      archHints.some((archHint) => artifactNameMatchesArch(lowerName, archHint))
+    );
+  });
+  if (!hasZip) {
+    throw new Error(`未生成 ${os}/${arch} zip，GitHub 在线更新缺少 macOS 更新包`);
+  }
+}
 function runAndReadStdout(command, args) {
   return runCommandAndReadStdout(command, args, {
     cwd: desktopRoot,
@@ -707,6 +735,10 @@ async function main() {
     "electron-builder.config.js",
     osBuilderFlagMap[os],
     archBuilderFlagMap[arch],
+    // 配置里的 GitHub publish 只用来生成 latest*.yml / app-update.yml。
+    // 矩阵 job 不能各自 --publish always，否则会抢写同一个 Release。
+    "--publish",
+    "never",
   ];
 
   console.log(`[bundle] target=${os}/${arch}`);
@@ -735,6 +767,8 @@ async function main() {
   await runTimedAsync("bundle:electron-builder", () =>
     runElectronBuilderWithRetry(buildArgs, buildEnv),
   );
+
+  runTimedSync("bundle:verify-update-manifest", () => verifyGeneratedUpdateManifest(os, arch));
 
   runTimedSync("bundle:verify-runtime-dependencies", () =>
     verifyPackagedRuntimeDependencies(os, arch),
