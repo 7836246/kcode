@@ -64,6 +64,9 @@ export function ModelProviderSection({
     savePersonalModelDraft,
     setPersonalModelEnabled,
     deletePersonalModel,
+    listRemoteProviderModels,
+    importRemoteProviderModels,
+    clearProviderModels,
     deleteProvider,
     reorderProviderModels,
     saveDisplayOrder,
@@ -305,6 +308,9 @@ export function ModelProviderSection({
           onSavePersonalModelDraft={savePersonalModelDraft}
           onSetPersonalModelEnabled={setPersonalModelEnabled}
           onDeletePersonalModel={deletePersonalModel}
+          onListRemoteModels={listRemoteProviderModels}
+          onImportRemoteModels={importRemoteProviderModels}
+          onClearModels={clearProviderModels}
           onDelete={handleDelete}
           onReorderProviderModels={reorderProviderModels}
           onTestModel={handleTestModel}

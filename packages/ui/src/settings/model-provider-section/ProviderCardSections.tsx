@@ -15,6 +15,8 @@ import type { ModelConnectivityResult } from "@kcode/shared";
 import type { ProviderApiType } from "@kcode/provider";
 import {
   TID_MODEL_PROVIDER_ADD_MODEL_BUTTON,
+  TID_MODEL_PROVIDER_CLEAR_MODELS_BUTTON,
+  TID_MODEL_PROVIDER_FETCH_MODELS_BUTTON,
   TID_MODEL_PROVIDER_BASE_URL_INPUT,
   TID_MODEL_PROVIDER_MODEL_DELETE_BUTTON,
   TID_MODEL_PROVIDER_MODEL_INPUT,
@@ -22,7 +24,15 @@ import {
   TID_MODEL_PROVIDER_NAME_INPUT,
   testId,
 } from "@kcode/shared";
-import { InfoIcon, LockKeyholeIcon, Plus, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import {
+  Download,
+  InfoIcon,
+  LockKeyholeIcon,
+  Plus,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
 import {
@@ -34,6 +44,8 @@ import {
 } from "@/components/ui/dropdown-menu.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useServices } from "@/hooks/useServices.js";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
+import { ProviderRemoteModelsDialog } from "@/settings/model-provider-section/ProviderRemoteModelsDialog.js";
 import { TECHNICAL_INPUT_ATTRIBUTES } from "@/lib/technicalInputAttributes.js";
 import { ApiKeyInput } from "./ApiKeyInput.js";
 import { ModelRowInput } from "./ProviderFormControls.js";
@@ -353,6 +365,9 @@ export function ProviderModelsSection({
   onModelCommit,
   onModelEnabledChange,
   onDeleteModel,
+  onListRemoteModels,
+  onImportRemoteModels,
+  onClearModels,
   onAddModel,
   onReorderModelIds,
   settingsRevision = 0,
@@ -369,14 +384,23 @@ export function ProviderModelsSection({
     basedOnRevision: number,
   ) => void | Promise<void>;
   onDeleteModel: (modelId: string) => void;
+  onListRemoteModels?: () => Promise<readonly string[]>;
+  onImportRemoteModels?: (modelIds: readonly string[]) => void | Promise<void>;
+  onClearModels?: () => void | Promise<void>;
   onModelEnabledChange?: (modelId: string, enabled: boolean) => void | Promise<void>;
   onAddModel: (model: ProviderSettingsFormModel) => void | Promise<void>;
   onReorderModelIds?: (modelIds: string[]) => void;
   settingsRevision?: number;
 }) {
   const { intl } = useKCodeIntl();
+  const confirmDialog = useConfirmDialog();
   const { providerSettingsService } = useServices();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [remoteModelsDialogOpen, setRemoteModelsDialogOpen] = useState(false);
+  const [remoteModelIds, setRemoteModelIds] = useState<readonly string[]>([]);
+  const [importingModels, setImportingModels] = useState(false);
+  const [clearingModels, setClearingModels] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
   const addSavingRef = useRef(false);
   const [addCommitError, setAddCommitError] = useState<string | null>(null);
@@ -470,17 +494,87 @@ export function ProviderModelsSection({
         <span className="text-ui-base text-foreground-subtle">
           {intl.formatMessage({ id: "settings.modelProvider.models" })}
         </span>
-        <Button
-          type="button"
-          variant="secondary"
-          size="default"
-          className="rounded-lg"
-          data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
-          onClick={openAddDialog}
-        >
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onClearModels && models.length > 0 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="default"
+              className="rounded-lg"
+              data-testid={TID_MODEL_PROVIDER_CLEAR_MODELS_BUTTON}
+              disabled={clearingModels || fetchingModels}
+              onClick={() => {
+                void (async () => {
+                  const confirmed = await confirmDialog({
+                    title: intl.formatMessage({
+                      id: "settings.modelProvider.clearModelsConfirmTitle",
+                    }),
+                    description: intl.formatMessage({
+                      id: "settings.modelProvider.clearModelsConfirmDescription",
+                    }),
+                    confirmLabel: intl.formatMessage({
+                      id: "settings.modelProvider.clearModelsConfirmAction",
+                    }),
+                    cancelLabel: intl.formatMessage({ id: "common.cancel" }),
+                    confirmVariant: "destructive",
+                  });
+                  if (!confirmed) return;
+                  setClearingModels(true);
+                  try {
+                    await onClearModels();
+                  } finally {
+                    setClearingModels(false);
+                  }
+                })();
+              }}
+            >
+              <Trash2 data-icon="inline-start" aria-hidden="true" />
+              {intl.formatMessage({ id: "settings.modelProvider.clearModels" })}
+            </Button>
+          ) : null}
+          {onListRemoteModels ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="default"
+              className="rounded-lg"
+              data-testid={TID_MODEL_PROVIDER_FETCH_MODELS_BUTTON}
+              disabled={fetchingModels}
+              aria-busy={fetchingModels}
+              onClick={() => {
+                if (fetchingModels) return;
+                setFetchingModels(true);
+                void onListRemoteModels()
+                  .then((modelIds) => {
+                    setRemoteModelIds(modelIds);
+                    setRemoteModelsDialogOpen(true);
+                  })
+                  .catch(() => undefined)
+                  .finally(() => {
+                    setFetchingModels(false);
+                  });
+              }}
+            >
+              <Download data-icon="inline-start" aria-hidden="true" />
+              {intl.formatMessage({
+                id: fetchingModels
+                  ? "settings.modelProvider.fetchingModels"
+                  : "settings.modelProvider.fetchModels",
+              })}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="default"
+            className="rounded-lg"
+            data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
+            onClick={openAddDialog}
+          >
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
+          </Button>
+        </div>
       </div>
       {models.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-input-border bg-input">
@@ -523,7 +617,7 @@ export function ProviderModelsSection({
                       })
                     }
                     settingsRevision={settingsRevision}
-                    onDelete={!model.builtin ? () => onDeleteModel(model.modelId) : undefined}
+                    onDelete={() => onDeleteModel(model.modelId)}
                     onEnabledChange={(enabled) => {
                       void Promise.resolve(onModelEnabledChange?.(model.modelId, enabled)).catch(
                         () => undefined,
@@ -576,6 +670,25 @@ export function ProviderModelsSection({
             void editor.flush().catch(() => undefined);
           }}
         />
+        {onImportRemoteModels ? (
+          <ProviderRemoteModelsDialog
+            open={remoteModelsDialogOpen}
+            remoteModelIds={remoteModelIds}
+            existingModelIds={new Set(models.map((model) => model.modelId))}
+            saving={importingModels}
+            onOpenChange={setRemoteModelsDialogOpen}
+            onConfirm={async (modelIds) => {
+              setImportingModels(true);
+              try {
+                await onImportRemoteModels(modelIds);
+                setRemoteModelsDialogOpen(false);
+                setRemoteModelIds([]);
+              } finally {
+                setImportingModels(false);
+              }
+            }}
+          />
+        ) : null}
       </>
     </div>
   );

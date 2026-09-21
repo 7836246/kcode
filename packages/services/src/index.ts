@@ -7,6 +7,8 @@ export {
   type ModelSelectionView,
   type ModelSelectionViewInput,
   type ProviderSettingsProviderView,
+  type ProviderSettingsRemoteModelsListResult,
+  type ProviderSettingsRemoteModelsResult,
   type ProviderSettingsView,
 } from "./model-provider/providerFacadeServices.js";
 export {

@@ -132,6 +132,32 @@ export function useModelProviders(target: {
     [commitProviderSettingsView, providerSettingsService],
   );
 
+  const listRemoteProviderModels = useCallback(
+    async (providerId: string) => {
+      const result = await providerSettingsService.listRemoteProviderModels(providerId);
+      return result.modelIds;
+    },
+    [providerSettingsService],
+  );
+
+  const importRemoteProviderModels = useCallback(
+    async (providerId: string, modelIds: readonly string[]) => {
+      const result = await providerSettingsService.importRemoteProviderModels(providerId, modelIds);
+      commitProviderSettingsView(result.view);
+      return result;
+    },
+    [commitProviderSettingsView, providerSettingsService],
+  );
+
+  const clearProviderModels = useCallback(
+    async (providerId: string) => {
+      const view = await providerSettingsService.clearProviderModels(providerId);
+      commitProviderSettingsView(view);
+      return view;
+    },
+    [commitProviderSettingsView, providerSettingsService],
+  );
+
   const deletePersonalModel = useCallback(
     async (providerId: string, modelId: string) => {
       const view = await providerSettingsService.deletePersonalModel(providerId, modelId);
@@ -228,6 +254,9 @@ export function useModelProviders(target: {
     savePersonalModelDraft,
     setPersonalModelEnabled,
     deletePersonalModel,
+    listRemoteProviderModels,
+    importRemoteProviderModels,
+    clearProviderModels,
     deleteProvider,
     reorderProviderModels,
     saveDisplayOrder,

@@ -17,6 +17,12 @@ import {
   resolveProviderTemplateName,
 } from "./config/index.js";
 import { resolveOwnedOrder } from "./owned-order.js";
+import {
+  normalizeHiddenInheritedModelIds,
+  resolvePersonalModelDeletionPlan,
+  resolveRemoteModelImportPlan,
+  type RemoteModelImportPlan,
+} from "./personal-model-membership.js";
 import type { ModelSelection } from "@kcode/shared/model-selection";
 import type { ProviderConfigSnapshot, ProviderSource } from "./sources.js";
 import {
@@ -534,31 +540,124 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
     const builtin = await this.#kcodeBuiltinSource.read();
     return this.#updatePersonal((current) => {
       assertMembershipCurrent(membership, normalizedProviderId, current);
-      const provider = current.providers.get(normalizedProviderId);
+      const provider = writableProviderOverlay(builtin, current, normalizedProviderId);
       const inherited =
         membership?.inheritedModelIds ??
         resolveProviderBuiltinModelIds(builtin, current.providers, normalizedProviderId);
-      if (inherited.includes(normalizedModelId))
-        throw new Error(`Built-in Model 不能删除: ${normalizedProviderId}/${normalizedModelId}`);
-      if (!provider?.personalModelIds?.includes(normalizedModelId)) {
-        throw new Error(`Personal Model 不存在: ${normalizedProviderId}/${normalizedModelId}`);
+      const plan = resolvePersonalModelDeletionPlan({
+        modelId: normalizedModelId,
+        inheritedModelIds: inherited,
+        personalModelIds: provider.personalModelIds ?? [],
+        hiddenInheritedModelIds: provider.hiddenInheritedModelIds,
+      });
+      if (plan.kind === "inherited") {
+        return {
+          providers: current.providers.set(
+            normalizedProviderId,
+            provider.withHiddenInheritedModelIds(plan.nextHiddenInheritedModelIds),
+          ),
+          models: current.models,
+          providerOrder: current.providerOrder,
+        };
       }
       return {
         providers: current.providers.set(
           normalizedProviderId,
           provider
-            .withPersonalModelIds(
-              provider.personalModelIds.filter((candidate) => candidate !== normalizedModelId),
-            )
+            .withPersonalModelIds(plan.nextPersonalModelIds)
             .withModelOrder(
-              normalizeModelOrder(
-                inherited,
-                provider.personalModelIds.filter((candidate) => candidate !== normalizedModelId),
-                provider.modelOrder ?? [],
-              ),
+              normalizeModelOrder(inherited, plan.nextPersonalModelIds, provider.modelOrder ?? []),
             ),
         ),
         models: current.models.deleteExact(normalizedProviderId, normalizedModelId),
+        providerOrder: current.providerOrder,
+      };
+    });
+  }
+
+  async importRemoteModels(
+    providerId: ProviderId,
+    remoteModelIds: readonly ModelId[],
+    membership?: ProviderModelMembership,
+  ): Promise<RemoteModelImportPlan> {
+    const normalizedProviderId = normalizeId("providerId", providerId);
+    const builtin = await this.#kcodeBuiltinSource.read();
+    let resolvedPlan: RemoteModelImportPlan | undefined;
+    await this.#updatePersonal((current) => {
+      assertMembershipCurrent(membership, normalizedProviderId, current);
+      const provider = writableProviderOverlay(builtin, current, normalizedProviderId);
+      const inherited =
+        membership?.inheritedModelIds ??
+        resolveProviderBuiltinModelIds(builtin, current.providers, normalizedProviderId);
+      const plan = resolveRemoteModelImportPlan({
+        remoteModelIds,
+        inheritedModelIds: inherited,
+        personalModelIds: provider.personalModelIds ?? [],
+        hiddenInheritedModelIds: provider.hiddenInheritedModelIds,
+      });
+      resolvedPlan = plan;
+      let models = current.models;
+      for (const modelId of plan.addedModelIds) {
+        models = models.setExact(
+          normalizedProviderId,
+          modelId,
+          new ModelConfig({ enabled: true }),
+          true,
+        );
+      }
+      return {
+        providers: current.providers.set(
+          normalizedProviderId,
+          provider
+            .withPersonalModelIds(plan.nextPersonalModelIds)
+            .withHiddenInheritedModelIds(plan.nextHiddenInheritedModelIds)
+            .withModelOrder(
+              normalizeModelOrder(
+                inherited,
+                plan.nextPersonalModelIds,
+                [
+                  ...(provider.modelOrder ?? []),
+                  ...plan.addedModelIds,
+                  ...plan.restoredInheritedModelIds,
+                ],
+              ),
+            ),
+        ),
+        models,
+        providerOrder: current.providerOrder,
+      };
+    });
+    if (!resolvedPlan) throw new Error(`导入远端模型失败: ${normalizedProviderId}`);
+    return resolvedPlan;
+  }
+
+  async clearVisibleModels(
+    providerId: ProviderId,
+    membership?: ProviderModelMembership,
+  ): Promise<ProviderConfigLayerSnapshot> {
+    const normalizedProviderId = normalizeId("providerId", providerId);
+    const builtin = await this.#kcodeBuiltinSource.read();
+    return this.#updatePersonal((current) => {
+      assertMembershipCurrent(membership, normalizedProviderId, current);
+      const provider = writableProviderOverlay(builtin, current, normalizedProviderId);
+      const inherited =
+        membership?.inheritedModelIds ??
+        resolveProviderBuiltinModelIds(builtin, current.providers, normalizedProviderId);
+      let models = current.models;
+      for (const modelId of provider.personalModelIds ?? []) {
+        models = models.deleteExact(normalizedProviderId, modelId);
+      }
+      return {
+        providers: current.providers.set(
+          normalizedProviderId,
+          provider
+            .withPersonalModelIds([])
+            .withHiddenInheritedModelIds(
+              normalizeHiddenInheritedModelIds(inherited, inherited),
+            )
+            .withModelOrder([]),
+        ),
+        models,
         providerOrder: current.providerOrder,
       };
     });
@@ -629,7 +728,11 @@ function normalizePersonalProviderMembership(
   const personalModelIds = uniqueInOrder(personal.personalModelIds ?? []).filter(
     (modelId) => !builtinSet.has(modelId),
   );
-  let normalized = personal.withPersonalModelIds(personalModelIds);
+  let normalized = personal
+    .withPersonalModelIds(personalModelIds)
+    .withHiddenInheritedModelIds(
+      normalizeHiddenInheritedModelIds(builtinModelIds, personal.hiddenInheritedModelIds),
+    );
   if (personal.modelOrder !== undefined && personal.modelOrder !== null) {
     normalized = normalized.withModelOrder(
       normalizeModelOrder(builtinModelIds, personalModelIds, personal.modelOrder),

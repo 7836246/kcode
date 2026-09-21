@@ -19,6 +19,28 @@ KCode 不再提供智谱 / Z.ai / BigModel 官方账号、OAuth、编程套餐�
 - MCP 协议自己的 OAuth（与智谱账号登录无关）
 - 用户已经手填的自定义供应商（即使 baseUrl 指向第三方域名）
 
+## 自定义供应商模型成员
+
+模板里的 `builtinModelIds` 只是该实例的默认目录，不是设置页里不可删的硬成员。实例成员只由 Personal Overlay 拥有：
+
+- `personalModelIds`：用户添加的模型
+- `hiddenInheritedModelIds`：用户从本实例隐藏的模板模型
+
+```text
+删除个人模型 → 去掉 personalModelIds
+删除模板模型 → 写入 hiddenInheritedModelIds → Settings View / Registry 不再展示
+保存名称/连接/Key → withModelMembershipFrom 保留成员，不得清掉隐藏名单
+
+获取模型列表 → 等待该 Provider 在途写入 → 读已保存 Base URL / API 格式 / API Key
+            → Host GET 远端目录（不经 Agent runtime）→ 此时不改成员
+            → 弹窗勾选要写入的模型（已在实例中的只展示、不可改；新模型默认不勾选）
+            → 确认后一次事务导入勾选项；取消或全不选不写盘
+清空模型 → 确认后隐藏全部模板模型并清空个人模型；连接配置保留
+失败 → 不改成员；UI 只报本次错误
+```
+
+一键获取使用已提交的连接配置。草稿未失焦保存时，按仓库里的正式配置请求。远端目录可以很多，不能在未确认时整表写入。
+
 磁盘上残留的 `oauth:*` 凭据、`zhipu-account` 配置和官方账号模型选择会被忽略，不再向 Z.ai / BigModel 官方账号接口发请求。
 
 ## 所有者
@@ -41,3 +63,10 @@ KCode 不再提供智谱 / Z.ai / BigModel 官方账号、OAuth、编程套餐�
 - 仅有残留官方账号模型时，不视为已有可用供应商
 - Host 不再注册 OAuth、Coding Plan 订阅服务
 - 内置 provider 配置不再包含官方智谱模板或 `account:zai|bigmodel-*`
+- 模板实例（如 xAI 的 grok-4.6）模型行显示删除，删除后设置列表和聊天选择都不再出现该模型
+- 删除个人添加的模型后，该模型从本实例消失
+- 保存 Base URL / API Key 不会把已删除的模板模型重新加回来
+- 「获取模型列表」先弹出远端目录供勾选，确认后才写入；取消不改成员
+- 新拉到的远端模型默认不勾选；已在实例中的只展示为已添加
+- 「清空」确认后当前实例模型列表为空，Base URL / API Key 仍在
+- 获取失败或缺少连接配置时，成员保持原样并提示原因

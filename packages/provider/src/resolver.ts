@@ -20,6 +20,7 @@ import {
   type ProviderId,
 } from "./config/index.js";
 import { resolveOwnedOrder } from "./owned-order.js";
+import { resolveVisibleInheritedModelIds } from "./personal-model-membership.js";
 import type { AccountProviderStates } from "./account-provider-state.js";
 import {
   isRetiredOfficialProvider,
@@ -241,10 +242,13 @@ export class ProviderConfigResolver {
       issues.push(...providerIssues);
       const builtinModelIds = config.builtinModelIds ?? [];
       const personalModelIds = config.personalModelIds ?? [];
-      const builtinIdsInOrder = uniqueInOrder(builtinModelIds);
-      const builtinIds = new Set(builtinIdsInOrder);
+      const inheritedIds = uniqueInOrder(builtinModelIds);
+      const builtinIdsInOrder = uniqueInOrder(
+        resolveVisibleInheritedModelIds(inheritedIds, config.hiddenInheritedModelIds),
+      );
+      const inheritedIdsSet = new Set(inheritedIds);
       const personalIdsInOrder = uniqueInOrder(personalModelIds).filter(
-        (modelId) => !builtinIds.has(modelId),
+        (modelId) => !inheritedIdsSet.has(modelId),
       );
       const orderedModelIds = resolveOwnedOrder(
         builtinIdsInOrder,
@@ -286,7 +290,7 @@ export class ProviderConfigResolver {
         return Object.freeze({
           kind: "candidate",
           modelId,
-          source: builtinIds.has(modelId) ? "builtin" : "personal",
+          source: inheritedIdsSet.has(modelId) ? "builtin" : "personal",
           config: modelConfig,
           effectiveBuiltinConfig,
           issues: Object.freeze(modelIssues),

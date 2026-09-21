@@ -15,7 +15,12 @@ import {
   type ProviderSettingsView,
   type ResolveModelConfigInput,
   type SavePersonalModelDraftInput,
+  isApiKeyAccess,
 } from "@kcode/provider";
+import {
+  fetchProviderRemoteModelIds,
+  ProviderRemoteModelsError,
+} from "./providerRemoteModels.js";
 import { createServiceDescriptor } from "../descriptors.js";
 import type { ModelConnectivityResult } from "@kcode/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
@@ -26,6 +31,16 @@ export type {
   ModelSelectionViewInput,
   ProviderSettingsView,
 } from "@kcode/provider";
+
+export interface ProviderSettingsRemoteModelsResult {
+  readonly view: ProviderSettingsView;
+  readonly addedCount: number;
+  readonly restoredCount: number;
+}
+
+export interface ProviderSettingsRemoteModelsListResult {
+  readonly modelIds: readonly string[];
+}
 
 export interface IProviderSettingsService {
   readonly onDidChange: Event<ProviderSettingsView>;
@@ -58,6 +73,12 @@ export interface IProviderSettingsService {
     nextModelId: ModelId,
   ): Promise<ProviderSettingsView>;
   deletePersonalModel(providerId: ProviderId, modelId: ModelId): Promise<ProviderSettingsView>;
+  listRemoteProviderModels(providerId: ProviderId): Promise<ProviderSettingsRemoteModelsListResult>;
+  importRemoteProviderModels(
+    providerId: ProviderId,
+    modelIds: readonly string[],
+  ): Promise<ProviderSettingsRemoteModelsResult>;
+  clearProviderModels(providerId: ProviderId): Promise<ProviderSettingsView>;
   savePersonalModelDraft(input: SavePersonalModelDraftInput): Promise<ProviderSettingsView>;
   setPersonalModelEnabled(
     providerId: ProviderId,
@@ -156,6 +177,45 @@ export function createProviderSettingsService(
     deletePersonalModel: async (providerId, modelId) => {
       await ensureReady();
       return facade.deletePersonalModel(providerId, modelId);
+    },
+    listRemoteProviderModels: async (providerId) => {
+      await ensureReady();
+      await facade.waitForProviderOperations(providerId);
+      const provider = facade
+        .getView()
+        .providers.find((item) => item.providerId === providerId);
+      if (!provider) {
+        throw new ProviderRemoteModelsError("missing-connection", `Provider 不存在: ${providerId}`);
+      }
+      const api = provider.effectiveConfig.api;
+      const access = provider.effectiveConfig.access;
+      if (!api?.baseUrl?.trim() || !isApiKeyAccess(access) || !access.apiKey?.trim()) {
+        throw new ProviderRemoteModelsError(
+          "missing-connection",
+          "请先填写 Base URL 和 API Key",
+        );
+      }
+      return {
+        modelIds: await fetchProviderRemoteModelIds({
+          apiType: api.type ?? undefined,
+          baseUrl: api.baseUrl,
+          apiKey: access.apiKey,
+          headers: api.headers,
+        }),
+      };
+    },
+    importRemoteProviderModels: async (providerId, modelIds) => {
+      await ensureReady();
+      const imported = await facade.importRemoteModels(providerId, modelIds);
+      return {
+        view: imported.view,
+        addedCount: imported.addedModelIds.length,
+        restoredCount: imported.restoredInheritedModelIds.length,
+      };
+    },
+    clearProviderModels: async (providerId) => {
+      await ensureReady();
+      return facade.clearVisibleModels(providerId);
     },
     savePersonalModelDraft: async (input) => {
       await ensureReady();

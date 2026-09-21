@@ -142,6 +142,9 @@ export function InlineEditableProviderCard({
   onSavePersonalModelDraft,
   onSetPersonalModelEnabled,
   onDeletePersonalModel,
+  onListRemoteModels,
+  onImportRemoteModels,
+  onClearModels,
   onDelete,
   onTestModel,
   onReorderModelIds,
@@ -169,6 +172,15 @@ export function InlineEditableProviderCard({
     enabled: boolean,
   ) => Promise<unknown>;
   onDeletePersonalModel?: (providerId: string, modelId: string) => Promise<unknown>;
+  onListRemoteModels?: (providerId: string) => Promise<readonly string[]>;
+  onImportRemoteModels?: (
+    providerId: string,
+    modelIds: readonly string[],
+  ) => Promise<{
+    addedCount: number;
+    restoredCount: number;
+  }>;
+  onClearModels?: (providerId: string) => Promise<unknown>;
   onDelete?: () => void | Promise<void>;
   onTestModel?: (providerId: string, modelId: string) => Promise<ModelConnectivityResult>;
   onReorderModelIds?: (modelIds: string[]) => Promise<void>;
@@ -672,26 +684,91 @@ export function InlineEditableProviderCard({
       if (!model) {
         return;
       }
-      if (!model.builtin) {
-        void runSaveOperation(
-          async () => {
-            if (!onDeletePersonalModel)
-              throw new Error("当前设置入口未装配 Personal Model 删除能力");
-            await onDeletePersonalModel(provider.providerId, model.modelId);
-          },
-          { modelId: model.modelId, operation: "delete" },
-        ).catch((error) => {
-          logger.warn("[ModelProviderSection] 删除 Personal Model 失败", {
-            providerId: provider.providerId,
-            modelId: model.modelId,
-            error,
-          });
+      void runSaveOperation(
+        async () => {
+          if (!onDeletePersonalModel) throw new Error("当前设置入口未装配 Model 删除能力");
+          await onDeletePersonalModel(provider.providerId, model.modelId);
+        },
+        { modelId: model.modelId, operation: "delete" },
+      ).catch((error) => {
+        logger.warn("[ModelProviderSection] 删除模型失败", {
+          providerId: provider.providerId,
+          modelId: model.modelId,
+          error,
         });
-        return;
-      }
+      });
     },
     [models, onDeletePersonalModel, provider.providerId, runSaveOperation],
   );
+
+  const handleListRemoteModels = useCallback(async () => {
+    if (!onListRemoteModels) throw new Error("当前设置入口未装配远端模型列表获取能力");
+    const feedbackKey = `fetch-models:${provider.providerId}`;
+    showFeedback({
+      key: feedbackKey,
+      message: intl.formatMessage({ id: "settings.modelProvider.fetchingModels" }),
+      state: "pending",
+    });
+    try {
+      const modelIds = await onListRemoteModels(provider.providerId);
+      showFeedback({
+        key: feedbackKey,
+        message: intl.formatMessage(
+          { id: "settings.modelProvider.fetchModelsListed" },
+          { count: modelIds.length },
+        ),
+        state: "success",
+      });
+      return modelIds;
+    } catch (error) {
+      showFeedback({
+        key: feedbackKey,
+        message: intl.formatMessage(
+          { id: "settings.modelProvider.fetchModelsFailure" },
+          { error: error instanceof Error ? error.message : String(error) },
+        ),
+        state: "failure",
+        durationMs: 8_000,
+        dismissible: true,
+        dismissLabel: intl.formatMessage({ id: "common.close" }),
+      });
+      logger.warn("[ModelProviderSection] 获取远端模型列表失败", {
+        providerId: provider.providerId,
+        error,
+      });
+      throw error;
+    }
+  }, [intl, onListRemoteModels, provider.providerId, showFeedback]);
+
+  const handleImportRemoteModels = useCallback(
+    async (modelIds: readonly string[]) => {
+      if (!onImportRemoteModels) throw new Error("当前设置入口未装配远端模型导入能力");
+      const result = await onImportRemoteModels(provider.providerId, modelIds);
+      const addedCount = result.addedCount + result.restoredCount;
+      showFeedback({
+        key: `fetch-models:${provider.providerId}`,
+        message:
+          addedCount > 0
+            ? intl.formatMessage(
+                { id: "settings.modelProvider.fetchModelsSuccess" },
+                { added: addedCount },
+              )
+            : intl.formatMessage({ id: "settings.modelProvider.fetchModelsEmpty" }),
+        state: "success",
+      });
+    },
+    [intl, onImportRemoteModels, provider.providerId, showFeedback],
+  );
+
+  const handleClearModels = useCallback(async () => {
+    if (!onClearModels) throw new Error("当前设置入口未装配模型清空能力");
+    await onClearModels(provider.providerId);
+    showFeedback({
+      key: `clear-models:${provider.providerId}`,
+      message: intl.formatMessage({ id: "settings.modelProvider.clearModelsSuccess" }),
+      state: "success",
+    });
+  }, [intl, onClearModels, provider.providerId, showFeedback]);
 
   const handleModelEnabledChange = useCallback(
     async (modelId: string, enabled: boolean) => {
@@ -851,6 +928,9 @@ export function InlineEditableProviderCard({
           onModelCommit={handleModelCommit}
           onModelEnabledChange={handleModelEnabledChange}
           onDeleteModel={handleDeleteModel}
+          onListRemoteModels={onListRemoteModels ? handleListRemoteModels : undefined}
+          onImportRemoteModels={onImportRemoteModels ? handleImportRemoteModels : undefined}
+          onClearModels={onClearModels ? handleClearModels : undefined}
           onAddModel={handleAddModel}
           onReorderModelIds={onReorderModelIds ? handleReorderModelIds : undefined}
           settingsRevision={settingsRevision ?? 0}

@@ -1,6 +1,7 @@
 /* oxlint-disable eslint(max-lines) -- Settings/Selection Facade 共享同一套 Registry 投影与写入边界。 */
 import type { ConfigValidationIssue } from "./config-overlay.js";
 import type { ProviderModelMembership } from "./config-service.js";
+import type { RemoteModelImportPlan } from "./personal-model-membership.js";
 import type {
   ModelConfig,
   ModelConfigObject,
@@ -81,6 +82,15 @@ export interface ProviderSettingsMutationTarget {
   deletePersonalModel(
     providerId: ProviderId,
     modelId: ModelId,
+    membership?: ProviderModelMembership,
+  ): Promise<unknown>;
+  importRemoteModels(
+    providerId: ProviderId,
+    remoteModelIds: readonly ModelId[],
+    membership?: ProviderModelMembership,
+  ): Promise<RemoteModelImportPlan>;
+  clearVisibleModels(
+    providerId: ProviderId,
     membership?: ProviderModelMembership,
   ): Promise<unknown>;
   savePersonalModelDraft(
@@ -173,6 +183,13 @@ export interface ProviderSettingsView {
   readonly providerTemplates: readonly ProviderSettingsTemplateView[];
   readonly providerOrder: readonly ProviderId[];
   readonly providers: readonly ProviderSettingsProviderView[];
+}
+
+export interface ProviderSettingsRemoteModelsImportResult {
+  readonly view: ProviderSettingsView;
+  readonly addedModelIds: readonly ModelId[];
+  readonly restoredInheritedModelIds: readonly ModelId[];
+  readonly skippedModelIds: readonly ModelId[];
 }
 
 export interface ProviderSettingsCreationResult {
@@ -393,6 +410,33 @@ export class ProviderSettingsFacade {
     );
   }
 
+  async importRemoteModels(
+    providerId: ProviderId,
+    remoteModelIds: readonly ModelId[],
+  ): Promise<ProviderSettingsRemoteModelsImportResult> {
+    let plan: RemoteModelImportPlan | undefined;
+    const view = await this.#mutateProvider(providerId, "import-remote-models", async (target) => {
+      plan = await target.importRemoteModels(
+        providerId,
+        remoteModelIds,
+        this.#modelMembership(providerId),
+      );
+    });
+    if (!plan) throw new Error(`导入远端模型失败: ${providerId}`);
+    return {
+      view,
+      addedModelIds: plan.addedModelIds,
+      restoredInheritedModelIds: plan.restoredInheritedModelIds,
+      skippedModelIds: plan.skippedModelIds,
+    };
+  }
+
+  clearVisibleModels(providerId: ProviderId): Promise<ProviderSettingsView> {
+    return this.#mutateProvider(providerId, "clear-visible-models", (target) =>
+      target.clearVisibleModels(providerId, this.#modelMembership(providerId)),
+    );
+  }
+
   savePersonalModelDraft(input: SavePersonalModelDraftInput): Promise<ProviderSettingsView> {
     return this.#mutateProvider(input.providerId, "save-model-draft", async (target) => {
       const snapshot = requireSnapshot(this.#source);
@@ -437,13 +481,12 @@ export class ProviderSettingsFacade {
       (item) => item.providerId === providerId,
     );
     if (!provider) throw new Error(`Provider 不存在: ${providerId}`);
-    // 配置成员与可执行模型不是同一名单：禁用、无权益和不完整模型仍可编辑。
-    // Account 的空/替换名单也必须原样使用，不能再与静态 Built-in 取并集。
+    // 配置成员与可执行/可见模型不是同一名单：禁用、无权益、不完整和已隐藏的
+    // 继承模型仍属于该实例，不能只按当前 Settings 列表回推。
+    // Account 的空/替换名单以 overlay 后的 builtinModelIds 为准，不再与静态 Built-in 取并集。
     return Object.freeze({
       providerId,
-      inheritedModelIds: Object.freeze(
-        provider.models.filter((model) => model.source === "builtin").map((model) => model.modelId),
-      ),
+      inheritedModelIds: Object.freeze([...(provider.config.builtinModelIds ?? [])]),
       personalRevision: snapshot.config.personalRevision,
       assertCurrent: () => {
         if (this.#source.getSnapshot() !== snapshot)

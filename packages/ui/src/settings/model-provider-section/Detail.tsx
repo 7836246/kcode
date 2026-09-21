@@ -19,6 +19,9 @@ export function ModelProviderSectionDetail({
   onSavePersonalModelDraft,
   onSetPersonalModelEnabled,
   onDeletePersonalModel,
+  onListRemoteModels,
+  onImportRemoteModels,
+  onClearModels,
   onDelete,
   onReorderProviderModels,
   onTestModel,
@@ -41,6 +44,15 @@ export function ModelProviderSectionDetail({
     enabled: boolean,
   ) => Promise<unknown>;
   onDeletePersonalModel?: (providerId: string, modelId: string) => Promise<unknown>;
+  onListRemoteModels?: (providerId: string) => Promise<readonly string[]>;
+  onImportRemoteModels?: (
+    providerId: string,
+    modelIds: readonly string[],
+  ) => Promise<{
+    addedCount: number;
+    restoredCount: number;
+  }>;
+  onClearModels?: (providerId: string) => Promise<unknown>;
   onDelete: (provider: ProviderSettingsFormProvider) => Promise<void>;
   onReorderProviderModels?: (providerId: string, modelIds: string[]) => Promise<void>;
   onTestModel: (providerId: string, modelId: string) => Promise<ModelConnectivityResult>;
@@ -58,6 +70,9 @@ export function ModelProviderSectionDetail({
     onSavePersonalModelDraft,
     onSetPersonalModelEnabled,
     onDeletePersonalModel,
+    onListRemoteModels,
+    onImportRemoteModels,
+    onClearModels,
     settingsRevision: providerSettingsView?.revision,
   };
 

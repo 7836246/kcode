@@ -177,6 +177,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
   readonly api?: ProviderApiConfig | null;
   readonly builtinModelIds?: ProviderConfigObject["builtinModelIds"];
   readonly personalModelIds?: ProviderConfigObject["personalModelIds"];
+  readonly hiddenInheritedModelIds?: ProviderConfigObject["hiddenInheritedModelIds"];
   readonly modelOrder?: ProviderConfigObject["modelOrder"];
   readonly visibility?: ProviderConfigObject["visibility"];
 
@@ -188,6 +189,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
     this.api = input.api;
     this.builtinModelIds = freezeModelIds(input.builtinModelIds);
     this.personalModelIds = freezeModelIds(input.personalModelIds);
+    this.hiddenInheritedModelIds = freezeModelIds(input.hiddenInheritedModelIds);
     this.modelOrder = freezeModelIds(input.modelOrder);
     this.visibility = input.visibility;
     Object.freeze(this);
@@ -201,6 +203,10 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       api: this.overlayConfig(this.api, next.api),
       builtinModelIds: this.overlayValue(this.builtinModelIds, next.builtinModelIds),
       personalModelIds: this.overlayValue(this.personalModelIds, next.personalModelIds),
+      hiddenInheritedModelIds: this.overlayValue(
+        this.hiddenInheritedModelIds,
+        next.hiddenInheritedModelIds,
+      ),
       modelOrder: this.overlayValue(this.modelOrder, next.modelOrder),
       visibility: this.overlayValue(this.visibility, next.visibility),
     });
@@ -214,6 +220,10 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
     return this.overlay(new ProviderConfig({ personalModelIds: modelIds }));
   }
 
+  withHiddenInheritedModelIds(modelIds: readonly ModelId[]): ProviderConfig {
+    return this.overlay(new ProviderConfig({ hiddenInheritedModelIds: modelIds }));
+  }
+
   withModelOrder(modelOrder: readonly ModelId[]): ProviderConfig {
     return this.overlay(new ProviderConfig({ modelOrder }));
   }
@@ -225,6 +235,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       api: this.api,
       builtinModelIds: this.builtinModelIds,
       personalModelIds: this.personalModelIds,
+      hiddenInheritedModelIds: this.hiddenInheritedModelIds,
       modelOrder: this.modelOrder,
       visibility: this.visibility,
     });
@@ -239,6 +250,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       api: this.api,
       builtinModelIds: source?.builtinModelIds,
       personalModelIds: source?.personalModelIds,
+      hiddenInheritedModelIds: source?.hiddenInheritedModelIds,
       modelOrder: source?.modelOrder,
       visibility: this.visibility,
     });
@@ -257,6 +269,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       api: this.api?.toJSON() ?? this.api,
       builtinModelIds: this.builtinModelIds,
       personalModelIds: this.personalModelIds,
+      hiddenInheritedModelIds: this.hiddenInheritedModelIds,
       modelOrder: this.modelOrder,
       visibility: this.visibility,
     });
