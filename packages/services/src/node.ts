@@ -1330,6 +1330,10 @@ export function createLocalServices(options: {
   // 官方账号登录已下线；onboarding 不再从 oauth 残留补 userId。
   const onboardingRecordService = createOnboardingRecordService({
     loadUserId: async () => null,
+    loadHasStoredOccupation: async () => {
+      const settings = await settingService.get();
+      return Boolean(settings.onboardingOccupation);
+    },
   });
   const providerConfigLog = createServiceLogger("provider-config");
   const clientConfigPlatform = resolveClientConfigPlatform();

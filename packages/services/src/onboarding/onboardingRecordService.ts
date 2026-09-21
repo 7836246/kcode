@@ -57,7 +57,7 @@ export function createOnboardingRecordService(
     return queued;
   };
 
-  return {
+  const service: IOnboardingRecordService = {
     async appendRecord(deviceMid: string, entry: OnboardingRecordEntryInput): Promise<void> {
       const userId = await options.loadUserId();
       await enqueueWrite(async () => {
@@ -121,8 +121,30 @@ export function createOnboardingRecordService(
     async shouldOnboard(): Promise<boolean> {
       const userId = await options.loadUserId();
       const file = await readRecordFile(getRecordFile());
-      if (!file) return true;
-      return !file.entries.some((entry) => entry.userId === userId);
+      if (file?.entries.some((entry) => entry.userId === userId)) {
+        return false;
+      }
+      // 3.14.0 分叉后有人已经用过、settings 里有职业，但从未写过 record。
+      // 只认文件会把老用户当成首跑。职业已存在即视为引导过。
+      if (options.loadHasStoredOccupation && (await options.loadHasStoredOccupation())) {
+        return false;
+      }
+      return true;
+    },
+
+    async dismissAutoOnboarding(deviceMid: string): Promise<void> {
+      const userId = await options.loadUserId();
+      const file = await readRecordFile(getRecordFile());
+      if (file?.entries.some((entry) => entry.userId === userId)) {
+        return;
+      }
+      await service.appendRecord(deviceMid, {
+        occupation: null,
+        interfaceMode: null,
+        memoryEnabled: null,
+        proactiveSuggestionsEnabled: null,
+        completedAt: new Date().toISOString(),
+      });
     },
 
     async getLatestEntry(): Promise<OnboardingRecordEntry | null> {
@@ -187,4 +209,5 @@ export function createOnboardingRecordService(
       });
     },
   };
+  return service;
 }

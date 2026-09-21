@@ -19,18 +19,10 @@ import type { InterfaceMode } from "@/lib/interfaceMode.js";
 import { logger } from "@/logger.js";
 import { DesktopWindowControls } from "@/DesktopWindowControls.js";
 import type { OnboardingRecordEntry } from "@kcode/shared";
-
-/** 追加本地引导记录（userId 由 host 补全）；channel 缺失挂起时 5 秒超时按写失败处理。 */
-async function appendOnboardingRecord(
-  service: NonNullable<ReturnType<typeof useOnboardingRecordService>>,
-  deviceMid: string,
-  entry: Parameters<typeof service.appendRecord>[1],
-): Promise<void> {
-  await Promise.race([
-    service.appendRecord(deviceMid, entry),
-    new Promise((_, reject) => setTimeout(() => reject(new Error("appendRecord timeout")), 5000)),
-  ]);
-}
+import {
+  persistCompletedOnboardingRecord,
+  scheduleDismissAutoOnboarding,
+} from "@/onboarding/persistOnboardingRecord.js";
 
 export function OccupationOnboarding({
   children,
@@ -99,7 +91,22 @@ export function OccupationOnboarding({
     setStep(0);
     setDismissed(true);
     setRequested(false);
-  }, [captureEnd, intl, setRequested]);
+    // 自动弹出关掉必须落盘，否则重启又弹。手动打开时 needsOnboarding 为 false，不改记录。
+    scheduleDismissAutoOnboarding({
+      needsOnboarding,
+      service: onboardingRecord,
+      deviceMid: platform.getDeviceId(),
+      markOnboarded,
+    });
+  }, [
+    captureEnd,
+    intl,
+    markOnboarded,
+    needsOnboarding,
+    onboardingRecord,
+    platform,
+    setRequested,
+  ]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (
@@ -120,8 +127,7 @@ export function OccupationOnboarding({
         return;
       }
       if (event.key === "Escape" && onboardingVisible && !saving) {
-        // 直接退出引导（设置里主动打开的场景尤其需要）：不保存、不改记录，
-        // 本次会话不再显示，下次启动按记录重新触发。
+        // 自动弹出的关闭由 closeOnboarding 落盘；设置里手动打开只关本次界面。
         event.preventDefault();
         event.stopImmediatePropagation();
         closeOnboarding();
@@ -234,25 +240,16 @@ export function OccupationOnboarding({
       setRequested(false);
       if (!skip && migration) requestOnboardingDialog("migration");
       logger.info("[occupation-onboarding] 偏好保存完成", { interfaceMode: mode });
-      if (onboardingRecord) {
-        try {
-          // 追加本地引导记录（userId 由 host 按登录态补全），后续上传服务器。
-          // appendRecord 走 RPC，channel 缺失时会挂起导致保存按钮永远转圈，加超时保护。
-          // 跳过是显式答案：该页被跳过时记 null（occupation 在第 1 步跳过时已是 null，
-          // mode 在第 2 步跳过时置 null，偏好页整体跳过时两个布尔记 null）。
-          await appendOnboardingRecord(onboardingRecord, platform.getDeviceId(), {
-            occupation,
-            interfaceMode: mode,
-            memoryEnabled: skip ? null : memory,
-            proactiveSuggestionsEnabled: skip ? null : mode === "office" && suggestions,
-            completedAt: new Date().toISOString(),
-          });
-          markOnboarded();
-        } catch (cause) {
-          // 偏好已保存成功，记录写失败只留 warn 日志，不打断用户；下次启动按记录会再次触发引导。
-          logger.warn("[occupation-onboarding] 写入引导记录失败", { error: String(cause) });
-        }
-      }
+      await persistCompletedOnboardingRecord({
+        service: onboardingRecord,
+        deviceMid: platform.getDeviceId(),
+        occupation,
+        mode,
+        memory,
+        suggestions,
+        skip,
+        markOnboarded,
+      });
     } catch (cause) {
       logger.warn("[occupation-onboarding] 保存偏好失败", { error: String(cause) });
       setError(true);

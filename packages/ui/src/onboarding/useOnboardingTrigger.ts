@@ -81,8 +81,8 @@ export function useOnboardingTrigger(options: {
       cancelled = true;
       clearTimeout(timeout);
     };
-    // 不依赖 hasStoredOccupation（对应 settings?.onboardingOccupation）：保存成功会改写该字段，
-    // 若记录写入失败会在当场重开引导；记录缺失导致的再次触发按约定留给下次启动。
+    // hasStoredOccupation 只作 RPC 失败/超时时的回退。正式判定在 shouldOnboard，
+    // 由服务同时看 record 与 settings 职业，避免这里再写一套老用户规则。
   }, [onboardingRecord, userId]);
   return [needsOnboarding, () => setNeedsOnboarding(false)];
 }

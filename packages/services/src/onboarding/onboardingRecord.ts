@@ -21,8 +21,16 @@ export interface IOnboardingRecordService {
    * userId 由服务内部按当前登录态补全，调用方不传。
    */
   appendRecord(deviceMid: string, entry: OnboardingRecordEntryInput): Promise<void>;
-  /** 触发判定：当前用户（登录→userId；apikey/未登录→null）没有对应记录或文件不存在时为 true。 */
+  /**
+   * 自动弹出判定：当前身份没有记录，且 settings 也没有职业时为 true。
+   * 已有记录或已有 onboardingOccupation 的老用户不自动弹。
+   */
   shouldOnboard(): Promise<boolean>;
+  /**
+   * 关掉自动弹出的引导：当前身份尚无记录时写入跳过形态条目，重启不再自动弹。
+   * 已有记录时为空操作，避免设置里手动打开再关闭覆盖作答。
+   */
+  dismissAutoOnboarding(deviceMid: string): Promise<void>;
   /**
    * 登录认领：当前 userId 没有条目而存在匿名（null）条目时，把 null 条目移交给该 userId
    * （改写而非复制，避免同一引导行为产生双条目污染上传统计）。同一人"未登录答一次→登录"
@@ -56,6 +64,8 @@ export interface IOnboardingRecordService {
 /** 工厂入参：userId 解析注入（正式装配用 oauthCredentialRepo，测试用桩）。 */
 export interface CreateOnboardingRecordServiceOptions {
   loadUserId: () => Promise<string | null>;
+  /** 老用户信号：settings 已有职业则 shouldOnboard 为 false。缺省视为没有。 */
+  loadHasStoredOccupation?: () => Promise<boolean>;
 }
 
 export type OnboardingRecordServiceFactory = (
