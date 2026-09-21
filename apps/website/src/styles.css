@@ -1,0 +1,33 @@
+@import "./vendor/geist.css";
+@import "./vendor/zcode-tailwind.css";
+
+.hero-visual-theme {
+  pointer-events: none;
+  user-select: none;
+  color-scheme: dark;
+  --background: #161616;
+  --color-background: #161616;
+  --color-background-alt: #161616;
+  --foreground: oklch(98.5% 0 0);
+  --color-foreground: oklch(98.5% 0 0);
+  --muted: oklch(26.9% 0 0);
+  --muted-foreground: oklch(70.8% 0 0);
+  --card: oklch(20.5% 0 0);
+  --color-card: oklch(20.5% 0 0);
+  --border: oklch(100% 0 0 / 0.1);
+  --color-border: oklch(100% 0 0 / 0.1);
+}
+
+.feature-visual {
+  background: #161616;
+}
+
+.site-cta {
+  background-color: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+
+.site-cta-sub {
+  color: color-mix(in oklab, var(--background) 65%, transparent);
+}

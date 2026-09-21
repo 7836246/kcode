@@ -19,6 +19,9 @@
         "src/renderer/src/resource-manager.tsx"
       ]
     },
+    "apps/website": {
+      "entry": ["src/main.tsx", "src/releaseDownloads.mjs", "src/theme.mjs", "src/siteRoute.mjs"]
+    },
     "packages/server": {
       "entry": ["src/index.ts", "src/entry-stdio.ts", "build-remote.ts"]
     },

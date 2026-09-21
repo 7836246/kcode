@@ -3,6 +3,7 @@ packages:
   - apps/kcode-cli
   - apps/kcode-cli/packages/*
   - apps/kcode-cli/tools/*
+  - apps/website
 supportedArchitectures:
   os:
     - current

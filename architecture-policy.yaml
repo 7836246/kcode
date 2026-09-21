@@ -55,6 +55,9 @@ modules:
   - id: kcode-cli
     roots: [apps/kcode-cli]
     managed: false
+  - id: website
+    roots: [apps/website]
+    managed: false
 
 global:
   maxFileLines: 400
