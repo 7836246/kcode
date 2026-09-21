@@ -28,6 +28,16 @@
 
 **KCode** 是开源 AI 编程工作台，提供桌面应用、浏览器界面和终端 Agent。自行配置模型供应商即可使用。
 
+## 安装
+
+安装包在 [GitHub Releases](https://github.com/7836246/kcode/releases/latest)，未签名，下载后即可用。
+
+- **macOS**：拖进应用程序后若提示「已损坏」，执行 `xattr -dr com.apple.quarantine /Applications/KCode.app`
+- **Windows**：SmartScreen 若提示无法识别，选「更多信息」→「仍要运行」
+- **Linux**：AppImage 先 `chmod +x`；deb / rpm 用发行版包管理器安装
+
+更完整的步骤见 [安装文档](https://kcode.wiki/docs/install)。
+
 ## 上游
 
 相对 [ZCode](https://github.com/zai-org/ZCode) 公开源码，KCode 主要改了这些：

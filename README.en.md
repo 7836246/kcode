@@ -28,6 +28,16 @@
 
 **KCode** is an open-source AI coding workspace with a desktop app, a browser UI, and a terminal Agent. Configure your own model providers.
 
+## Install
+
+Installers are on [GitHub Releases](https://github.com/7836246/kcode/releases/latest). They are unsigned and usable after download.
+
+- **macOS**: If it says the app is damaged, run `xattr -dr com.apple.quarantine /Applications/KCode.app`
+- **Windows**: If SmartScreen does not recognize it, choose More info → Run anyway
+- **Linux**: `chmod +x` the AppImage, or install the deb / rpm
+
+Full steps: [Install docs](https://kcode.wiki/docs/install).
+
 ## Upstream
 
 Compared with the public [ZCode](https://github.com/zai-org/ZCode) source, KCode mainly changes the following:
