@@ -20,7 +20,7 @@ import type {
   WorkspaceHookBundleSnapshot,
   WorkspaceId,
 } from "@kcode/contracts";
-import type { KCodeProviderAccountAccess } from "@kcode/shared";
+import type { KCodeProviderAccountAccess, ModelFallbackRef } from "@kcode/shared";
 import type { EffectiveModelSelectionResult } from "@kcode/shared/model-selection";
 import type { RuntimeMessageEntry } from "../agent/message-history.js";
 import type {
@@ -125,6 +125,11 @@ export interface AgentRuntimeConfig {
   mode?: CollaborationMode;
   planEnabled?: boolean;
   modelStreaming?: "off" | "on";
+  /**
+   * 当前工作区的备用模型顺序。主模型在同一回合内因超时、限流或 5xx 失败后按此继续。
+   * 不参与会话选型投影；选型变化由 ModelSelected 单独发布。
+   */
+  modelFallbackChain?: readonly ModelFallbackRef[];
   streamingToolExecution?: "off" | "readOnly";
   /** Session 创建时固定；缺省使用共享的模型上下文预算默认策略。 */
   modelContextBudgetStrategy?: "legacy" | "preflight-v1";

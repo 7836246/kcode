@@ -673,7 +673,7 @@ export interface ModelRequestPayload {
   maxTokens?: number;
 }
 
-export type ModelSelectionOrigin = "registryFallback";
+export type ModelSelectionOrigin = "registryFallback" | "turnFallback";
 
 export interface ModelSelectedPayload {
   modelSelection: ModelSelection;

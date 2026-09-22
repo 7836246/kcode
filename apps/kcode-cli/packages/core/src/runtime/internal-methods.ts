@@ -34,6 +34,7 @@ import type {
   ContextBuilder,
   ExecutionShellSelection,
 } from "./deps.js";
+import type { ModelFallbackRef } from "@kcode/shared";
 import type { BackgroundResultOriginMeta, ContextUsageBreakdownItem } from "@kcode/contracts";
 import type { RuntimeCommand, RuntimeCommandId } from "./command-queue.js";
 import type { RuntimeMessageEntry } from "../agent/message-history.js";
@@ -81,6 +82,7 @@ export interface AgentRuntimeCoreMethods {
   ): Promise<void>;
   getSessionModelSelection(): ModelSelection | undefined;
   setSessionModelSelection(selection: ModelSelection | undefined): void;
+  setModelFallbackChain(chain: readonly ModelFallbackRef[]): void;
   getProjectId(): ProjectId;
   setWorkingDirectory(cwd: string): void;
   ensureSessionPersistedForExternalActivity(

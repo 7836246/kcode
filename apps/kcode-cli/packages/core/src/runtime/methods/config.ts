@@ -22,6 +22,7 @@ import {
   type ChildClientPortsContext,
   type ClientFacingPorts,
 } from "../helpers/child-client-ports.js";
+import { normalizeModelFallbackChain, type ModelFallbackRef } from "@kcode/shared";
 import type { AgentRuntimeConfig, ActiveTurnInfo } from "../types.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import { cloneModelSelection } from "../model-selection.js";
@@ -43,6 +44,13 @@ export async function setExecutionState(
   traceContext?: TraceContext,
 ): Promise<void> {
   await applyRuntimeExecutionState(this, input, { source: "command", traceContext });
+}
+
+export function setModelFallbackChain(
+  this: AgentRuntimeInternal,
+  chain: readonly ModelFallbackRef[],
+): void {
+  this.config.modelFallbackChain = normalizeModelFallbackChain(chain);
 }
 
 export function updateConfig(

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { modelSelectionSchema } from "../model-selection.js";
+import { modelFallbackChainSchema, modelSelectionSchema } from "../model-selection.js";
 
 // ── config──
 export const sessionConfigStateSchema = z.object({
@@ -25,12 +25,14 @@ export const sessionConfigStateSchema = z.object({
       planEnabled: z.boolean(),
     })
     .optional(),
+  /** 工作区备用模型顺序。只随创建请求进入 runtime，投影不把它当成可见 config。 */
+  modelFallbackChain: modelFallbackChainSchema.optional(),
 });
 export type SessionConfigState = z.infer<typeof sessionConfigStateSchema>;
 
 export const sessionModelTransitionSchema = z.object({
   eventId: z.string().min(1),
-  origin: z.literal("registryFallback"),
+  origin: z.enum(["registryFallback", "turnFallback"]),
   from: z.object({
     provider: z.string(),
     model: z.string(),

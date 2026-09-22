@@ -4459,7 +4459,7 @@ export class ProductProjection {
       prev.thoughtLevels.every((value, index) => value === thoughtLevels[index])
     );
     const modelTransition =
-      payload.origin === "registryFallback" &&
+      (payload.origin === "registryFallback" || payload.origin === "turnFallback") &&
       payload.previousModelSelection != null &&
       (payload.previousModelSelection.providerId !== provider ||
         payload.previousModelSelection.modelId !== model)

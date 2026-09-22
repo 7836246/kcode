@@ -1,4 +1,5 @@
 /* oxlint-disable eslint(max-lines) */
+import { ModelFallbackSetting } from "@/settings/ModelFallbackSetting.js";
 import { ArrowLeft, Rocket, type LucideIcon } from "lucide-react";
 import {
   useCallback,
@@ -1285,6 +1286,13 @@ export function SettingsPage({
                       </div>
                       <div className="space-y-8">
                         {activeSection === "general" ? (
+                          <>
+                          <ModelFallbackSetting
+                            remoteSessionId={activeWorkspaceTab?.remoteSessionId}
+                            remoteTarget={activeWorkspaceTab?.remoteTarget}
+                            workspaceIdentity={activeWorkspaceIdentity}
+                            workspacePath={activeWorkspacePath}
+                          />
                           <GeneralSectionContent
                             localePreference={localePreference}
                             interfaceMode={interfaceMode}
@@ -1414,6 +1422,7 @@ export function SettingsPage({
                               })
                             }
                           />
+                          </>
                         ) : activeSection === "appearance" ? (
                           <AppearanceSectionContent
                             codePreviewSettings={codePreviewSettings}

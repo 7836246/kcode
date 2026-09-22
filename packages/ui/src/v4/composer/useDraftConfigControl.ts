@@ -35,6 +35,7 @@ import {
   type V4ComposerDraft,
 } from "@/v4/composer/composerDraftStore.js";
 import { resolveAppFollowupMode } from "@/v4/composer/followupModeSettings.js";
+import { readWorkspaceModelFallbackChain } from "@/lib/modelFallbackSettings.js";
 import { logger } from "@/logger.js";
 import { useKCodeSessionStore } from "@/store/kcodeSessionStore.js";
 
@@ -275,8 +276,12 @@ export function useDraftConfigControl(params: {
     if (appFollowupMode) {
       config.followupMode = appFollowupMode;
     }
+    const modelFallbackChain = readWorkspaceModelFallbackChain(sharedSettings, workspaceKey);
+    if (modelFallbackChain.length > 0) {
+      config.modelFallbackChain = modelFallbackChain;
+    }
     return config;
-  }, [appFollowupMode]);
+  }, [appFollowupMode, sharedSettings, workspaceKey]);
 
   const updateComposerContent = useCallback(
     (content: Pick<V4ComposerDraft, "text" | "editorStateJson" | "mention">) => {

@@ -14,6 +14,7 @@ import type { ActiveTurnSteeringState } from "../types.js";
 import type { SubagentRunOptions } from "@kcode/contracts";
 import type { DrainedPendingInputDiagnostics } from "../types.js";
 import type { TurnMachineImpl } from "../deps.js";
+import type { ModelFallbackRef } from "@kcode/shared";
 import type { RuntimeMessageEntry } from "../../agent/message-history.js";
 
 export type PendingStreamRecoveryRequest = ModelStreamRecoveryStatus;
@@ -92,8 +93,13 @@ export interface RegularTurnLoopState {
   events: SessionEvent[];
   input: string;
   modelResponse: string;
-  /** 本轮固定使用的可调用模型；配置变化只影响以后创建的 Loop。 */
+  /**
+   * 本轮使用的可调用模型。普通配置变化只影响以后创建的 Loop；
+   * 备用模型续跑可以在同一次 turn 里替换它，已提交的工具结果不回滚。
+   */
   model: Model;
+  /** 本回合已经试过的模型，备用续跑不会再选它们。 */
+  modelFallbackTried?: readonly ModelFallbackRef[];
   /** execution 表示当前 Active Model 不能被同 loop 的 guide 改写。 */
   modelSelectionScope?: "execution";
   /** Core Server 的前台 child Selection override；优先于 profile 与父模型继承。 */

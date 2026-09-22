@@ -262,6 +262,24 @@ export async function applyRequestedSessionConfig(
   if (config.followupMode && config.followupMode !== "queue") {
     await record.app.setFollowupMode(config.followupMode);
   }
+
+  if (config.modelFallbackChain) {
+    record.app.runtime.setModelFallbackChain(config.modelFallbackChain);
+  }
 }
 
-export const modelConfigHandlers = { switchModelConfig, switchCollaborationMode };
+async function setModelFallbackChain(
+  host: V4CommandCoreHost,
+  envelope: CommandEnvelope,
+): Promise<CommandResult | undefined> {
+  const payload = envelope.payload as CommandPayloadMap["setModelFallbackChain"];
+  const record = requireRecord(host, envelope.sessionId);
+  record.app.runtime.setModelFallbackChain(payload.chain);
+  return undefined;
+}
+
+export const modelConfigHandlers = {
+  switchModelConfig,
+  switchCollaborationMode,
+  setModelFallbackChain,
+};

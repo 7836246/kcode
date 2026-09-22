@@ -16,6 +16,40 @@ export const modelSelectionSchema = z
 
 export type ModelSelection = z.infer<typeof modelSelectionSchema>;
 
+/** 同一工作区最多保留的备用模型数。再长只会把一次失败拖成多次换模型。 */
+export const MODEL_FALLBACK_CHAIN_LIMIT = 3;
+
+export const modelFallbackRefSchema = z
+  .object({
+    providerId: z.string().trim().min(1),
+    modelId: z.string().trim().min(1),
+  })
+  .strict();
+
+export const modelFallbackChainSchema = z
+  .array(modelFallbackRefSchema)
+  .max(MODEL_FALLBACK_CHAIN_LIMIT);
+
+export type ModelFallbackRef = z.infer<typeof modelFallbackRefSchema>;
+
+export function normalizeModelFallbackChain(
+  chain: readonly ModelFallbackRef[],
+): ModelFallbackRef[] {
+  const seen = new Set<string>();
+  const next: ModelFallbackRef[] = [];
+  for (const item of chain) {
+    const providerId = item.providerId.trim();
+    const modelId = item.modelId.trim();
+    if (!providerId || !modelId) continue;
+    const key = `${providerId}\n${modelId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    next.push({ providerId, modelId });
+    if (next.length === MODEL_FALLBACK_CHAIN_LIMIT) break;
+  }
+  return next;
+}
+
 /** 公共解析结果。页面可以展示不完整选择，执行入口必须同时检查 selectionIssue。 */
 export interface EffectiveModelSelectionResult {
   readonly effectiveSelection: ModelSelection | null;

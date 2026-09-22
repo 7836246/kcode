@@ -1,3 +1,4 @@
+import { useModelFallbackChainSync } from "@/v4/composer/useModelFallbackChainSync.js";
 import { resolveSelectionSideInheritedModel } from "@/lib/selectionSideInheritedModel.js";
 import type { SessionCreateSource } from "@kcode/shared";
 import { reportSessionCreate } from "@/lib/sessionCreateTelemetry.js";
@@ -1566,6 +1567,12 @@ export function SessionPane({
       workspacePath,
     ],
   );
+  useModelFallbackChainSync({
+    dispatchCommand,
+    sessionId,
+    workspaceIdentity,
+    workspacePath,
+  });
 
   const handleFetchFileChanges = useCallback(
     (target: ConversationRowTarget, options: ConversationFileChangesRequestOptions) => {
@@ -2283,7 +2290,11 @@ export function SessionPane({
   );
   const effectiveSessionId = sessionId ?? prewarmSessionId;
   const showModelChangeNotice = useCallback(
-    (sourceModel: ModelSelectionSource | null, targetModel: ModelSelectionSource) => {
+    (
+      sourceModel: ModelSelectionSource | null,
+      targetModel: ModelSelectionSource,
+      origin?: "registryFallback" | "turnFallback",
+    ) => {
       // Bug 原因：草稿尚未形成实际会话，模型选择本身已经在 composer 中可见；
       // 若此时重复弹出切换结果，会把初始化或 prewarm fallback 误报成一次会话内切换。
       if (sessionId === null) {
@@ -2312,6 +2323,10 @@ export function SessionPane({
         targetModel.model,
         intl,
       );
+      if (origin === "turnFallback") {
+        toast(intl.formatMessage({ id: "chat.modelFallback.switched" }, { model: toModel }));
+        return;
+      }
       toast(intl.formatMessage({ id: "chat.modelChangeNotice.changed" }, { fromModel, toModel }));
     },
     [intl, modelSelectionView, sessionId],
@@ -2327,7 +2342,7 @@ export function SessionPane({
       // Bug 原因：自动 fallback 的提示与偏好晋升过去分别由 online 事件和任意
       // snapshot 差异驱动，recovery/历史投影可能静默改写下一草稿。现在两者都只
       // 消费 store 已按 deliveryKind 去重后的同一 realtime online 事件。
-      showModelChangeNotice(transition.from, transition.to);
+      showModelChangeNotice(transition.from, transition.to, transition.origin);
     },
     [
       effectiveSessionId,

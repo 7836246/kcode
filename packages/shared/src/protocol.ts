@@ -307,6 +307,11 @@ export interface AppSettings {
   toolGroupingChangesEnabled?: boolean;
   /** KCode 运行中继续输入时，是排队到下一轮，还是引导到下一次工具调用后运行 */
   kcodeInteractionBehavior?: KCodeInteractionBehavior;
+  /**
+   * 每个工作区的备用模型顺序。键是 workspaceIdentity?.trim() || workspacePath。
+   * 当前模型超时、限流或 5xx 时按此继续同一回合。
+   */
+  modelFallbackByWorkspace?: Record<string, Array<{ providerId: string; modelId: string }>>;
   /** Agent 提问五分钟无人回答时是否允许自动继续；缺失按开启兼容旧配置。 */
   askUserQuestionAutoResolutionEnabled?: boolean;
   /** 是否完整保留 Model I/O；开启后不轮转、不限额重置、不压缩或裁剪，鉴权信息仍会脱敏。 */

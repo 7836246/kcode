@@ -1,5 +1,6 @@
 /* oxlint-disable eslint(max-lines) -- AppSettings schema 聚合历史迁移、默认值和 patch 校验，拆分会削弱设置迁移的单一入口。 */
 import { z } from "zod";
+import { modelFallbackChainSchema } from "./model-selection.js";
 import type { AppSettings } from "./protocol.js";
 import { REMOTE_ASSET_INSTALL_MODES } from "./remoteAssetInstallMode.js";
 import { isKnownRemoteResourcePackageId } from "./remoteResourcePackages.js";
@@ -451,6 +452,7 @@ const appSettingsObjectSchema = z.object({
   toolGroupingTerminalEnabled: z.boolean().default(true),
   toolGroupingChangesEnabled: z.boolean().default(false),
   kcodeInteractionBehavior: kcodeInteractionBehaviorSchema.default("queue"),
+  modelFallbackByWorkspace: z.record(z.string(), modelFallbackChainSchema).optional(),
   askUserQuestionAutoResolutionEnabled: z.boolean().default(true),
   modelIoFullRetentionEnabled: z.boolean().default(false),
   startPlanRecommendationDismissed: z.boolean().default(false),
@@ -520,6 +522,7 @@ export const appSettingsPatchSchema = z.object({
   toolGroupingTerminalEnabled: z.boolean().optional(),
   toolGroupingChangesEnabled: z.boolean().optional(),
   kcodeInteractionBehavior: kcodeInteractionBehaviorSchema.optional(),
+  modelFallbackByWorkspace: z.record(z.string(), modelFallbackChainSchema).optional(),
   askUserQuestionAutoResolutionEnabled: z.boolean().optional(),
   modelIoFullRetentionEnabled: z.boolean().optional(),
   startPlanRecommendationDismissed: z.boolean().optional(),

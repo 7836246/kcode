@@ -73,6 +73,7 @@ import {
   resolveModelStepMaxOutputTokens,
   resolveNormalRequestMaxOutputTokens,
 } from "./model-token-limits.js";
+import { continueTurnAfterModelFallback } from "./model-fallback-turn.js";
 import {
   appendOutputTokenContinuation,
   classifyOutputTokenContinuation,
@@ -361,6 +362,21 @@ async function runModelBackedTurnStepImpl(
       // Start Plan 运行中断流会先走 core stream recovery；恢复次数耗尽后，
       // 继续抛原 provider 文案会和首轮繁忙失败无法区分，UI 也就不能展示“自动重试达到最大次数”。
       finalError = createStartPlanBusyAutoRetryExhaustedError(finalError);
+    }
+    if (
+      await continueTurnAfterModelFallback(this, {
+        abandonStreaming: () =>
+          streamingToolCoordinator.abandon(
+            state.turnAbortSignal.aborted ? "cancelled" : "model_failed",
+          ),
+        assistantCreatedAt,
+        assistantMessageId,
+        error: finalError,
+        modelTraceContext,
+        state,
+      })
+    ) {
+      return "continue";
     }
     await streamingToolCoordinator.abandon(
       state.turnAbortSignal.aborted ? "cancelled" : "model_failed",

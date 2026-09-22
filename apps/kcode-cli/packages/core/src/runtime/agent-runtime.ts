@@ -1,5 +1,5 @@
 import { DEFAULT_KCODE_MODEL_CONTEXT_BUDGET_STRATEGY, resolveExecutionState } from "@kcode/shared";
-import type { BackgroundBashOutputResult } from "@kcode/shared";
+import type { BackgroundBashOutputResult, ModelFallbackRef } from "@kcode/shared";
 import {
   createDenyPermissionBroker,
   createRootTraceContext,
@@ -467,6 +467,8 @@ export interface AgentRuntime {
   completeExternalQueueDrain(): void;
   /** v4 setFollowupMode：翻转 followup 路由模式（queue/guide，会话级）。 */
   setFollowupMode(options: { mode: "queue" | "guide"; traceContext?: TraceContext }): Promise<void>;
+  /** 替换当前 runtime 的备用模型顺序。不改当前选型，下一次可换失败才消费它。 */
+  setModelFallbackChain(chain: readonly ModelFallbackRef[]): void;
   /** v4 switchModelConfig：模型选型变化后补发 ModelSelected（config/marker 投影）。 */
   emitModelSelected(options: {
     modelSelection: ModelSelection;

@@ -6,7 +6,7 @@ import {
   setExecutionState,
 } from "./config.js";
 import { getMode, getPlanEnabled } from "./config.js";
-import { getSessionModelSelection, setSessionModelSelection } from "./config.js";
+import { getSessionModelSelection, setModelFallbackChain, setSessionModelSelection } from "./config.js";
 import { getProjectId } from "./config.js";
 import { setWorkingDirectory } from "./config.js";
 import { ensureSessionPersistedForExternalActivity } from "./config.js";
@@ -207,6 +207,7 @@ export function installAgentRuntimeMethods(ctor: AgentRuntimeConstructor): void 
   proto.getPlanEnabled = getPlanEnabled;
   proto.getSessionModelSelection = getSessionModelSelection;
   proto.setSessionModelSelection = setSessionModelSelection;
+  proto.setModelFallbackChain = setModelFallbackChain;
   proto.getProjectId = getProjectId;
   proto.setWorkingDirectory = setWorkingDirectory;
   proto.ensureSessionPersistedForExternalActivity = ensureSessionPersistedForExternalActivity;
