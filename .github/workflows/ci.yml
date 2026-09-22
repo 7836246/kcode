@@ -45,6 +45,8 @@ jobs:
 
       - name: Focused tests
         run: |
+          # 投影测试要加载 @kcode/contracts 的构建产物；根目录 typecheck 不会编译 CLI 包。
+          pnpm --filter @kcode/contracts build
           pnpm exec tsx --test \
             packages/ui/test/modelConnectivityFailure.test.ts \
             packages/ui/test/loginApiKeyContinue.test.ts \
