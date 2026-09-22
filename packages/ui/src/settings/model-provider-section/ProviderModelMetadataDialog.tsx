@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog.js";
 import { Input } from "@/components/ui/input.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
-import type { ModelConfigObject } from "@kcode/provider";
+import type { ModelConfigObject, ProviderApiType } from "@kcode/provider";
 import type {
   ProviderModelDraftValues,
   ProviderModelDraftCommitResult,
@@ -56,6 +56,7 @@ export function ProviderModelMetadataDialog({
   onDraftChange,
   onRestore,
   onCommit,
+  apiFormat,
   modelConfigResolutionPending = false,
   modelIdReadOnly = false,
   saving = false,
@@ -74,6 +75,7 @@ export function ProviderModelMetadataDialog({
   onDraftChange: (patch: Partial<ProviderModelDraftValues>) => void;
   onRestore?: () => void;
   onCommit: () => boolean | Promise<boolean>;
+  apiFormat: ProviderApiType;
   modelConfigResolutionPending?: boolean;
   modelIdReadOnly?: boolean;
   saving?: boolean;
@@ -356,6 +358,9 @@ export function ProviderModelMetadataDialog({
             </ModelSettingsGroup>
             <ProviderModelReasoningSettings
               draft={draft}
+              open={open}
+              apiFormat={apiFormat}
+              errorField={draftErrorField}
               personalConfig={personalConfig}
               overrideFields={activeOverrides}
               inheritedConfig={inheritedConfig}

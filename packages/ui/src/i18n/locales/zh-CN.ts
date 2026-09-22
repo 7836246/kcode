@@ -1726,7 +1726,8 @@ const zhCN: Record<string, string> = {
   "settings.managedSystemRole.preset.updated": "已更新预设。点保存后新对话才会用上当前正文。",
   "settings.managedSystemRole.preset.updateFailed": "更新预设失败。",
   "settings.managedSystemRole.discard.title": "丢弃未保存的修改？",
-  "settings.managedSystemRole.discard.description": "切换预设或恢复默认会丢掉当前编辑框里还没保存的正文。",
+  "settings.managedSystemRole.discard.description":
+    "切换预设或恢复默认会丢掉当前编辑框里还没保存的正文。",
   "settings.managedSystemRole.discard.confirm": "丢弃并继续",
   "settings.managedSystemRole.discard.cancel": "继续编辑",
   "settings.managedSystemRole.dirtyHint": "有未保存的修改",
@@ -2356,7 +2357,7 @@ const zhCN: Record<string, string> = {
   "settings.modelProvider.help.capabilities":
     "- **结构化输出**：支持通过 JSON Schema 约束模型输出的字段、类型和结构。\n- **原生联网搜索**：支持使用模型接口内置的联网搜索能力。\n- **对话中系统消息**：支持在对话中途插入系统指令。\n\n请勿勾选模型不支持的能力。",
   "settings.modelProvider.help.reasoningLevelsOrdered":
-    "设置聊天时可选择的推理等级，**必须按推理强度从低到高排列**。\n请勿配置模型不支持的推理等级。",
+    "聊天里可选的推理档位，**按强度从低到高排列**。点选中文名称即可，实际请求仍使用模型接口要求的英文值。预设会替换当前整组档位。\n请勿加入模型不支持的档位。",
   "settings.modelProvider.help.reasoningLevelMapping":
     "使用 CEL 表达式，将当前推理等级 `reasoningLevel` 映射为模型接口的请求字段。表达式返回的 JSON 对象会合并到实际发送的请求体中。",
   "settings.modelProvider.help.advanced":
@@ -2408,6 +2409,17 @@ const zhCN: Record<string, string> = {
   "settings.modelProvider.reasoningLevelAdd": "添加推理等级",
   "settings.modelProvider.reasoningLevelMapping": "推理参数映射",
   "settings.modelProvider.reasoningLevelDelete": "删除推理等级",
+  "settings.modelProvider.reasoningLevelPreset.switch": "开关",
+  "settings.modelProvider.reasoningLevelPreset.three": "三档",
+  "settings.modelProvider.reasoningLevelPreset.intensity": "强度",
+  "settings.modelProvider.reasoningLevelPreset.full": "完整",
+  "settings.modelProvider.reasoningLevelPresetGroup": "常用组合",
+  "settings.modelProvider.reasoningLevelCustom": "其他",
+  "settings.modelProvider.reasoningMapWillWrite": "将写入 {fields}",
+  "settings.modelProvider.reasoningMapWillWriteAfterSelect": "选择档位后将写入 {fields}",
+  "settings.modelProvider.reasoningMapRecommended": "使用推荐映射",
+  "settings.modelProvider.reasoningMapCustom": "使用自定义映射",
+  "settings.modelProvider.reasoningMapCustomize": "自定义映射",
   "settings.modelProvider.modelMetadata.invalid.reasoningLevelValues": "推理档位不能为空或重复",
   "settings.modelProvider.modelMetadata.invalid.reasoningLevelMap": "推理参数映射无效",
   "settings.modelProvider.contextWindowBadgeLabel": "上下文窗口：{value}",

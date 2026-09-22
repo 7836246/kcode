@@ -371,6 +371,7 @@ export function ProviderModelsSection({
   onAddModel,
   onReorderModelIds,
   settingsRevision = 0,
+  apiFormat,
 }: {
   providerId: string;
   providerName?: string;
@@ -391,6 +392,7 @@ export function ProviderModelsSection({
   onAddModel: (model: ProviderSettingsFormModel) => void | Promise<void>;
   onReorderModelIds?: (modelIds: string[]) => void;
   settingsRevision?: number;
+  apiFormat: ProviderApiType;
 }) {
   const { intl } = useKCodeIntl();
   const confirmDialog = useConfirmDialog();
@@ -624,6 +626,7 @@ export function ProviderModelsSection({
                       );
                     }}
                     onTest={onTestModel}
+                    apiFormat={apiFormat}
                   />
                   {!completeProperties && (
                     <div className="px-3 pb-2 text-ui-sm text-destructive">
@@ -666,6 +669,7 @@ export function ProviderModelsSection({
           saving={addSaving}
           modelConfigResolutionPending={editor.pending}
           modelDefaultsLoaded={editor.defaultsLoaded}
+          apiFormat={apiFormat}
           onModelIdBlur={() => {
             void editor.flush().catch(() => undefined);
           }}

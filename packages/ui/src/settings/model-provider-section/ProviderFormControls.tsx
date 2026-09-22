@@ -9,7 +9,7 @@ import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useProviderModelDraft } from "@/settings/model-provider-section/useProviderModelDraft.js";
 import { ProviderModelMetadataDialog } from "@/settings/model-provider-section/ProviderModelMetadataDialog.js";
 import { formatModelContextWindowLabel } from "@/lib/tokenNumberFormat.js";
-import type { ModelConfigResolution, ProviderConfigObject } from "@kcode/provider";
+import type { ModelConfigResolution, ProviderApiType, ProviderConfigObject } from "@kcode/provider";
 import { shouldShowModelVisionBadge } from "@/lib/modelVisionBadge.js";
 import { useProviderDetailFeedback } from "@/settings/model-provider-section/ProviderDetailFeedback.js";
 import { resolveConnectivityFailureCopy } from "@/lib/modelConnectivityFailure.js";
@@ -28,6 +28,7 @@ export function ModelRowInput({
   onDelete,
   onEnabledChange,
   onTest,
+  apiFormat,
 }: {
   model: ProviderSettingsFormModel;
   providerId: string;
@@ -45,6 +46,7 @@ export function ModelRowInput({
   onDelete?: () => void;
   onEnabledChange?: (enabled: boolean) => void;
   onTest?: (model: string) => Promise<ModelConnectivityResult>;
+  apiFormat: ProviderApiType;
 }) {
   const { intl, locale } = useKCodeIntl();
   const { showFeedback } = useProviderDetailFeedback();
@@ -312,6 +314,7 @@ export function ModelRowInput({
             void editor.flush().catch(() => undefined);
           }}
           modelIdReadOnly={model.builtin}
+          apiFormat={apiFormat}
         />
         {onDelete ? (
           <Button

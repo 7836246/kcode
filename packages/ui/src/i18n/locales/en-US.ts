@@ -543,7 +543,8 @@ const enUS: Record<string, string> = {
   "welcome.loggingIn": "Logging in...",
   "welcome.loginFailed": "Login failed",
   "login.title": "Welcome to KCode",
-  "login.description": "Choose a provider and API key. KCode checks the connection before opening a workspace.",
+  "login.description":
+    "Choose a provider and API key. KCode checks the connection before opening a workspace.",
   "login.expired.title": "Your session has expired",
   "login.expired.description": "To keep your account secure, please sign in again.",
   "login.expired.action": "Sign in again",
@@ -1820,14 +1821,17 @@ const enUS: Record<string, string> = {
   "settings.managedSystemRole.preset.saveNew": "Save as preset",
   "settings.managedSystemRole.preset.namePlaceholder": "Preset name",
   "settings.managedSystemRole.preset.delete": "Delete preset",
-  "settings.managedSystemRole.preset.added": "Preset added. Save to use this text in a new conversation.",
+  "settings.managedSystemRole.preset.added":
+    "Preset added. Save to use this text in a new conversation.",
   "settings.managedSystemRole.preset.addFailed": "Could not add the preset.",
   "settings.managedSystemRole.preset.deleteFailed": "Could not delete the preset.",
   "settings.managedSystemRole.preset.update": "Update preset",
-  "settings.managedSystemRole.preset.updated": "Preset updated. Save to use this text in a new conversation.",
+  "settings.managedSystemRole.preset.updated":
+    "Preset updated. Save to use this text in a new conversation.",
   "settings.managedSystemRole.preset.updateFailed": "Could not update the preset.",
   "settings.managedSystemRole.discard.title": "Discard unsaved changes?",
-  "settings.managedSystemRole.discard.description": "Switching presets or restoring the default will drop the unsaved text in the editor.",
+  "settings.managedSystemRole.discard.description":
+    "Switching presets or restoring the default will drop the unsaved text in the editor.",
   "settings.managedSystemRole.discard.confirm": "Discard and continue",
   "settings.managedSystemRole.discard.cancel": "Keep editing",
   "settings.managedSystemRole.dirtyHint": "Unsaved changes",
@@ -2506,7 +2510,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.help.capabilities":
     "- **Structured output**: Supports JSON Schema constraints on output fields, types, and structure.\n- **Native web search**: Supports the model API's built-in web search capability.\n- **Mid-conversation system messages**: Supports inserting system instructions during a conversation.\n\nDo not enable capabilities the model does not support.",
   "settings.modelProvider.help.reasoningLevelsOrdered":
-    "Set the reasoning levels available in chat. **They must be ordered from lowest to highest reasoning effort**.\nDo not configure reasoning levels the model does not support.",
+    "Reasoning levels available in chat, **ordered from lowest to highest effort**. Pick a name from the list; the request still uses the English value the model API expects. A preset replaces the whole set.\nDo not add levels the model does not support.",
   "settings.modelProvider.help.reasoningLevelMapping":
     "Use a CEL expression to map the current reasoning level, `reasoningLevel`, to model API request fields. The JSON object returned by the expression is merged into the outgoing request body.",
   "settings.modelProvider.help.advanced":
@@ -2558,6 +2562,17 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.reasoningLevelAdd": "Add reasoning level",
   "settings.modelProvider.reasoningLevelMapping": "Reasoning parameter mapping",
   "settings.modelProvider.reasoningLevelDelete": "Delete reasoning level",
+  "settings.modelProvider.reasoningLevelPreset.switch": "On/Off",
+  "settings.modelProvider.reasoningLevelPreset.three": "Three levels",
+  "settings.modelProvider.reasoningLevelPreset.intensity": "Effort",
+  "settings.modelProvider.reasoningLevelPreset.full": "Full range",
+  "settings.modelProvider.reasoningLevelPresetGroup": "Common sets",
+  "settings.modelProvider.reasoningLevelCustom": "Custom",
+  "settings.modelProvider.reasoningMapWillWrite": "Writes {fields}",
+  "settings.modelProvider.reasoningMapWillWriteAfterSelect": "Choosing levels writes {fields}",
+  "settings.modelProvider.reasoningMapRecommended": "Using the recommended mapping",
+  "settings.modelProvider.reasoningMapCustom": "Using a custom mapping",
+  "settings.modelProvider.reasoningMapCustomize": "Custom mapping",
   "settings.modelProvider.modelMetadata.invalid.reasoningLevelValues":
     "Reasoning levels cannot be empty or duplicated",
   "settings.modelProvider.modelMetadata.invalid.reasoningLevelMap":
