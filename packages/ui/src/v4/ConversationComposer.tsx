@@ -2028,13 +2028,12 @@ function ConversationComposerImpl({
   // 避免每个 token 批次都重建 Tooltip/Select 子树。
   const composerUsage = snapshot?.usage ?? null;
   const composerPhase = snapshot?.control.phase ?? null;
-  // 工具栏中段：当前会话最后一轮的生成指标。取数口径由 turnHeader.metrics 决定，
-  // composer 只负责挑出该行，不重算首 token / tok/s / 输出 token。
-  const composerRows = snapshot?.rows.window;
+  // 工具栏中段读 snapshot 上的当前轮指标，不扫会被尾窗裁掉的 turnHeader。
+  const composerTurnMetrics = snapshot?.composerTurnMetrics ?? null;
   const toolbarStatusNode = useMemo(() => {
-    const view = resolveTurnMetricsView(composerRows);
+    const view = resolveTurnMetricsView(composerTurnMetrics);
     return view ? <TurnMetricsBar metrics={view.metrics} streaming={view.streaming} /> : null;
-  }, [composerRows]);
+  }, [composerTurnMetrics]);
   const handleSelectModelTrace = useCallback(
     (nextProvider: string, nextModel: string, sourceModel: ModelSelectionSource | null) =>
       runUserAction({

@@ -53,18 +53,28 @@ export const turnWorkSegmentSchema = z.object({
 });
 export type TurnWorkSegment = z.infer<typeof turnWorkSegmentSchema>;
 
-// 每轮生成指标。口径与设置页用量统计、Developer Tools 同源：首 token 用 CLI 采集的
-// `timeToFirstContentMs`（请求发出 → 首个内容），解码速度用 outputTokens ÷ 各请求
-// 「首内容 → 请求结束」耗时之和。两边都不做估算，未知值一律 null，不用请求总耗时替代。
+// 每轮生成指标。只统计 querySource === "main_turn" 的模型请求。
+// 首 token 用 CLI 采集的 `timeToFirstContentMs`（请求发出 → 首个内容）。
+// 输出 token 是这些请求的 usage.outputTokens 之和。
+// tok/s 的分子分母只用计时完整的请求：outputTokens ÷「首内容 → 请求结束」耗时。
+// 缺计时的请求仍计入输出 token，但不进入 tok/s。未知值一律 null，不用请求总耗时替代。
 export const turnMetricsSchema = z.object({
-  // 本轮首个产出内容的模型请求的首 token 延迟；本轮尚无内容时为 null。
+  // 本轮首个产出内容的主回合模型请求的首 token 延迟；尚无内容时为 null。
   firstTokenMs: z.number().nonnegative().nullable(),
-  // 本轮全部模型请求的 outputTokens 之和。
+  // 本轮全部主回合模型请求的 outputTokens 之和。
   outputTokens: z.number().nonnegative(),
-  // 本轮输出解码速度（tokens/s）；耗时不完整或 outputTokens 为 0 时为 null。
+  // 本轮输出解码速度（tokens/s）。计时完整的请求没有输出，或耗时不完整时为 null。
   tokensPerSecond: z.number().nonnegative().nullable(),
 });
 export type TurnMetrics = z.infer<typeof turnMetricsSchema>;
+
+// Composer 状态栏读的当前轮指标。挂在 snapshot 上，不随 rows 尾窗裁剪。
+// streaming 由投影按当前 product turn 是否仍在跑写入，UI 不从 phase 或行窗口反推。
+export const composerTurnMetricsSchema = z.object({
+  metrics: turnMetricsSchema,
+  streaming: z.boolean(),
+});
+export type ComposerTurnMetrics = z.infer<typeof composerTurnMetricsSchema>;
 
 // turnHeader：product turn 边界 + 权威工时 + 每轮文件摘要。
 // guide 产生的内部折叠边界由 workSegments 表达；行归属仍由 CLI 决定，客户端零归属逻辑。

@@ -12,7 +12,7 @@ import {
   kcodeSessionContextCacheUsageSchema,
 } from "../kcode-protocol-legacy-types.js";
 import { timestampSchema } from "./core.js";
-import { conversationRowSchema } from "./rows.js";
+import { composerTurnMetricsSchema, conversationRowSchema } from "./rows.js";
 import { toolCallDisplaySchema } from "./toolDisplay.js";
 
 import { workspaceHookReviewRequestPayloadSchema } from "./workspace-hook-review.js";
@@ -502,6 +502,10 @@ export const conversationSnapshotSchema = z.object({
   // 旧快照/旧发送端不携带此字段 → 解析得 null,不破坏兼容性(遵守冻结规则)。
   // pendingCount === 0 时投影层置 null(提示条消失)。
   workspaceHookAdmission: workspaceHookAdmissionStateSchema.nullable().default(null),
+  // 当前 product turn 的生成指标。A 区字段，重连快照只带尾部 60 行时 header 可能不在窗口里，
+  // 状态栏仍读这一份。null = 本轮还没有可展示的指标（新轮 / 切段会清空）。
+  // default(null)：旧快照缺字段时解析为不展示。
+  composerTurnMetrics: composerTurnMetricsSchema.nullable().default(null),
   // B 区
   rows: rowsWindowSchema,
 });

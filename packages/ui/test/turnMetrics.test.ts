@@ -29,39 +29,17 @@ const metrics = {
   tokensPerSecond: 42.66,
 };
 
-test("取 row window 里最后一条 turnHeader 的指标", () => {
-  const view = resolveTurnMetricsView([
-    { kind: "turnHeader", state: "completedSuccess", metrics: { ...metrics, outputTokens: 10 } },
-    { kind: "assistantText" },
-    { kind: "turnHeader", state: "running", metrics },
-  ]);
-
-  assert.deepEqual(view, { metrics, streaming: true });
+test("有当前轮指标时原样交给状态栏", () => {
+  assert.deepEqual(resolveTurnMetricsView({ metrics, streaming: true }), {
+    metrics,
+    streaming: true,
+  });
+  assert.equal(resolveTurnMetricsView({ metrics, streaming: false })?.streaming, false);
 });
 
-test("最后一条 turnHeader 没有指标时不回退到上一轮", () => {
-  const view = resolveTurnMetricsView([
-    { kind: "turnHeader", state: "completedSuccess", metrics },
-    { kind: "userInput" },
-    { kind: "turnHeader", state: "running" },
-  ]);
-
-  assert.equal(view, null);
-});
-
-test("没有 turnHeader 或 rows 为空时返回 null", () => {
+test("当前轮没有指标时不展示", () => {
   assert.equal(resolveTurnMetricsView(undefined), null);
-  assert.equal(resolveTurnMetricsView([]), null);
-  assert.equal(resolveTurnMetricsView([{ kind: "userInput" }]), null);
-});
-
-test("只有 running 轮标记为生成中", () => {
-  const rows = [
-    { kind: "turnHeader", state: "completedSuccess", metrics },
-    { kind: "turnHeader", state: "failed", metrics },
-  ];
-
-  assert.equal(resolveTurnMetricsView(rows)?.streaming, false);
+  assert.equal(resolveTurnMetricsView(null), null);
 });
 
 test("首 token 按毫秒 / 秒 / 十秒以上取整三档格式化", () => {

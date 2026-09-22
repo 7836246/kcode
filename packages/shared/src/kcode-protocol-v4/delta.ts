@@ -3,7 +3,7 @@
 // 凡此模型表达不了的结构变化，服务端一律发 snapshot resync，刻意压缩客户端错误面。
 import { z } from "zod";
 import { streamablePathSchema } from "./core.js";
-import { conversationRowSchema } from "./rows.js";
+import { composerTurnMetricsSchema, conversationRowSchema } from "./rows.js";
 import { sharedContextImportStateSchema } from "./shared-context-import.js";
 import {
   backgroundWorkSummarySchema,
@@ -47,6 +47,8 @@ export const statePatchSchema = z.object({
   plan: planStateSchema.nullable().optional(),
   // 软门禁：null = pending 清零(提示条消失);对象 = 待审核状态更新。
   workspaceHookAdmission: workspaceHookAdmissionStateSchema.nullable().optional(),
+  // 当前轮生成指标。null = 清空（新轮 / queue 切段）。旧客户端按未知键剥离，不弄丢 patch 其余键。
+  composerTurnMetrics: composerTurnMetricsSchema.nullable().optional(),
 });
 export type StatePatch = z.infer<typeof statePatchSchema>;
 

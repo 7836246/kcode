@@ -34,15 +34,19 @@ function fitComposerToolbar(root: HTMLElement) {
     const model = root.querySelector<HTMLElement>(".composer-model-trigger");
     if (!model) return;
     const trailing = root.querySelector<HTMLElement>("[data-composer-trailing-actions]");
+    const status = root.querySelector<HTMLElement>("[data-composer-toolbar-status]");
     const gap = Number.parseFloat(getComputedStyle(root).columnGap) || 12;
+    const contentWidth = content.getBoundingClientRect().width;
+    const statusWidth = status?.getBoundingClientRect().width ?? 0;
+    const trailingWidth = trailing?.getBoundingClientRect().width ?? 0;
     const overflow = Math.max(
-      content.getBoundingClientRect().width - available.getBoundingClientRect().width,
-      trailing
-        ? content.getBoundingClientRect().width +
-            trailing.getBoundingClientRect().width +
-            gap -
-            root.getBoundingClientRect().width
-        : 0,
+      contentWidth - available.getBoundingClientRect().width,
+      contentWidth +
+        statusWidth +
+        trailingWidth +
+        (statusWidth > 0 ? gap : 0) +
+        (trailingWidth > 0 ? gap : 0) -
+        root.getBoundingClientRect().width,
     );
     const modelWidth = Math.max(28, model.getBoundingClientRect().width - overflow);
     // 收起左侧文案后，剩余空间必须让给同一行的模型与发送按钮，不能靠换行掩盖溢出。
@@ -95,7 +99,7 @@ export function useComposerToolbarFit() {
       resize?.disconnect();
       resize?.observe(root);
       for (const element of root.querySelectorAll<HTMLElement>(
-        "[data-composer-leading-actions], [data-composer-leading-content], [data-composer-trailing-actions]",
+        "[data-composer-leading-actions], [data-composer-leading-content], [data-composer-trailing-actions], [data-composer-toolbar-status]",
       ))
         resize?.observe(element);
       update();

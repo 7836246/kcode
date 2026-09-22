@@ -98,6 +98,7 @@ import type {
   SessionUsageState,
   RunningSubagentSummary,
   SubagentProjectionState,
+  ComposerTurnMetrics,
   TurnHeaderRow,
   TurnMetrics,
   TurnWorkSegment,
@@ -404,18 +405,20 @@ interface FileToolInputPreviewState {
   pendingAppend: string;
 }
 
-// 每轮生成指标的累加中间态。firstTokenMs 取本轮首个报告了首内容时延的请求；
-// decodeMs 只累加「首内容 → 请求结束」的耗时，任一端缺失的请求不计入
-// （未知值不能用请求总耗时替代，与 session-debug 同一裁决）。
+// 每轮生成指标的累加中间态。firstTokenMs 取本轮首个报告了首内容时延的主回合请求。
+// outputTokens 累加全部主回合请求；tpsOutputTokens / decodeMs 只累加计时完整的请求，
+// 避免缺计时请求的 token 抬高 tok/s。未知耗时不能用请求总耗时替代。
 interface TurnMetricsAccumulator {
   firstTokenMs: number | null;
   outputTokens: number;
+  tpsOutputTokens: number;
   decodeMs: number;
 }
 
 const EMPTY_TURN_METRICS_ACCUMULATOR: TurnMetricsAccumulator = {
   firstTokenMs: null,
   outputTokens: 0,
+  tpsOutputTokens: 0,
   decodeMs: 0,
 };
 
@@ -492,11 +495,11 @@ export class ProductProjection {
   private runtimeTurnIdByProductTurnId = new Map<string, string>();
   private productTurnSplitOrdinalByRuntimeTurnId = new Map<string, number>();
   private currentProductTurnStartedAtMs: number | null = null;
-  // 每轮生成指标累加器：turn 起点归零，每次模型请求完成累加一次，轮内值变化即下发。
+  // 每轮生成指标累加器：turn 起点归零，每次主回合模型请求完成累加一次。
   // 只累加 CLI 采集到的权威事实（usage 与首内容时延），不做估算。
   private turnMetricsAccumulator: TurnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
-  // 上一次已下发的指标，用于「值未变不下发」。
-  private lastEmittedTurnMetrics: TurnMetrics | null = null;
+  // 上一次已下发的 composer 指标（含是否仍在生成）。值未变不下发。
+  private lastEmittedTurnMetrics: ComposerTurnMetrics | null = null;
   // 投递语义侧表：TurnSteerQueued 时按事件 payload（或 followupMode 兜底）记录，
   // drain 时决定切轮 vs 内联；账本落地后以账本为准。
   private deliveryByPendingInputId = new Map<string, "guide" | "queue">();
@@ -1151,7 +1154,10 @@ export class ProductProjection {
     clone.currentProductTurnStartedAtMs = this.currentProductTurnStartedAtMs;
     clone.turnMetricsAccumulator = { ...this.turnMetricsAccumulator };
     clone.lastEmittedTurnMetrics = this.lastEmittedTurnMetrics
-      ? { ...this.lastEmittedTurnMetrics }
+      ? {
+          streaming: this.lastEmittedTurnMetrics.streaming,
+          metrics: { ...this.lastEmittedTurnMetrics.metrics },
+        }
       : null;
     clone.deliveryByPendingInputId = new Map(this.deliveryByPendingInputId);
     clone.currentTurnId = this.currentTurnId;
@@ -1958,8 +1964,7 @@ export class ProductProjection {
     this.runtimeTurnIdByProductTurnId.set(turnId, runtimeTurnId);
     this.productTurnSplitOrdinalByRuntimeTurnId.delete(runtimeTurnId);
     this.currentProductTurnStartedAtMs = this.ms(event);
-    this.turnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
-    this.lastEmittedTurnMetrics = null;
+    const metricsReset = this.resetTurnMetrics();
     this.streamingTextRowId = null;
     this.streamingReasoningRowId = null;
     this.outputContinuationTextRowId = null;
@@ -1967,7 +1972,10 @@ export class ProductProjection {
     // background Agent 的 ToolCallResult 只是 launch ACK，先把工具行收口成
     // success；子 Agent 的真实终态随后只作为 model-only task-notification 开新轮。
     // V4 过去没有按 tool-use-id 消费这条权威事实，因此 429 后卡片会永久停在 completed。
-    const deltas: ConversationDelta[] = this.applyBackgroundTaskNotification(fact);
+    const deltas: ConversationDelta[] = [
+      ...metricsReset,
+      ...this.applyBackgroundTaskNotification(fact),
+    ];
     const sharedContextRef = fact.sharedContextRefs?.[0];
     if (
       sharedContextRef &&
@@ -3703,8 +3711,7 @@ export class ProductProjection {
     this.productTurnIdByRuntimeTurnId.set(runtimeTurnId, productTurnId);
     this.runtimeTurnIdByProductTurnId.set(productTurnId, runtimeTurnId);
     this.currentProductTurnStartedAtMs = this.ms(event);
-    this.turnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
-    this.lastEmittedTurnMetrics = null;
+    deltas.push(...this.resetTurnMetrics());
     const header = buildTurnHeaderRow(this.rowBase(event, productTurnId, productTurnId), {
       turnNumber: 0,
       input: "",
@@ -5136,7 +5143,7 @@ export class ProductProjection {
   /**
    * 本轮累计到的生成指标。尚未产出任何内容（没有 usage 也没有首 token 时延）时返回
    * undefined，避免把一枚读不出信息的空胶囊下发给客户端。
-   * `tokensPerSecond` 用 @kcode/shared 的权威口径计算，与设置页用量统计、Developer Tools 同源。
+   * tok/s 只用计时完整的请求：分子是 tpsOutputTokens，不是全部 outputTokens。
    */
   private currentTurnMetrics(): TurnMetrics | undefined {
     const accumulator = this.turnMetricsAccumulator;
@@ -5145,46 +5152,81 @@ export class ProductProjection {
       firstTokenMs: accumulator.firstTokenMs,
       outputTokens: accumulator.outputTokens,
       tokensPerSecond: calculateOutputTps(
-        accumulator.outputTokens,
+        accumulator.tpsOutputTokens,
         accumulator.decodeMs > 0 ? accumulator.decodeMs : null,
       ),
     };
   }
 
   /**
-   * 模型请求完成事实 → 本轮指标累加。usage 与 timeToFirstContentMs 都是 CLI 已采集的
-   * 权威值，投影只做求和，不重算口径、不做估算。累加后立即尝试下发：轮内值有变化时
-   * 以 row.upserted 更新同一个 turnHeader，值未变则零 delta（conflation）。
+   * 模型请求完成事实 → 本轮指标累加。只接受 main_turn。
+   * Bug 原因：标题生成、压缩摘要、目标校验都挂在当前 runtime turn 上发
+   * model_request_completed。只按 turnId 累加会把标题请求的首 token 锁进状态栏，
+   * 输出 token 和 tok/s 也会偏离 Developer Tools 的 main_turn 口径。
    */
   private accumulateTurnMetrics(
     event: SessionEvent,
     payload: ModelRequestCompletedPayload,
   ): ConversationDelta[] {
+    if (payload.querySource !== "main_turn") return [];
     const accumulator = this.turnMetricsAccumulator;
     const contentMs = payload.timeToFirstContentMs;
-    const hasContentMs = contentMs !== undefined && Number.isFinite(contentMs);
+    const hasContentMs =
+      typeof contentMs === "number" && Number.isFinite(contentMs) && contentMs >= 0;
     const durationMs = nonNegativeInteger(payload.durationMs, 0);
+    const outputTokens = nonNegativeInteger(payload.usage?.outputTokens ?? 0, 0);
     // 只有两端都已知、且请求确实在首内容之后才结束，才计入解码耗时；
     // 未知值不能用请求总耗时替代（与 session-debug 同一裁决）。
     const decodeMs = hasContentMs && durationMs > contentMs ? durationMs - contentMs : 0;
     this.turnMetricsAccumulator = {
       firstTokenMs: accumulator.firstTokenMs ?? (hasContentMs ? contentMs : null),
-      outputTokens: accumulator.outputTokens + nonNegativeInteger(payload.usage?.outputTokens ?? 0, 0),
+      outputTokens: accumulator.outputTokens + outputTokens,
+      tpsOutputTokens: accumulator.tpsOutputTokens + (decodeMs > 0 ? outputTokens : 0),
       decodeMs: accumulator.decodeMs + decodeMs,
     };
     return this.upsertTurnMetrics(event);
   }
 
-  /** 轮内指标下发：同一 turnHeader 的 row.upserted，值未变不下发。 */
+  /** 轮内指标下发：行上留副本，snapshot 上留状态栏读的那一份。值未变不下发。 */
   private upsertTurnMetrics(event: SessionEvent): ConversationDelta[] {
     const row = this.turnHeaderForEvent(event);
     const metrics = this.currentTurnMetrics();
     if (!row || !metrics) return [];
-    if (this.lastEmittedTurnMetrics && areTurnMetricsEqual(this.lastEmittedTurnMetrics, metrics)) {
+    const deltas: ConversationDelta[] = [];
+    const previous = this.lastEmittedTurnMetrics;
+    if (!previous || !areTurnMetricsEqual(previous.metrics, metrics)) {
+      deltas.push({ op: "row.upserted", row: { ...row, metrics } });
+    }
+    deltas.push(...this.publishComposerTurnMetrics(true));
+    return deltas;
+  }
+
+  /**
+   * 状态栏事实。挂在 snapshot 上，重连时不依赖仍在尾部 60 行窗口里的 turnHeader。
+   * streaming 跟随当前 product turn 是否还在跑，轮收口改为 false，数字保留到下一轮开始。
+   */
+  private publishComposerTurnMetrics(streaming: boolean): ConversationDelta[] {
+    const metrics = this.currentTurnMetrics();
+    if (!metrics) return [];
+    const next: ComposerTurnMetrics = { metrics, streaming };
+    const previous = this.lastEmittedTurnMetrics;
+    if (
+      previous &&
+      previous.streaming === streaming &&
+      areTurnMetricsEqual(previous.metrics, metrics)
+    ) {
       return [];
     }
-    this.lastEmittedTurnMetrics = metrics;
-    return [{ op: "row.upserted", row: { ...row, metrics } }];
+    this.lastEmittedTurnMetrics = next;
+    return [{ op: "state.updated", patch: { composerTurnMetrics: next } }];
+  }
+
+  /** 新 product turn / queue 切段：累加器归零，状态栏立刻收起，不残留上一段数字。 */
+  private resetTurnMetrics(): ConversationDelta[] {
+    this.turnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
+    if (this.lastEmittedTurnMetrics === null) return [];
+    this.lastEmittedTurnMetrics = null;
+    return [{ op: "state.updated", patch: { composerTurnMetrics: null } }];
   }
 
   private upsertTurnHeader(
@@ -5214,6 +5256,7 @@ export class ProductProjection {
             : {}),
         },
       },
+      ...this.publishComposerTurnMetrics(false),
     ];
   }
 

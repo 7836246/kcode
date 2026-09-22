@@ -1,8 +1,8 @@
 /**
  * Composer 生成指标状态栏的展示投影。
  *
- * 指标本身由 CLI 投影从模型请求完成事实累加后下发（`turnHeader.metrics`）；这里
- * 只做「取哪一轮 + 格式化成可渲染段落」，不重算指标、不补默认值、不估算。
+ * 指标由 CLI 投影写入 `snapshot.composerTurnMetrics`。这里只做空值收口和格式化，
+ * 不重算指标、不补默认值、不估算，也不从 row window 挑轮次。
  * 纯函数、无 React 与 i18n provider 依赖，文案通过 `formatMessage` 注入，便于单测。
  */
 import { formatCompactTokenNumber } from "../lib/tokenNumberFormat.js";
@@ -12,13 +12,6 @@ export interface TurnMetrics {
   firstTokenMs: number | null;
   outputTokens: number;
   tokensPerSecond: number | null;
-}
-
-// 结构化入参：只认渲染需要的三个字段，避免把协议行类型绑进纯函数。
-export interface TurnMetricsSourceRow {
-  kind: string;
-  state?: string;
-  metrics?: TurnMetrics | null;
 }
 
 export type TurnMetricsSegmentId = "firstToken" | "tokensPerSecond" | "outputTokens";
@@ -42,22 +35,17 @@ export type TurnMetricsMessageFormat = (
 ) => string;
 
 /**
- * 状态栏跟随「当前会话最后一条 turnHeader」（row window 尾部）。
- *
- * 最后一条 turnHeader 没有指标时返回 null，而不是回退到更早的轮次：新一轮刚开始、
- * 首个模型请求尚未完成时，继续展示上一轮的数字会让用户以为那是本轮的实时值。
+ * 状态栏只读投影下发的当前轮指标。null 表示本轮还没有可展示的数字，
+ * 不回退到更早轮次：新一轮刚开始时继续展示上一轮，会让用户以为那是本轮的实时值。
  */
 export function resolveTurnMetricsView(
-  rows: readonly TurnMetricsSourceRow[] | undefined,
+  composerTurnMetrics: TurnMetricsView | null | undefined,
 ): TurnMetricsView | null {
-  if (!rows || rows.length === 0) return null;
-  for (let index = rows.length - 1; index >= 0; index -= 1) {
-    const row = rows[index]!;
-    if (row.kind !== "turnHeader") continue;
-    if (!row.metrics) return null;
-    return { metrics: row.metrics, streaming: row.state === "running" };
-  }
-  return null;
+  if (!composerTurnMetrics) return null;
+  return {
+    metrics: composerTurnMetrics.metrics,
+    streaming: composerTurnMetrics.streaming,
+  };
 }
 
 /** 首 token 延迟：不足 1 秒给毫秒，其余给秒（10 秒以上取整），与轨迹耗时同一可读性档位。 */

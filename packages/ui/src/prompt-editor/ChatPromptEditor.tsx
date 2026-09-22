@@ -420,7 +420,11 @@ export function ChatPromptEditor({
               ) : null}
             </div>
           </div>
-          {toolbarStatus}
+          {toolbarStatus ? (
+            <div data-composer-toolbar-status className="flex shrink-0 items-center">
+              {toolbarStatus}
+            </div>
+          ) : null}
           <div
             className="ml-auto flex shrink-0 items-center justify-end gap-1.5"
             data-composer-trailing-actions

@@ -10,7 +10,7 @@ import {
 /**
  * Composer 生成指标状态栏：当前会话最后一轮的「首 token · tok/s · 输出 token」。
  *
- * 纯展示组件：指标来自 `turnHeader.metrics`（CLI 权威下发），这里不订阅任何 store、
+ * 纯展示组件：指标来自 `snapshot.composerTurnMetrics`（CLI 权威下发），这里不订阅任何 store、
  * 不持有状态、不做估算。窄 composer 下整枚隐藏，交给容器查询而不是 JS 测量，
  * 避免和 `useComposerToolbarFit` 的折叠优先级互相抢空间。
  */
