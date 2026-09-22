@@ -3786,6 +3786,9 @@ const enUS: Record<string, string> = {
   "chat.reasoning.durationFewSeconds": "a few seconds",
   "chat.reasoning.durationSeconds": "{seconds} seconds",
   "chat.contextUsage": "Context usage {used} of {total}",
+  "chat.turnMetrics.firstToken": "First token",
+  "chat.turnMetrics.tokensPerSecond": "{value} tok/s",
+  "chat.turnMetrics.outputTokens": "Output",
   "chat.contextUsage.title": "Context windows",
   "chat.contextUsageDescription":
     "Prompt text, tool calls, and responses all share this context window.",

@@ -63,6 +63,7 @@ import {
 // 会在 packages/ui 的 Desktop 构建链解析失败，App 重启后打不开。）
 import { verdictWorkspaceHookReviewRequest } from "@kcode/shared/workspace-hook-review-monotonicity";
 import {
+  calculateOutputTps,
   extractPlanStepsFromToolInput,
   extractPlanStepsFromToolOutput,
   isKCodeModelRetryRecoveryProgressPayload,
@@ -98,6 +99,7 @@ import type {
   RunningSubagentSummary,
   SubagentProjectionState,
   TurnHeaderRow,
+  TurnMetrics,
   TurnWorkSegment,
   UserInputRow,
   UserInputQuestionPayload,
@@ -402,6 +404,35 @@ interface FileToolInputPreviewState {
   pendingAppend: string;
 }
 
+// 每轮生成指标的累加中间态。firstTokenMs 取本轮首个报告了首内容时延的请求；
+// decodeMs 只累加「首内容 → 请求结束」的耗时，任一端缺失的请求不计入
+// （未知值不能用请求总耗时替代，与 session-debug 同一裁决）。
+interface TurnMetricsAccumulator {
+  firstTokenMs: number | null;
+  outputTokens: number;
+  decodeMs: number;
+}
+
+const EMPTY_TURN_METRICS_ACCUMULATOR: TurnMetricsAccumulator = {
+  firstTokenMs: null,
+  outputTokens: 0,
+  decodeMs: 0,
+};
+
+/** 指标是否与上次下发的一致（「值未变不下发」）。 */
+function areTurnMetricsEqual(left: TurnMetrics, right: TurnMetrics): boolean {
+  return (
+    left.firstTokenMs === right.firstTokenMs &&
+    left.outputTokens === right.outputTokens &&
+    left.tokensPerSecond === right.tokensPerSecond
+  );
+}
+
+type ModelRequestCompletedPayload = Extract<
+  ModelNetworkStatusPayload,
+  { type: "model_request_completed" }
+>;
+
 type TurnModelBaseline =
   | { kind: "silentInitial" }
   | { kind: "sourceLess" }
@@ -461,6 +492,11 @@ export class ProductProjection {
   private runtimeTurnIdByProductTurnId = new Map<string, string>();
   private productTurnSplitOrdinalByRuntimeTurnId = new Map<string, number>();
   private currentProductTurnStartedAtMs: number | null = null;
+  // 每轮生成指标累加器：turn 起点归零，每次模型请求完成累加一次，轮内值变化即下发。
+  // 只累加 CLI 采集到的权威事实（usage 与首内容时延），不做估算。
+  private turnMetricsAccumulator: TurnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
+  // 上一次已下发的指标，用于「值未变不下发」。
+  private lastEmittedTurnMetrics: TurnMetrics | null = null;
   // 投递语义侧表：TurnSteerQueued 时按事件 payload（或 followupMode 兜底）记录，
   // drain 时决定切轮 vs 内联；账本落地后以账本为准。
   private deliveryByPendingInputId = new Map<string, "guide" | "queue">();
@@ -1113,6 +1149,10 @@ export class ProductProjection {
       this.productTurnSplitOrdinalByRuntimeTurnId,
     );
     clone.currentProductTurnStartedAtMs = this.currentProductTurnStartedAtMs;
+    clone.turnMetricsAccumulator = { ...this.turnMetricsAccumulator };
+    clone.lastEmittedTurnMetrics = this.lastEmittedTurnMetrics
+      ? { ...this.lastEmittedTurnMetrics }
+      : null;
     clone.deliveryByPendingInputId = new Map(this.deliveryByPendingInputId);
     clone.currentTurnId = this.currentTurnId;
     clone.currentTurnStartedModelOnly = this.currentTurnStartedModelOnly;
@@ -1156,6 +1196,8 @@ export class ProductProjection {
     this.runtimeTurnIdByProductTurnId = candidate.runtimeTurnIdByProductTurnId;
     this.productTurnSplitOrdinalByRuntimeTurnId = candidate.productTurnSplitOrdinalByRuntimeTurnId;
     this.currentProductTurnStartedAtMs = candidate.currentProductTurnStartedAtMs;
+    this.turnMetricsAccumulator = candidate.turnMetricsAccumulator;
+    this.lastEmittedTurnMetrics = candidate.lastEmittedTurnMetrics;
     this.deliveryByPendingInputId = candidate.deliveryByPendingInputId;
     this.currentTurnId = candidate.currentTurnId;
     this.currentTurnStartedModelOnly = candidate.currentTurnStartedModelOnly;
@@ -1916,6 +1958,8 @@ export class ProductProjection {
     this.runtimeTurnIdByProductTurnId.set(turnId, runtimeTurnId);
     this.productTurnSplitOrdinalByRuntimeTurnId.delete(runtimeTurnId);
     this.currentProductTurnStartedAtMs = this.ms(event);
+    this.turnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
+    this.lastEmittedTurnMetrics = null;
     this.streamingTextRowId = null;
     this.streamingReasoningRowId = null;
     this.outputContinuationTextRowId = null;
@@ -2360,7 +2404,7 @@ export class ProductProjection {
         // 保持当前状态，等首个有效 text/reasoning/tool 进展再清理，避免标签闪退。
         return positiveInteger(payload.attempt, 1) <= 1 ? this.setApiRetry(null) : [];
       case "model_request_completed":
-        return this.setApiRetry(null);
+        return [...this.setApiRetry(null), ...this.accumulateTurnMetrics(event, payload)];
       case "model_request_failed":
         return payload.retryable ? [] : this.setApiRetry(null);
       case "model_stream_stalled":
@@ -3628,6 +3672,8 @@ export class ProductProjection {
     const headerRow = headerRowId !== undefined ? this.findRow(headerRowId) : undefined;
     if (headerRow?.kind === "turnHeader") {
       const endedAt = this.ms(event);
+      // 切段边界也是指标边界：收口的这一段带走自己累加到的指标，新段从零开始。
+      const metrics = this.currentTurnMetrics();
       deltas.push({
         op: "row.upserted",
         row: {
@@ -3638,6 +3684,7 @@ export class ProductProjection {
             0,
             endedAt - (this.currentProductTurnStartedAtMs ?? headerRow.startedAt),
           ),
+          ...(metrics ? { metrics } : {}),
           ...(headerRow.workSegments
             ? {
                 workSegments: this.completeWorkSegments(headerRow.workSegments, endedAt),
@@ -3656,6 +3703,8 @@ export class ProductProjection {
     this.productTurnIdByRuntimeTurnId.set(runtimeTurnId, productTurnId);
     this.runtimeTurnIdByProductTurnId.set(productTurnId, runtimeTurnId);
     this.currentProductTurnStartedAtMs = this.ms(event);
+    this.turnMetricsAccumulator = { ...EMPTY_TURN_METRICS_ACCUMULATOR };
+    this.lastEmittedTurnMetrics = null;
     const header = buildTurnHeaderRow(this.rowBase(event, productTurnId, productTurnId), {
       turnNumber: 0,
       input: "",
@@ -5084,6 +5133,60 @@ export class ProductProjection {
     };
   }
 
+  /**
+   * 本轮累计到的生成指标。尚未产出任何内容（没有 usage 也没有首 token 时延）时返回
+   * undefined，避免把一枚读不出信息的空胶囊下发给客户端。
+   * `tokensPerSecond` 用 @kcode/shared 的权威口径计算，与设置页用量统计、Developer Tools 同源。
+   */
+  private currentTurnMetrics(): TurnMetrics | undefined {
+    const accumulator = this.turnMetricsAccumulator;
+    if (accumulator.outputTokens <= 0 && accumulator.firstTokenMs === null) return undefined;
+    return {
+      firstTokenMs: accumulator.firstTokenMs,
+      outputTokens: accumulator.outputTokens,
+      tokensPerSecond: calculateOutputTps(
+        accumulator.outputTokens,
+        accumulator.decodeMs > 0 ? accumulator.decodeMs : null,
+      ),
+    };
+  }
+
+  /**
+   * 模型请求完成事实 → 本轮指标累加。usage 与 timeToFirstContentMs 都是 CLI 已采集的
+   * 权威值，投影只做求和，不重算口径、不做估算。累加后立即尝试下发：轮内值有变化时
+   * 以 row.upserted 更新同一个 turnHeader，值未变则零 delta（conflation）。
+   */
+  private accumulateTurnMetrics(
+    event: SessionEvent,
+    payload: ModelRequestCompletedPayload,
+  ): ConversationDelta[] {
+    const accumulator = this.turnMetricsAccumulator;
+    const contentMs = payload.timeToFirstContentMs;
+    const hasContentMs = contentMs !== undefined && Number.isFinite(contentMs);
+    const durationMs = nonNegativeInteger(payload.durationMs, 0);
+    // 只有两端都已知、且请求确实在首内容之后才结束，才计入解码耗时；
+    // 未知值不能用请求总耗时替代（与 session-debug 同一裁决）。
+    const decodeMs = hasContentMs && durationMs > contentMs ? durationMs - contentMs : 0;
+    this.turnMetricsAccumulator = {
+      firstTokenMs: accumulator.firstTokenMs ?? (hasContentMs ? contentMs : null),
+      outputTokens: accumulator.outputTokens + nonNegativeInteger(payload.usage?.outputTokens ?? 0, 0),
+      decodeMs: accumulator.decodeMs + decodeMs,
+    };
+    return this.upsertTurnMetrics(event);
+  }
+
+  /** 轮内指标下发：同一 turnHeader 的 row.upserted，值未变不下发。 */
+  private upsertTurnMetrics(event: SessionEvent): ConversationDelta[] {
+    const row = this.turnHeaderForEvent(event);
+    const metrics = this.currentTurnMetrics();
+    if (!row || !metrics) return [];
+    if (this.lastEmittedTurnMetrics && areTurnMetricsEqual(this.lastEmittedTurnMetrics, metrics)) {
+      return [];
+    }
+    this.lastEmittedTurnMetrics = metrics;
+    return [{ op: "row.upserted", row: { ...row, metrics } }];
+  }
+
   private upsertTurnHeader(
     event: SessionEvent,
     state: "completedSuccess" | "completedInterrupted" | "failed",
@@ -5093,6 +5196,7 @@ export class ProductProjection {
     const row = this.turnHeaderForEvent(event);
     if (!row) return [];
     const endedAt = this.ms(event);
+    const metrics = this.currentTurnMetrics();
     return [
       {
         op: "row.upserted",
@@ -5100,6 +5204,7 @@ export class ProductProjection {
           ...row,
           state,
           endedAt,
+          ...(metrics ? { metrics } : {}),
           ...(activeMs !== undefined ? { activeMs } : {}),
           ...(historyRoundCount !== undefined ? { historyRoundCount } : {}),
           ...(row.workSegments

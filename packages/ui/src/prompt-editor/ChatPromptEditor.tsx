@@ -66,6 +66,7 @@ export function ChatPromptEditor({
   planAction,
   betweenCancelAndSubmitAction,
   submitControl,
+  toolbarStatus,
   inputTestId,
   submitTestId,
   cancelTestId,
@@ -128,6 +129,8 @@ export function ChatPromptEditor({
   /** 行内编辑专用：固定插在取消与主提交之间的第二动作。 */
   betweenCancelAndSubmitAction?: ReactNode;
   submitControl?: ReactNode;
+  /** 工具栏中段状态位（生成指标状态栏等）：主输入框才有，行内编辑不传。 */
+  toolbarStatus?: ReactNode;
   inputTestId?: string;
   submitTestId?: string;
   cancelTestId?: string;
@@ -417,6 +420,7 @@ export function ChatPromptEditor({
               ) : null}
             </div>
           </div>
+          {toolbarStatus}
           <div
             className="ml-auto flex shrink-0 items-center justify-end gap-1.5"
             data-composer-trailing-actions

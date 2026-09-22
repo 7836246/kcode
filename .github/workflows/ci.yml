@@ -47,5 +47,6 @@ jobs:
         run: |
           pnpm exec tsx --test \
             packages/ui/test/modelConnectivityFailure.test.ts \
-            packages/ui/test/loginApiKeyContinue.test.ts
+            packages/ui/test/loginApiKeyContinue.test.ts \
+            packages/ui/test/turnMetrics.test.ts
           node --test packages/desktop/scripts/release-signing-plan.test.mjs

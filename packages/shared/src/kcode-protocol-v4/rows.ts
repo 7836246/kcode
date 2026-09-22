@@ -53,6 +53,19 @@ export const turnWorkSegmentSchema = z.object({
 });
 export type TurnWorkSegment = z.infer<typeof turnWorkSegmentSchema>;
 
+// 每轮生成指标。口径与设置页用量统计、Developer Tools 同源：首 token 用 CLI 采集的
+// `timeToFirstContentMs`（请求发出 → 首个内容），解码速度用 outputTokens ÷ 各请求
+// 「首内容 → 请求结束」耗时之和。两边都不做估算，未知值一律 null，不用请求总耗时替代。
+export const turnMetricsSchema = z.object({
+  // 本轮首个产出内容的模型请求的首 token 延迟；本轮尚无内容时为 null。
+  firstTokenMs: z.number().nonnegative().nullable(),
+  // 本轮全部模型请求的 outputTokens 之和。
+  outputTokens: z.number().nonnegative(),
+  // 本轮输出解码速度（tokens/s）；耗时不完整或 outputTokens 为 0 时为 null。
+  tokensPerSecond: z.number().nonnegative().nullable(),
+});
+export type TurnMetrics = z.infer<typeof turnMetricsSchema>;
+
 // turnHeader：product turn 边界 + 权威工时 + 每轮文件摘要。
 // guide 产生的内部折叠边界由 workSegments 表达；行归属仍由 CLI 决定，客户端零归属逻辑。
 export const turnHeaderRowSchema = z.object({
@@ -82,6 +95,9 @@ export const turnHeaderRowSchema = z.object({
   // guide 不切 product turn，但每条 accepted guide 都开启独立视觉工作段。
   // 普通 turn 缺省以保持旧 snapshot 兼容；一旦出现 guide，CLI 负责完整投影首段与后续段。
   workSegments: z.array(turnWorkSegmentSchema).optional(),
+  // 每轮生成指标：CLI 从模型请求完成事实累加后下发，客户端只渲染不重算。
+  // optional 兼容旧 snapshot，以及尚未产出内容的轮次；值未变不下发。
+  metrics: turnMetricsSchema.optional(),
   originMeta: backgroundResultOriginMetaSchema.optional(),
   // origin === "workflowLaunch" 的轮上在场（活投影来源）；与 originMeta 并列，不复用其形状。
   workflowLaunch: workflowLaunchMetaSchema.optional(),
