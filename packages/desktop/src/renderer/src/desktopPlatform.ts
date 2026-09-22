@@ -97,8 +97,6 @@ export function createDesktopPlatform(options: {
       return window.kcode.onOpenWorkspace?.(handler) ?? (() => {});
     },
     onOpenWorkspacePath: (handler) => window.kcode.onOpenWorkspacePath?.(handler) ?? (() => {}),
-    onOpenFeedbackDialog: (handler) => window.kcode.onOpenFeedbackDialog?.(handler) ?? (() => {}),
-    onOpenTicketsPanel: (handler) => window.kcode.onOpenTicketsPanel?.(handler) ?? (() => {}),
     onWindowFullscreenChanged: (handler) => window.kcode.onWindowFullscreenChanged(handler),
     getDesktopWindowChromeState: window.kcode.getDesktopWindowChromeState
       ? () => window.kcode.getDesktopWindowChromeState!()

@@ -166,18 +166,6 @@ export function getExportLogDir(): string {
   return join(getKCodeDataRootDir(), "export-log");
 }
 
-export function getFeedbackRootDir(): string {
-  return join(getKCodeDataRootDir(), "feedback");
-}
-
-export function getFeedbackAttachmentDir(): string {
-  return join(getFeedbackRootDir(), "attachments");
-}
-
-export function getFeedbackLogArchiveDir(): string {
-  return join(getFeedbackRootDir(), "logs");
-}
-
 export function getGitCheckpointIndexRootDir(): string {
   return join(getKCodeDataRootDir(), "git-checkpoint-index");
 }

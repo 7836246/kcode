@@ -25,9 +25,9 @@ import {
 } from "./components/ui/dialog.js";
 import { cn } from "./components/lib/utils.js";
 import { toast } from "./components/ui/toast.js";
-import { useFeedbackStore } from "@/feedback/feedbackStore.js";
+import { usePlatform } from "@/hooks/usePlatform.js";
+import { openKCodeGitHubIssue } from "@/lib/productIssues.js";
 import { getProviderBusinessErrorMessageId } from "@/lib/providerBusinessError.js";
-import { buildErrorFeedbackDescription } from "@/lib/errorFeedbackDraft.js";
 import {
   isSuspiciousEmptyModelResultMessage,
   resolveOffPeakTicketExpiredBusinessCode,
@@ -118,7 +118,7 @@ export function ChatErrorBanner({
   onOpenModelSettings?: () => void;
 }) {
   const { intl } = useKCodeIntl();
-  const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
+  const platform = usePlatform();
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const actionButtonClassName = "shrink-0";
   const iconButtonClassName = "shrink-0";
@@ -130,21 +130,7 @@ export function ChatErrorBanner({
   }
 
   const handleOpenFeedback = async () => {
-    openFeedbackSubmit({
-      title: localizedErrorMessage.slice(0, 80),
-      type: "bug",
-      module: "模型调用报错",
-      severity: "P2-中",
-      includeLogs: false,
-      description: buildErrorFeedbackDescription({
-        message: localizedErrorMessage,
-        detail: error.detail,
-        traceId: error.traceId,
-        formatMessage: (id: string, values?: Record<string, string>) =>
-          intl.formatMessage({ id }, values),
-      }),
-      screenshots: [],
-    });
+    await openKCodeGitHubIssue(platform);
     toast(intl.formatMessage({ id: "chat.error.feedbackOpened" }));
   };
 

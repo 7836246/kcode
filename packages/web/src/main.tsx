@@ -11,7 +11,7 @@ import {
 } from "@kcode/ui";
 import "@kcode/ui/styles.css";
 import { connectViaWebSocket } from "@kcode/client";
-import { resolveWebCommunityUrl, resolveWebHelpConfig } from "./communityUrl.js";
+import { resolveWebCommunityUrl } from "./communityUrl.js";
 import {
   ConversationShareLandingLoader,
   ConversationShareLandingStatus,
@@ -24,7 +24,12 @@ import {
   isConversationSharePath,
   resolveConversationShareCodeFromPath,
 } from "./share/conversationShareRoute.js";
-import type { IPlatformService, RemoteTarget, ServerRemoteInfo } from "@kcode/shared";
+import {
+  KCODE_GITHUB_NEW_ISSUE_URL,
+  type IPlatformService,
+  type RemoteTarget,
+  type ServerRemoteInfo,
+} from "@kcode/shared";
 import { WEB_DEFAULT_THEME, resolveWebInitialTheme } from "./webThemeSeed.js";
 
 function resolveWebThemePreference(defaultTheme: Theme = WEB_DEFAULT_THEME): Theme {
@@ -62,8 +67,8 @@ function resolveWebThemePreference(defaultTheme: Theme = WEB_DEFAULT_THEME): The
   document.documentElement.classList.toggle("theme-zai-dark", appliedTheme === "zai-dark");
 }
 
-async function resolveFeedbackUrl(): Promise<string | undefined> {
-  return (await resolveWebHelpConfig()).feedback_url;
+async function resolveFeedbackUrl(): Promise<string> {
+  return KCODE_GITHUB_NEW_ISSUE_URL;
 }
 
 const root = createRoot(document.getElementById("root")!);

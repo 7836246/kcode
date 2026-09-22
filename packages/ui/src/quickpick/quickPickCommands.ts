@@ -3,7 +3,6 @@ export type QuickPickCommandIcon =
   | "browser"
   | "community"
   | "diff"
-  | "feedback"
   | "folder"
   | "login"
   | "logout"

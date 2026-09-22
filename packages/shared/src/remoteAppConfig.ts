@@ -1,9 +1,6 @@
 import type { Locale } from "./protocol.js";
 
 interface RemoteAppConfigLike {
-  feedback_url?: unknown;
-  feedback_api_base?: unknown;
-  feedback_use_external_form?: unknown;
   community_urls?: unknown;
   forceUpdate?: unknown;
 }
@@ -16,31 +13,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function sanitizeUrl(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() !== "" ? value : undefined;
-}
-
-export function getFeedbackUrlFromConfig(config: unknown): string | undefined {
-  if (!isRecord(config)) {
-    return undefined;
-  }
-
-  return sanitizeUrl((config as RemoteAppConfigLike).feedback_url);
-}
-
-export function getFeedbackApiBaseFromConfig(config: unknown): string | undefined {
-  if (!isRecord(config)) {
-    return undefined;
-  }
-
-  return sanitizeUrl((config as RemoteAppConfigLike).feedback_api_base);
-}
-
-export function getFeedbackUseExternalFormFromConfig(config: unknown): boolean {
-  if (!isRecord(config)) {
-    return false;
-  }
-
-  const value = (config as RemoteAppConfigLike).feedback_use_external_form;
-  return value === true || value === "true";
 }
 
 export function getCommunityUrlsFromConfig(config: unknown): LocaleUrlMap {

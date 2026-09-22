@@ -19,11 +19,9 @@ import { pipeline } from "node:stream/promises";
 import { ZipFile } from "yazl";
 
 import {
-  createFeedbackDiagnosticArchive,
   getAppConfigDir,
   getExportLogDir as getDefaultExportLogDir,
   getExportLogStageDir as getDefaultExportLogStageDir,
-  getFeedbackLogArchiveDir as getDefaultFeedbackLogArchiveDir,
 } from "@kcode/services/node";
 import { createAboutSnapshot, formatAboutDetail, readBuildMetadata } from "./about.js";
 import { logger } from "./logger.js";
@@ -94,13 +92,6 @@ interface ExportLogsDependencies {
 
 interface WriteLogArchiveZipOptions {
   stageRootDir?: string;
-}
-
-interface CreateFeedbackLogArchiveFromExportLogsOptions {
-  now?: () => Date;
-  outputRootDir?: string;
-  stageRootDir?: string;
-  onProgress?: (event: { processedBytes: number; totalBytes: number }) => void;
 }
 
 function formatTimestamp(now: Date = new Date()): string {
@@ -1132,26 +1123,6 @@ async function writeLogArchiveDirectory(
   logSkippedLogArchiveFiles(skippedFiles);
 
   await writeFile(join(outputPath, "about.txt"), artifacts.aboutContent, "utf-8");
-}
-
-export async function createFeedbackLogArchiveFromExportLogs(
-  sourceDir: string,
-  options: CreateFeedbackLogArchiveFromExportLogsOptions = {},
-): Promise<{ path: string; size: number }> {
-  return createFeedbackDiagnosticArchive({
-    sources: [
-      { directory: join(sourceDir, "logs"), archivePrefix: "logs" },
-      { directory: getKCodeCliLogDir(), archivePrefix: ".kcode/cli/log" },
-      {
-        directory: getCuaHelperRunDir(),
-        archivePrefix: ".kcode/computer-use/run",
-        exitLogsOnly: true,
-      },
-    ],
-    outputRootDir: options.outputRootDir ?? getDefaultFeedbackLogArchiveDir(),
-    now: options.now,
-    onProgress: options.onProgress,
-  });
 }
 
 export async function exportLogs(

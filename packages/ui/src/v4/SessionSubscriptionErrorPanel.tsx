@@ -2,9 +2,9 @@ import { useCallback } from "react";
 import { TID_V4_RETRY_SUBSCRIBE } from "@kcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
-import { useFeedbackStore } from "@/feedback/feedbackStore.js";
+import { usePlatform } from "@/hooks/usePlatform.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
-import { buildErrorFeedbackDescription } from "@/lib/errorFeedbackDraft.js";
+import { openKCodeGitHubIssue } from "@/lib/productIssues.js";
 
 interface SessionSubscriptionErrorPanelProps {
   error: string;
@@ -15,36 +15,14 @@ interface SessionSubscriptionErrorPanelProps {
 
 export function SessionSubscriptionErrorPanel({
   error,
-  sessionId,
-  workspacePath,
   onReconnect,
 }: SessionSubscriptionErrorPanelProps) {
   const { intl } = useKCodeIntl();
-  const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
+  const platform = usePlatform();
   const handleOpenFeedback = useCallback(async () => {
-    openFeedbackSubmit({
-      title: error.slice(0, 80),
-      type: "bug",
-      module: "Agent任务执行失败",
-      severity: "P2-中",
-      includeLogs: false,
-      description: buildErrorFeedbackDescription({
-        message: error,
-        contextLines: [
-          intl.formatMessage({ id: "feedback.submit.template.section.taskInfo" }),
-          intl.formatMessage({ id: "feedback.submit.template.section.taskId" }, { id: sessionId }),
-          intl.formatMessage(
-            { id: "feedback.submit.template.section.taskWorkspace" },
-            { path: workspacePath },
-          ),
-        ],
-        formatMessage: (id: string, values?: Record<string, string>) =>
-          intl.formatMessage({ id }, values),
-      }),
-      screenshots: [],
-    });
+    await openKCodeGitHubIssue(platform);
     toast(intl.formatMessage({ id: "chat.error.feedbackOpened" }));
-  }, [error, intl, openFeedbackSubmit, sessionId, workspacePath]);
+  }, [intl, platform]);
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4 text-ui-base">
