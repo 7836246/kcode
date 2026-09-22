@@ -151,6 +151,8 @@ import { useOpenPptxElementReference } from "@/v4/composer/useOpenPptxElementRef
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import { useConversationSelectionReferences } from "@/v4/composer/useConversationSelectionReferences.js";
 import { ConversationBackgroundWorkTrigger } from "@/v4/composer/ConversationBackgroundWorkTrigger.js";
+import { TurnMetricsBar } from "@/v4/composer/TurnMetricsBar.js";
+import { resolveTurnMetricsView } from "@/chat-input-toolbar/turnMetrics.js";
 import { V4ComposerCuaEntry } from "@/v4/composer/V4ComposerCuaEntry.js";
 import {
   V4ComposerModeSwitch,
@@ -2026,6 +2028,13 @@ function ConversationComposerImpl({
   // 避免每个 token 批次都重建 Tooltip/Select 子树。
   const composerUsage = snapshot?.usage ?? null;
   const composerPhase = snapshot?.control.phase ?? null;
+  // 工具栏中段：当前会话最后一轮的生成指标。取数口径由 turnHeader.metrics 决定，
+  // composer 只负责挑出该行，不重算首 token / tok/s / 输出 token。
+  const composerRows = snapshot?.rows.window;
+  const toolbarStatusNode = useMemo(() => {
+    const view = resolveTurnMetricsView(composerRows);
+    return view ? <TurnMetricsBar metrics={view.metrics} streaming={view.streaming} /> : null;
+  }, [composerRows]);
   const handleSelectModelTrace = useCallback(
     (nextProvider: string, nextModel: string, sourceModel: ModelSelectionSource | null) =>
       runUserAction({
@@ -2288,6 +2297,7 @@ function ConversationComposerImpl({
           enableMentionPanel
           leadingActions={leadingActionsNode}
           submitControl={submitControlNode}
+          toolbarStatus={toolbarStatusNode}
           className="p-0"
           onChange={handleEditorChange}
           onFocus={handleEditorFocus}
