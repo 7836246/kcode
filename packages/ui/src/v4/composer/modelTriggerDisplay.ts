@@ -1,3 +1,4 @@
+import { resolveModelProviderFamilyIdByProviderId } from "@kcode/shared";
 import type { IntlInstance } from "@/i18n/IntlProvider.js";
 import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
 
@@ -46,7 +47,12 @@ export function resolveV4ModelTriggerLabel({
     return fallbackLabel;
   }
 
-  return formatProviderModelLabel(providerId, providerName, selectedItem.name);
+  // 仅当前菜单中存在的连接按 ID 兜底；历史记录的通用格式化保留原有语义。
+  return formatProviderModelLabel(
+    providerId,
+    providerName?.trim() || providerId,
+    selectedItem.name,
+  );
 }
 
 export function resolveV4ModelTriggerDisplay({
@@ -78,8 +84,11 @@ export function resolveV4ModelTriggerDisplay({
   }
 
   const modelLabel = selectedItem.name;
-  const normalizedProviderName = providerName?.trim();
-  if (!normalizedProviderName) {
+  const normalizedProviderName = providerName?.trim() || providerId;
+  if (
+    !normalizedProviderName ||
+    (providerId && resolveModelProviderFamilyIdByProviderId(providerId))
+  ) {
     return { fullLabel, modelLabel };
   }
 

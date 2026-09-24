@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { onboardingRecordFileSchema } from "@kcode/shared";
+import { onboardingRecordEntrySchema, onboardingRecordFileSchema } from "@kcode/shared";
 import { appSettingsOccupationEnum } from "@kcode/shared";
 import type {
   OnboardingRecordEntry,
@@ -78,7 +78,8 @@ export function createOnboardingRecordService(
           }
           file = existing;
         } else {
-          file = { version: 1, deviceMid, entries: [] };
+          // 上游 v3.14.3 把记录文件升到 v2，读取时会给 v1 补空 decisions；新文件直接写 v2。
+          file = { version: 2, deviceMid, entries: [], decisions: [] };
         }
         const record: OnboardingRecordEntry = {
           userId,
@@ -88,7 +89,7 @@ export function createOnboardingRecordService(
         // 每 userId（含 null）至多一条：同一用户重复完成引导（debug 重置后再答等）覆盖旧条目，
         // 而不是追加——覆盖后的新答案重新置 pending，等待上传。
         const previousIndex = file.entries.findIndex((item) => item.userId === userId);
-        const validated = onboardingRecordFileSchema.shape.entries.element.parse(record);
+        const validated = onboardingRecordEntrySchema.parse(record);
         if (previousIndex >= 0) file.entries[previousIndex] = validated;
         else file.entries.push(validated);
         await mkdir(join(filePath, ".."), { recursive: true });
@@ -107,7 +108,7 @@ export function createOnboardingRecordService(
         // 兼容旧版重复文件取最后一条 null；移交是改写，不保留匿名副本。
         for (let i = file.entries.length - 1; i >= 0; i -= 1) {
           if (file.entries[i]!.userId === null) {
-            file.entries[i] = onboardingRecordFileSchema.shape.entries.element.parse({
+            file.entries[i] = onboardingRecordEntrySchema.parse({
               ...file.entries[i]!,
               userId,
             });
@@ -191,7 +192,7 @@ export function createOnboardingRecordService(
         if (!file) return;
         const index = file.entries.findLastIndex((entry) => entry.userId === userId);
         if (index < 0) return;
-        file.entries[index] = onboardingRecordFileSchema.shape.entries.element.parse({
+        file.entries[index] = onboardingRecordEntrySchema.parse({
           ...file.entries[index],
           ...patch,
         });

@@ -16,6 +16,8 @@ export function createDesktopPlatform(options: {
     createTempTextAttachment: (payload) => window.kcode.createTempTextAttachment(payload),
     onRemoteConnectionLog: (handler) => window.kcode.onRemoteConnectionLog(handler),
     onRemoteSessionClosed: (handler) => window.kcode.onRemoteSessionClosed(handler),
+    onBotRemoteWorkspaceReconnected: (handler) =>
+      window.kcode.onBotRemoteWorkspaceReconnected(handler),
     activateOrSetWorkspace: (path) =>
       window.kcode.activateOrSetWorkspace?.(path) ?? Promise.resolve({ activated: false }),
     connectRemote: (remoteOptions, requestId, context) =>

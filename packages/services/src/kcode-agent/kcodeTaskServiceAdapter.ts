@@ -50,6 +50,7 @@ import {
   type KCodeBackgroundTaskNotificationInfo,
   type KCodeBackgroundTaskControlItem,
   type KCodeBackgroundTurnAttribution,
+  type KCodeAutomationBotDeliveryTarget,
   type KCodeCancelTaskCommandResult,
   type KCodeConfigOption,
   type KCodeEnqueueTaskCommandResult,
@@ -381,6 +382,7 @@ export function createKCodeTaskServiceAdapter(
       content: string;
       attachments?: KCodePromptAttachment[];
       toolDenylist?: string[];
+      botDeliveryTarget?: KCodeAutomationBotDeliveryTarget;
       clientId?: string;
       clientMode?: KCodeTaskClientMode;
       logReason?: string;
@@ -431,6 +433,7 @@ export function createKCodeTaskServiceAdapter(
           modelExecution: params.modelExecution,
           ...turnAttributionOf(params),
           toolDenylist: promptToolDenylist,
+          botDeliveryTarget: params.botDeliveryTarget,
           ...(params.clientMode ? { clientMode: params.clientMode } : {}),
         });
       } else {
@@ -452,6 +455,7 @@ export function createKCodeTaskServiceAdapter(
               ...(params.modelSelection ? { modelSelection: params.modelSelection } : {}),
               ...(params.modelExecution ? { modelExecution: params.modelExecution } : {}),
               ...turnAttributionOf(params),
+              ...(params.botDeliveryTarget ? { botDeliveryTarget: params.botDeliveryTarget } : {}),
               ...(promptToolDenylist ? { toolDisallowlist: promptToolDenylist } : {}),
             },
             sessionId: target.taskId,
@@ -1827,30 +1831,63 @@ export function createKCodeTaskServiceAdapter(
         // v4 createSession 命令已原生（desktop
         // v4 UI 在用），但 replayable createTask 需要 mcpServers/model/importedHistory
         // 载荷与 snapshot 返回值（task index 同步依赖），v4 命令面均未建模；
-        // 迁移属 v4 生命周期收口。
-        snapshot = await options.kcodeAgentService.createSession({
-          ...target,
-          sessionTraceId: createSessionTraceId(),
-          mode: toKCodeMode(params.mode),
-          model: requestedSelection,
-          thoughtLevel: requestedSelection?.options?.reasoningLevel,
-          ...(params.automationId || params.deferPersistenceUntilFirstPrompt
-            ? {
-                // automation / 闲时任务新建空 session 后会立即 sendText。session_input 有
-                // session 外键，必须让 V4 admission 在首发前统一持久化 session 主记录；
-                // 否则 create 返回成功后第一条 prompt 会稳定触发 FOREIGN KEY constraint failed。
-                persistence: "deferred" as const,
-              }
-            : {}),
-          ...(params.automationId
-            ? {
-                titleGenerationEnabled: false,
-              }
-            : {}),
-          // replayable task facade 创建 session 时同样会启动 runtime；
-          // 之前这里丢掉 mcpServers，导致手机远控路径和 desktop-continuous 的 MCP 行为不一致。
-          mcpServers,
-        });
+        if (params.v4Create === true) {
+          const model = requestedSelection;
+          const ack = assertV4CommandAckOk(
+            "createSession",
+            await options.kcodeAgentService.sendConversationCommandV4({
+              ...target,
+              envelope: createHostCommandEnvelope({
+                type: "createSession",
+                sessionId: null,
+                payload: {
+                  workspaceId: target.workspaceIdentity?.trim() || target.workspacePath,
+                  config: {
+                    ...(model ? { provider: model.providerId, model: model.modelId } : {}),
+                    ...(model?.options?.reasoningLevel
+                      ? { thought: model.options.reasoningLevel }
+                      : {}),
+                    ...(params.mode ? { mode: toKCodeMode(params.mode) } : {}),
+                  },
+                  ...(mcpServers ? { mcpServers } : {}),
+                },
+              }),
+            }),
+            `workspace=${target.workspacePath}`,
+          );
+          const sessionId = ack.result?.type === "createSession" ? ack.result.sessionId : undefined;
+          if (!sessionId) {
+            throw new Error("v4 createSession accepted without sessionId result");
+          }
+          snapshot = await options.kcodeAgentService.readSession({
+            ...target,
+            sessionId,
+          });
+        } else {
+          snapshot = await options.kcodeAgentService.createSession({
+            ...target,
+            sessionTraceId: createSessionTraceId(),
+            mode: toKCodeMode(params.mode),
+            model: requestedSelection,
+            thoughtLevel: requestedSelection?.options?.reasoningLevel,
+            ...(params.automationId || params.deferPersistenceUntilFirstPrompt
+              ? {
+                  // 修复原因：automation / 闲时任务新建空 session 后会立即 sendText。session_input 有
+                  // session 外键，必须让 V4 admission 在首发前统一持久化 session 主记录；
+                  // 否则 create 返回成功后第一条 prompt 会稳定触发 FOREIGN KEY constraint failed。
+                  persistence: "deferred" as const,
+                }
+              : {}),
+            ...(params.automationId
+              ? {
+                  titleGenerationEnabled: false,
+                }
+              : {}),
+            // Bugfix: replayable task facade 创建 session 时同样会启动 runtime；
+            // 之前这里丢掉 mcpServers，导致手机远控路径和 desktop-continuous 的 MCP 行为不一致。
+            mcpServers,
+          });
+        }
       }
       const baseMeta = snapshotToMeta(snapshot);
       const meta = await syncTaskIndexMeta({
@@ -1894,6 +1931,7 @@ export function createKCodeTaskServiceAdapter(
         attachments: params.attachments,
         ...turnAttributionOf(params),
         toolDenylist: params.toolDenylist,
+        botDeliveryTarget: params.botDeliveryTarget,
         clientId: params.clientId,
         clientMode: params.clientMode,
         modelSelection: params.modelSelection,
@@ -3417,7 +3455,7 @@ function getSnapshotGoalActiveIterationCount(snapshot: KCodeSessionStateSnapshot
 }
 
 function toKCodeDeliveryKind(
-  deliveryKind: "continuous" | "replayable" | "mixed" | undefined,
+  deliveryKind: "continuous" | "bot-channel-continuous" | "replayable" | "mixed" | undefined,
 ): KCodeDeliveryKind {
   return deliveryKind === "replayable" ? "web-remote-replayable" : "desktop-continuous";
 }

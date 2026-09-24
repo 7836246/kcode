@@ -108,18 +108,18 @@ function V4ComposerModeSwitchImpl({
               size="sm"
               disabled={disabled}
               data-testid={TID_CHAT_MODE_SELECT_TRIGGER}
-              data-composer-collapse-priority="0"
+              data-composer-collapse-priority="1"
               aria-label={intl.formatMessage({ id: "chat.toolbar.mode.label" })}
               className={cn(
-                "group/mode size-7 gap-1 rounded-lg p-0 text-ui-base @xl/composer:w-auto @xl/composer:px-2 data-[composer-compact=true]:w-7 data-[composer-compact=true]:px-0",
+                "group/mode h-7 gap-1 rounded-lg px-2 text-ui-base data-[composer-compact=true]:w-7 data-[composer-compact=true]:px-0",
                 selected.id === "yolo" && "text-warning hover:text-warning",
               )}
             >
               <Icon className="size-4" />
-              <span className="hidden @xl/composer:inline group-data-[composer-compact=true]/mode:hidden">
+              <span className="inline group-data-[composer-compact=true]/mode:hidden">
                 {label(selected)}
               </span>
-              <ChevronDownIcon className="hidden size-3.5 @xl/composer:block group-data-[composer-compact=true]/mode:hidden" />
+              <ChevronDownIcon className="size-3.5 group-data-[composer-compact=true]/mode:hidden" />
             </Button>
           </DropdownMenuTrigger>
         </ControlHintTooltip>
@@ -189,7 +189,7 @@ function V4ComposerModeSwitchImpl({
             >
               <LightbulbIcon className="size-4 group-hover/plan:hidden group-focus-visible/plan:hidden" />
               <XIcon className="hidden size-4 group-hover/plan:block group-focus-visible/plan:block" />
-              <span className="hidden @xl/composer:inline group-data-[composer-compact=true]/plan:hidden">
+              <span className="inline group-data-[composer-compact=true]/plan:hidden">
                 {intl.formatMessage({ id: "mode.plan" })}
               </span>
             </Button>

@@ -1,7 +1,9 @@
 import { resolve } from "node:path";
-import { createConfig } from "@kcode/adapters/config";
+import { createConfig, resolvePath } from "@kcode/adapters/config";
 import { createNodeSkillAdapter } from "@kcode/adapters/skills";
 import type { Logger, SkillContent, SkillDiagnostic, SkillLoadOutcome } from "@kcode/contracts";
+import { resolveBundledSkillRoots } from "./app/bundled-skills.js";
+import { getCliStorageRoot } from "./app/paths.js";
 import { resolveKCodePlugins } from "./plugins.js";
 import { collectDisabledPaths } from "./skill-command-overrides.js";
 
@@ -26,7 +28,7 @@ export interface KCodeSkillInspection {
 export async function listKCodeSkills(
   options: ListKCodeSkillsOptions = {},
 ): Promise<SkillLoadOutcome> {
-  const discovery = createSkillDiscovery(options);
+  const discovery = await createSkillDiscovery(options);
   if (!discovery.enabled) {
     return {
       diagnostics: [],
@@ -43,7 +45,7 @@ export async function listKCodeSkills(
 export async function inspectKCodeSkill(
   options: InspectKCodeSkillOptions,
 ): Promise<KCodeSkillInspection> {
-  const discovery = createSkillDiscovery(options);
+  const discovery = await createSkillDiscovery(options);
   if (!discovery.enabled) {
     throw new Error("Skills are disabled.");
   }
@@ -70,7 +72,7 @@ export async function inspectKCodeSkill(
   };
 }
 
-function createSkillDiscovery(options: ListKCodeSkillsOptions):
+async function createSkillDiscovery(options: ListKCodeSkillsOptions): Promise<
   | {
       enabled: false;
       workingDirectory: string;
@@ -79,7 +81,8 @@ function createSkillDiscovery(options: ListKCodeSkillsOptions):
       enabled: true;
       skillPort: ReturnType<typeof createNodeSkillAdapter>;
       workingDirectory: string;
-    } {
+    }
+> {
   const workingDirectory = resolve(options.workingDirectory ?? process.cwd());
   const configResult = createConfig({
     env: options.env,
@@ -105,11 +108,17 @@ function createSkillDiscovery(options: ListKCodeSkillsOptions):
     workingDirectory,
   });
 
+  // 内置技能包与插件技能根并列注入：`kcode skills list`、引用目录与 runtime 看到同一份发现结果。
+  const bundledSkillRoots = await resolveBundledSkillRoots({
+    cliStorageRoot: getCliStorageRoot(resolvePath(configResult.config.storage.dir)),
+    logger: options.logger,
+  });
+
   return {
     enabled: true,
     skillPort: createNodeSkillAdapter({
       extraRoots: configResult.config.skills.roots,
-      extraResolvedRoots: pluginOutcome.skillRoots,
+      extraResolvedRoots: [...pluginOutcome.skillRoots, ...bundledSkillRoots],
       disabledPaths: collectDisabledPaths(configResult.config.skillOverrides),
     }),
     workingDirectory,

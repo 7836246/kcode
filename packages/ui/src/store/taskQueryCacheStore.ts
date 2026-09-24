@@ -17,7 +17,7 @@ import {
 import { notifyTaskLifecycle } from "@/lib/taskLifecycleEvents.js";
 import { uiMemoryDiagnosticsRegistry } from "@/lib/memoryDiagnostics.js";
 
-interface TaskListMembershipState {
+export interface TaskListMembershipState {
   pinned: boolean;
   archived: boolean;
 }
@@ -948,6 +948,14 @@ export function markTaskQueryCacheScopesStale(
     buildTaskWorkspaceKey(scope.workspacePath, scope.workspaceIdentity),
   );
   useTaskQueryCacheStore.getState().markWorkspaceKeysStale(workspaceKeys);
+}
+
+export function upsertTaskQueryCacheTaskMeta(task: KCodeTaskMeta): void {
+  useTaskQueryCacheStore.getState().upsertTaskMeta(task);
+}
+
+export function updateTaskQueryCacheTaskMetaPreservingMembership(task: KCodeTaskMeta): void {
+  useTaskQueryCacheStore.getState().updateTaskMetaPreservingMembership(task);
 }
 
 export function applyTaskQueryCacheMutation(params: {

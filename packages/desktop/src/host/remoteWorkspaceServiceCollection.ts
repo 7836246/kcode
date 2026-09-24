@@ -13,6 +13,7 @@ import {
   IKCodeAgentService,
   IKCodeSessionService,
   IConversationShareService,
+  IBotsService,
   IFileWatcherService,
   IModelSelectionService,
   IProviderSettingsService,
@@ -43,6 +44,7 @@ import {
   createHostApiNetworkTransport,
   registerHostApiNetworkTransportForDispose,
   createSettingsSyncService,
+  createBotsService,
   createUsageStatsService,
   createClientScenesService,
   createServiceLogger,
@@ -237,6 +239,19 @@ export function createRemoteWorkspaceServiceCollection(params: {
     .register(IKCodeAgentService, params.connectionServices.kcodeAgentService)
     .register(IKCodeSessionService, remoteKCodeSessionService)
     .register(IConversationShareService, conversationShareService)
+    .register(
+      IBotsService,
+      createBotsService({
+        credentialService: localCredentialService,
+        kcodeTaskService: remoteKCodeTaskService,
+        broadcastService: localBroadcastService,
+        settingService: localSettingService,
+        modelSelectionService: params.connectionServices.modelSelectionService,
+        // 修复原因：remote workspace host 首屏只需要远端文件/agent 能力；
+        // bot 启动后台任务如果立即轮询或 getAll，会重复拉本机 preset 并放大 SSH/Docker 连接耗时。
+        runStartupBackgroundTasks: false,
+      }),
+    )
     .register(IFileWatcherService, params.connectionServices.fileWatcherService)
     // Provider/Model 事实属于目标 Environment。远端 workspace 的选择和设置视图
     // 必须直接读取远端 Registry，不能继续显示 Desktop 本地 Provider。

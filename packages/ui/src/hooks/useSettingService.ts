@@ -106,7 +106,7 @@ async function refreshSettingsStore(settingService: ISettingService | undefined)
 
 /** 获取和更新应用设置 */
 export function useSettings() {
-  const { broadcastService, settingService, kcodeAgentService } = useServices();
+  const { botsService, broadcastService, settingService, kcodeAgentService } = useServices();
   const platform = usePlatform();
   const settingsStore = getSettingsStore(settingService);
   const [snapshot, setSnapshot] = useState<SettingsSnapshot>(settingsStore.snapshot);
@@ -156,6 +156,7 @@ export function useSettings() {
         };
         const syncResults = await Promise.allSettled([
           kcodeAgentService.syncAppRuntimePreferences(preferences),
+          botsService.syncAppRuntimePreferences(preferences),
         ]);
         const syncError = syncResults.find(
           (result): result is PromiseRejectedResult => result.status === "rejected",
@@ -169,7 +170,15 @@ export function useSettings() {
         }
       }
     },
-    [broadcastService, settingService, settingsStore, kcodeAgentService, platform, refresh],
+    [
+      botsService,
+      broadcastService,
+      settingService,
+      settingsStore,
+      kcodeAgentService,
+      platform,
+      refresh,
+    ],
   );
 
   return {

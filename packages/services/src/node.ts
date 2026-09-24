@@ -79,6 +79,7 @@ export { createCredentialService } from "./credential/credentialService.js";
 export { createBroadcastService } from "./broadcast/broadcastService.js";
 export { createKCodeAgentService } from "./kcode-agent/kcodeAgentService.js";
 export { createKCodeTaskServiceAdapter } from "./kcode-agent/kcodeTaskServiceAdapter.js";
+export { createBotsService } from "./bots/botsService.js";
 export { createKCodeSessionService } from "./kcode-session/kcodeSessionService.js";
 export {
   resolveDefaultKCodeAgentCommand,
@@ -285,6 +286,7 @@ import { ICommandsService } from "./commands/commands.js";
 import { IHooksService } from "./hooks/hooks.js";
 import { IMemoryService } from "./memory/memory.js";
 import { ISettingsSyncService } from "./settings-sync/settingsSync.js";
+import { IBotsService } from "./bots/bots.js";
 import { IPromptAttachmentTransferService } from "./prompt-attachment-transfer/promptAttachmentTransfer.js";
 import { createFileService } from "./file/fileService.js";
 import { createMediaPreviewService } from "./media-preview/mediaPreview.js";
@@ -304,6 +306,8 @@ import type { KCodeAgentCommandResolver } from "./kcode-agent/kcodeAgentProcessM
 import { buildAgentTelemetrySpawnEnv } from "./kcode-agent/agentTelemetryEnv.js";
 import { resolveKCodeAgentPresentationSurface } from "./kcode-agent/kcodeAgentPresentationSurface.js";
 import { createKCodeTaskServiceAdapter } from "./kcode-agent/kcodeTaskServiceAdapter.js";
+import { createBotsService } from "./bots/botsService.js";
+import { createBotRemoteWorkspaceService } from "./bots/botRemoteWorkspaceBridge.js";
 import { createKCodeSessionService } from "./kcode-session/kcodeSessionService.js";
 import { createKCodeTaskIndexSyncer } from "./kcode-agent/kcodeTaskIndexSyncer.js";
 import { TaskIndexRepo } from "./session/taskIndexRepo.js";
@@ -2033,6 +2037,11 @@ export function createLocalServices(options: {
     settingService,
     cuaProductMcpServerResolver,
   });
+  const botRemoteWorkspaceService = createBotRemoteWorkspaceService({
+    parentPort: options?.parentPort,
+    settingService,
+    credentialService,
+  });
   const fileService = createFileService({
     workspaceFileSearchFilter: options?.workspaceFileSearchFilter,
   });
@@ -2078,6 +2087,20 @@ export function createLocalServices(options: {
     .register(ICuaPermissionService, cuaPermissionService)
     .register(ICuaPipSessionService, cuaPipSessionService)
     .register(IConversationShareService, conversationShareService)
+    .register(
+      IBotsService,
+      createBotsService({
+        credentialService,
+        kcodeTaskService,
+        broadcastService,
+        settingService,
+        modelSelectionService: providerRuntime.modelSelection,
+        remoteWorkspaceService: botRemoteWorkspaceService,
+        // 远端与本地 Bot 都读取所属 Environment 的 Model Selection View。
+        // 远端启动期不再轮询旧 Preset，避免重新制造一套模型候选事实。
+        runStartupBackgroundTasks: !isDesktopAttachedRemote,
+      }),
+    )
     .register(IFileWatcherService, createFileWatcherService())
     .register(
       IUsageStatsService,
@@ -2190,6 +2213,7 @@ export function disposeServiceResources(services: ServiceCollection): void {
     services.getOptional(IKCodeTaskService),
     services.getOptional(IKCodeAgentService),
     services.getOptional(IKCodeSessionService),
+    services.getOptional(IBotsService),
     services.getOptional(IFileWatcherService),
     services.getOptional(IOffPeakTaskService),
   ].filter((service) => service !== undefined);
@@ -2223,6 +2247,7 @@ export async function disposeServiceResourcesAndWait(services: ServiceCollection
     services.getOptional(IKCodeTaskService),
     services.getOptional(IKCodeAgentService),
     services.getOptional(IKCodeSessionService),
+    services.getOptional(IBotsService),
     services.getOptional(IFileWatcherService),
     services.getOptional(IOffPeakTaskService),
   ].filter((service) => service !== undefined);

@@ -63,6 +63,7 @@ import type {
   KCodeWorkspaceGenerateTextResult,
   KCodeWorkspaceGenerateTextParams,
   KCodeWorkspaceHookTrustGrantResult,
+  KCodeAutomationBotDeliveryTarget,
 } from "@kcode/shared";
 import type {
   ClientHello,
@@ -266,6 +267,8 @@ export interface KCodeAgentSendPromptParamsBase extends KCodeAgentSessionTarget 
   expectedProviderRevision?: string;
   runtimeProviderHeaders?: Record<string, string>;
   toolDenylist?: string[];
+  /** Bot 来源 turn 的稳定回推地址；只在当前 turn 内供 CronCreate 读取。 */
+  botDeliveryTarget?: KCodeAutomationBotDeliveryTarget;
 }
 
 export type KCodeAgentSendPromptParams = KCodeAgentSendPromptParamsBase &
