@@ -9,6 +9,28 @@ export interface ComposerSubmissionConfig {
   planEnabled: boolean;
 }
 
+/**
+ * Composer 展示/提交用的选型。
+ * View 的 effectiveSelection 负责账号重映射等解析；但异步 getView 尚未跟上用户
+ * 刚点的草稿意图时，不能让旧 View 结果盖住本次切模——否则工具条已显示新模型，
+ * 发送却仍带上旧 Selection，runtime 继续打旧供应商。
+ */
+export function resolveComposerModelSelection(
+  draftSelection: ModelSelection | null | undefined,
+  viewSelection: ModelSelection | null | undefined,
+): ModelSelection | undefined {
+  if (!draftSelection) return viewSelection ?? undefined;
+  if (!viewSelection) return draftSelection;
+  if (
+    viewSelection.providerId === draftSelection.providerId &&
+    viewSelection.modelId === draftSelection.modelId
+  ) {
+    // 同身份时优先 View（账号 plan 重映射后的 providerId、补全后的档位）。
+    return viewSelection;
+  }
+  return draftSelection;
+}
+
 /** 在点击提交的瞬间，把 Composer 意图冻结成本次 Submission 的执行配置。 */
 export function createComposerSubmissionConfig(
   composer:

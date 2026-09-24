@@ -49,21 +49,32 @@ export async function applySubmissionExecutionState(
   let model = preparedModel;
 
   if (selection) {
-    model ??= createTurnModel(runtime, {
-      selection,
-      requestDependencies: modelExecution?.requestDependencies,
-    });
+    // preparedModel 来自 turn 入口的 admitted 快照；若与本次 intent Selection 不一致
+    // （例如入口曾回退到 Session 旧选型），不能用 ??= 继续沿用旧 Model 句柄。
+    const preparedMatchesSelection =
+      model !== undefined &&
+      model.providerId === selection.providerId &&
+      model.modelId === selection.modelId &&
+      model.options?.reasoningLevel === selection.options?.reasoningLevel;
+    const nextModel =
+      preparedMatchesSelection && model
+        ? model
+        : createTurnModel(runtime, {
+            selection,
+            requestDependencies: modelExecution?.requestDependencies,
+          });
+    model = nextModel;
     if (modelExecution?.selectionScope !== "execution") {
       const appliedSelection = cloneModelSelection(selection);
       runtime.setSessionModelSelection(appliedSelection);
       await persistRuntimeModelSelection(runtime, appliedSelection);
       if (!sameModelSelection(previousSelection, appliedSelection)) {
         await runtime.emitModelSelected({
-          model,
+          model: nextModel,
           modelSelection: appliedSelection,
-          effectiveReasoningLevel: model.options.reasoningLevel,
+          effectiveReasoningLevel: nextModel.options.reasoningLevel,
           previousModelSelection: previousSelection,
-          supportedThoughtLevels: model.optionSpecs.reasoningLevel.values,
+          supportedThoughtLevels: nextModel.optionSpecs.reasoningLevel.values,
           traceContext,
         });
       }

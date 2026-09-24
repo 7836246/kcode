@@ -27,6 +27,7 @@ import { useKCodeSessionService } from "@/hooks/useKCodeSessionService.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import { parseModelPickerValue } from "@/lib/kcodeSessionProjection.js";
 import { initializeNewTaskDraft } from "@/v4/composer/newTaskDraft.js";
+import { resolveComposerModelSelection } from "@/v4/composer/composerSubmissionConfig.js";
 import {
   clearV4ComposerDraft,
   persistV4ComposerDraft,
@@ -177,9 +178,12 @@ export function useDraftConfigControl(params: {
   stateRef.current = currentState;
   // 原因：按 revision 清草稿会把短暂不可用永久写成空选择。这里只派生当前结果，
   // 正文/模式自动保存继续保存 draft 中的原意图；读取未就绪时保留展示，提交由 View 门禁阻断。
-  const effectiveSelection = modelSelectionView
-    ? (modelSelectionView.effectiveSelection ?? undefined)
-    : draft.modelSelection;
+  // 切模后 getView(新意图) 仍在飞时，不能让上一份 ready View 的旧 effectiveSelection
+  // 写回 draftConfig/submission，否则同窗口多供应商切换会继续打旧模型。
+  const effectiveSelection = resolveComposerModelSelection(
+    draft.modelSelection,
+    modelSelectionView?.effectiveSelection,
+  );
   const draftConfig = useMemo<Partial<SessionConfigState>>(
     () => ({
       mode: draft.mode,

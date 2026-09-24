@@ -2285,9 +2285,9 @@ export function SessionPane({
     workspaceIdentity,
     workspacePath,
   });
-  const ensureDraftPrewarmConfigBeforeSendRef = useRef<(targetSessionId: string) => Promise<void>>(
-    async () => undefined,
-  );
+  const ensureDraftPrewarmConfigBeforeSendRef = useRef<
+    (targetSessionId: string, submission: ComposerSubmissionConfig) => Promise<void>
+  >(async () => undefined);
   const effectiveSessionId = sessionId ?? prewarmSessionId;
   const showModelChangeNotice = useCallback(
     (
@@ -2600,13 +2600,12 @@ export function SessionPane({
         // resumeGoal 等控制命令也不应被发送消息确认框截获。
         return "confirmationRequired" as const;
       }
-      const prewarmTargetBeforeSend =
-        sessionId === null ? prewarmBindingRef.current?.sessionId : null;
-      if (prewarmTargetBeforeSend) {
+      const sessionTargetBeforeSend = sessionId ?? prewarmBindingRef.current?.sessionId ?? null;
+      if (sessionTargetBeforeSend) {
         // 屏障只保证已经入队的命令完成；若点击配置时预热 session/snapshot 尚未
-        // 就绪，命令可能当时没有目标。首发绑定确定的预热 session 前再同步一次
-        // 草稿权威配置，禁止 UI 新值与 runtime 旧值分叉。
-        await ensureDraftPrewarmConfigBeforeSendRef.current(prewarmTargetBeforeSend);
+        // 就绪，命令可能当时没有目标。发送前把 runtime Selection 收敛到本次
+        // Submission，避免同窗口多供应商切模后仍打旧模型。
+        await ensureDraftPrewarmConfigBeforeSendRef.current(sessionTargetBeforeSend, submission);
       }
       // slash 命令优先：已有 session 直接消费；draft 首发 /goal 先建空会话再发命令。
       // 携带附件或网页元素上下文时不消费为 v4 原生命令（compact/goal 等无附件语义），随 sendText 直发。
@@ -3313,12 +3312,20 @@ export function SessionPane({
     [dispatchCommand, sessionId],
   );
   const telemetryDraftConfig = draftConfig;
-  const ensureDraftPrewarmConfigBeforeSend = useCallback(
-    async (targetSessionId: string) => {
-      // followupMode 仍是 Session 行为设置；模型与模式属于本次 Submission，随 sendText
-      // 原子提交，不能在发送前通过 CAS 改写共享 Session。
+  const ensureSessionModelBeforeSend = useCallback(
+    async (targetSessionId: string, submission: ComposerSubmissionConfig) => {
+      // followupMode 仍是 Session 行为设置；模式随 sendText 原子提交。
+      // 模型虽也在 Submission 里，但预热/已有会话的 runtime Selection 可能仍停在
+      // 创建或上次回合的旧值。手机端复用 draft session 前会显式 setModel；桌面若只靠
+      // sendText 携带 Selection，在多供应商同窗切模时会出现 UI 已换、请求仍打旧模型。
+      // 发送前用 switchModelConfig 把 runtime/投影收敛到本次 Submission，与 admission 对齐。
       const desiredConfig = buildDraftCreateConfigPayload(
-        draftConfigRef.current,
+        {
+          ...draftConfigRef.current,
+          modelSelection: submission.modelSelection,
+          mode: submission.mode,
+          planEnabled: submission.planEnabled,
+        },
         appFollowupMode,
       ).config;
       if (!desiredConfig) return;
@@ -3337,6 +3344,26 @@ export function SessionPane({
         );
       };
 
+      const desiredSelection = desiredConfig.modelSelection;
+      if (
+        desiredSelection &&
+        (desiredSelection.providerId !== projectedConfig?.modelSelection?.providerId ||
+          desiredSelection.modelId !== projectedConfig?.modelSelection?.modelId ||
+          desiredSelection.options?.reasoningLevel !==
+            projectedConfig?.modelSelection?.options?.reasoningLevel)
+      ) {
+        const ack = await dispatchConfigCas(
+          "switchModelConfig",
+          {
+            provider: desiredSelection.providerId,
+            model: desiredSelection.modelId,
+            thought: desiredSelection.options?.reasoningLevel ?? "",
+          },
+          { targetSessionId },
+        );
+        requireAcceptedConfigAck("switchModelConfig", ack);
+      }
+
       if (
         desiredConfig.followupMode &&
         desiredConfig.followupMode !== projectedConfig?.followupMode
@@ -3351,7 +3378,7 @@ export function SessionPane({
     },
     [appFollowupMode, dispatchConfigCas, draftConfigRef],
   );
-  ensureDraftPrewarmConfigBeforeSendRef.current = ensureDraftPrewarmConfigBeforeSend;
+  ensureDraftPrewarmConfigBeforeSendRef.current = ensureSessionModelBeforeSend;
 
   const followupModeSyncKeyRef = useRef<string | null>(null);
   useEffect(() => {
