@@ -1208,6 +1208,8 @@ async function drainPendingInputUnlocked(
       turnId: options.activeTurn.turnId,
       workingDirectory: this.workingDirectory,
     });
+    // 截断标记不在这里发：此刻该输入的 userInput 行还没建（要等它自己那轮 TurnStarted），
+    // 事件会被投影丢弃。排队输入由它自己的 turn 走主路径 resolve 后补发。
     // 只在实际 guide 消费且无附件时固化新标记；审批反馈仍走原合同。
     const inputPresentation =
       delivery === "guide" && !pendingInput.source && !pendingInput.attachments?.length

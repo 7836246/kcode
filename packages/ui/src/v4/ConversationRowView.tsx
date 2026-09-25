@@ -343,6 +343,8 @@ const UserInputAttachmentList = memo(function UserInputAttachmentList({
   const previewUnavailableLabel = intl.formatMessage({
     id: "chat.attachments.preview.unavailable",
   });
+  // 附件截断标记：只对已发送的消息行展示（composer 编辑态还不知道发送时会不会截断）。
+  const truncatedMarkerLabel = intl.formatMessage({ id: "chat.attachments.truncated.marker" });
 
   useEffect(() => {
     if (attachmentKind === "file" || !attachments || !sessionId || !readAttachment) {
@@ -696,6 +698,15 @@ const UserInputAttachmentList = memo(function UserInputAttachmentList({
     const isThumbnail = attachmentKind === "media" || (isEditingAttachment && isMedia);
     const fileDisplayDescriptor = resolveFileDisplayDescriptor(attachment.fileName);
     const isUnavailable = failedRefs.has(ref);
+    const truncatedTitle =
+      attachment.truncated === true
+        ? attachment.totalLines !== undefined
+          ? intl.formatMessage(
+              { id: "chat.attachments.truncated.tooltip" },
+              { totalLines: attachment.totalLines },
+            )
+          : intl.formatMessage({ id: "chat.attachments.truncated.tooltipNoTotal" })
+        : undefined;
     const thumbnailUrl = thumbnailUrls.get(ref) ?? "";
     const previewItemIndex = previewEntries.findIndex((entry) => entry.index === index);
     // 图片与视频共用当前消息的媒体 gallery；video 首次成为 active item 时再读取。
@@ -783,14 +794,25 @@ const UserInputAttachmentList = memo(function UserInputAttachmentList({
             </div>
           </>
         ) : (
-          <FileDisplayInline
-            path={attachment.fileName}
-            options={{
-              className: "inline-flex min-w-0 max-w-40 items-center gap-1.5",
-              iconSize: 16,
-              fileNameClassName: "truncate text-ui-base font-medium text-foreground",
-            }}
-          />
+          <>
+            <FileDisplayInline
+              path={attachment.fileName}
+              options={{
+                className: "inline-flex min-w-0 max-w-40 items-center gap-1.5",
+                iconSize: 16,
+                fileNameClassName: "truncate text-ui-base font-medium text-foreground",
+              }}
+            />
+            {truncatedTitle ? (
+              <span
+                data-v4-user-input-attachment-truncated="true"
+                title={truncatedTitle}
+                className="shrink-0 text-ui-sm font-normal text-foreground-subtle"
+              >
+                {truncatedMarkerLabel}
+              </span>
+            ) : null}
+          </>
         )}
         {onRemove && isEditingAttachment ? (
           <AttachmentRemove

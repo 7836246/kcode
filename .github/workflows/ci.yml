@@ -56,5 +56,6 @@ jobs:
             packages/ui/test/promptEnhance.test.ts \
             apps/kcode-cli/packages/core/src/runtime/methods/workspace-generate-text-accumulate.test.ts \
             apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment.test.ts \
-            apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment-parity.test.ts
+            apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment-parity.test.ts \
+            apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-attachments-resolved-projection.test.ts
           node --test packages/desktop/scripts/release-signing-plan.test.mjs

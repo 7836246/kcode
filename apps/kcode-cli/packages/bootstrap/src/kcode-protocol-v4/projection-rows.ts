@@ -86,6 +86,12 @@ export function buildUserInputRow(base: RowBaseInput, payload: TurnStartedPayloa
       fileName: meta.fileName,
       mime: meta.mime,
       bytes: meta.bytes,
+      // 冷恢复（transcript 合成）时元信息由消息 parts 派生，这里能带上截断事实；
+      // live 的 TurnStarted 阶段还不知道，缺省即未知。
+      ...(meta.truncated === true ? { truncated: true } : {}),
+      ...(meta.truncated === true && meta.totalLines !== undefined
+        ? { totalLines: meta.totalLines }
+        : {}),
     }));
   const sourceCommandId = payload.intent?.sourceCommandId ?? payload.inputId;
   const rootSourceCommandId = payload.intent?.provenance?.sourceCommandId ?? sourceCommandId;

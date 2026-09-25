@@ -5179,6 +5179,11 @@ const enUS: Record<string, string> = {
   "chat.attachments.preview.loading": "Loading image preview…",
   "chat.attachments.preview.videoLoading": "Loading video preview…",
   "chat.attachments.preview.unavailable": "This image is no longer available to preview.",
+  "chat.attachments.truncated.marker": "Truncated",
+  "chat.attachments.truncated.tooltip":
+    "This attachment was too long, so only the beginning is in context (the file has {totalLines} lines).",
+  "chat.attachments.truncated.tooltipNoTotal":
+    "This attachment was too long, so only the beginning is in context.",
   "chat.attachments.preview.videoUnavailable": "This video is no longer available to preview.",
   "chat.attachments.preview.videoUnsupported":
     "This video can still be sent, but this device cannot preview its format or codec.",

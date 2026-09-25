@@ -22,6 +22,7 @@ import type {
   ModelStreamingPayload,
   ModelUsage,
   PermissionDeniedPayload,
+  TurnAttachmentsResolvedPayload,
   PermissionRequestedPayload,
   PermissionResolvedPayload,
   SessionEvent,
@@ -1050,14 +1051,16 @@ export class ProductProjection {
     const reduced =
       event.type === SessionEventType.AssistantFeedbackUpdated
         ? this.onAssistantFeedbackUpdated(event)
-        : (() => {
-            const fact = normalizeConversationEvent(event, {
-              productTurnId,
-              openAssistantSegments: this.openAssistantSegments(),
-            });
-            this.normalizationDiagnostics.push(...fact.diagnostics);
-            return this.reduce(fact);
-          })();
+        : event.type === SessionEventType.TurnAttachmentsResolved
+          ? this.onTurnAttachmentsResolved(event)
+          : (() => {
+              const fact = normalizeConversationEvent(event, {
+                productTurnId,
+                openAssistantSegments: this.openAssistantSegments(),
+              });
+              this.normalizationDiagnostics.push(...fact.diagnostics);
+              return this.reduce(fact);
+            })();
     const subagentDeltas = this.shouldMaterializeSubagentProjection(reduced)
       ? this.materializeSubagentProjection(reduced)
       : [];
@@ -2661,6 +2664,41 @@ export class ProductProjection {
     this.streamingTextRowId = null;
     if (row?.kind !== "assistantText") return [];
     return [{ op: "row.upserted", row: { ...row, state } }];
+  }
+
+  /**
+   * 附件截断事实的展示补丁。附件在 TurnStarted 之后才 resolve，因此该事实只能由
+   * turn_attachments_resolved 补发；这里按行内序号与既有附件对齐，只补截断字段，
+   * 不覆盖展示层已有的 ref / fileName / mime / bytes。缺省表示未知，不写成 false。
+   */
+  private onTurnAttachmentsResolved(event: SessionEvent): ConversationDelta[] {
+    const payload = event.payload as TurnAttachmentsResolvedPayload;
+    const turnId = this.turnIdOf(event);
+    const row = this.snapshot.rows.window.find(
+      (candidate): candidate is UserInputRow =>
+        candidate.kind === "userInput" && candidate.turnId === turnId,
+    );
+    const attachments = row?.attachments;
+    if (!row || !attachments || attachments.length === 0) return [];
+
+    let changed = false;
+    const next = attachments.map((attachment, index) => {
+      const meta = payload.attachments[index];
+      if (!meta) return attachment;
+      const truncated = meta.truncated === true ? true : undefined;
+      const totalLines = truncated ? meta.totalLines : undefined;
+      if (attachment.truncated === truncated && attachment.totalLines === totalLines) {
+        return attachment;
+      }
+      changed = true;
+      return {
+        ...attachment,
+        ...(truncated ? { truncated: true } : {}),
+        ...(totalLines !== undefined ? { totalLines } : {}),
+      };
+    });
+    if (!changed) return [];
+    return [{ op: "row.upserted", row: { ...row, attachments: next } }];
   }
 
   private onAssistantFeedbackUpdated(event: SessionEvent): ConversationDelta[] {

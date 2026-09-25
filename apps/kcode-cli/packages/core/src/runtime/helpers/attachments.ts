@@ -94,6 +94,33 @@ export async function resolveTurnAttachments(
   return resolved;
 }
 
+/**
+ * resolve 之后的附件展示元信息，供 `turn_attachments_resolved` 事件下发。
+ *
+ * TurnStarted 早于 resolve，那里只能给无 IO 推断值；只有读到内容才知道的截断事实只能在这之后补。
+ * 缺省表示「未知」，不得写成 `false`——展示层靠缺省区分「未截断」与「不知道」。
+ */
+export function summarizeResolvedTurnAttachmentsForEvent(
+  resolved: readonly ResolvedTurnAttachment[],
+): TurnAttachmentMeta[] | undefined {
+  if (resolved.length === 0) return undefined;
+  return resolved.map((attachment, index) => {
+    const source = attachment.source;
+    const sourceRef = source ? (source.type === "resource" ? source.uri : source.path) : undefined;
+    const ref = sourceRef ?? (isDataOrArtifactUrl(attachment.url) ? undefined : attachment.url);
+    const preview = attachment.metadata.preview;
+    const truncated = preview?.truncated === true;
+    return {
+      fileName: attachment.filename ?? (ref ? basename(ref) : `attachment-${index + 1}`),
+      mime: attachment.mime,
+      bytes: attachment.metadata.sizeBytes ?? 0,
+      ...(ref ? { ref } : {}),
+      ...(truncated ? { truncated: true } : {}),
+      ...(truncated && preview?.totalLines !== undefined ? { totalLines: preview.totalLines } : {}),
+    };
+  });
+}
+
 async function resolveTurnAttachment(
   attachment: TurnAttachment,
   index: number,

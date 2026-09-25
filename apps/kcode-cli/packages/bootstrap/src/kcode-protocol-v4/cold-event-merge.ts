@@ -166,6 +166,9 @@ const MEMORY_ONLY_EVENT_TYPES = new Set<string>([
   SessionEventType.DynamicWorkflowRunProgress,
   SessionEventType.TargetChanged,
   SessionEventType.RewindTriggered,
+  // 附件截断事实的展示补丁只在 live 用：冷恢复由消息 parts 的 metadata.preview 派生同一份事实，
+  // 因此不参与冷合成，归为 memory-only，避免每次冷恢复刷一条 unclassified 诊断。
+  SessionEventType.TurnAttachmentsResolved,
 ]);
 
 const TRANSCRIPT_DERIVED_EVENT_TYPES = new Set<string>([

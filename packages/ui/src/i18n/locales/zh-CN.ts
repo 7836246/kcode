@@ -4972,6 +4972,10 @@ const zhCN: Record<string, string> = {
   "chat.attachments.preview.loading": "正在加载图片预览…",
   "chat.attachments.preview.videoLoading": "正在加载视频预览…",
   "chat.attachments.preview.unavailable": "这张图片已无法预览。",
+  "chat.attachments.truncated.marker": "已截断",
+  "chat.attachments.truncated.tooltip":
+    "该附件内容过长，上下文中只保留了前面部分（文件共 {totalLines} 行）。",
+  "chat.attachments.truncated.tooltipNoTotal": "该附件内容过长，上下文中只保留了前面部分。",
   "chat.attachments.preview.videoUnavailable": "这个视频已无法预览。",
   "chat.attachments.preview.videoUnsupported":
     "该视频可以正常发送，但当前设备不支持预览此视频的编码或格式。",

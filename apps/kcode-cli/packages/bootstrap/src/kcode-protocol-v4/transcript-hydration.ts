@@ -531,18 +531,32 @@ function subagentStatusFromToolPart(
  */
 function attachmentMetasOfMessage(
   parts: readonly MessagePart[],
-): Array<{ fileName: string; mime: string; bytes: number; ref?: string }> {
+): Array<{
+  fileName: string;
+  mime: string;
+  bytes: number;
+  ref?: string;
+  truncated?: boolean;
+  totalLines?: number;
+}> {
   const fileParts = parts.filter(
     (part): part is Extract<MessagePart, { type: "file" }> => part.type === "file",
   );
   return fileParts.map((part, index) => {
     const urlIsStableRef = part.url.length > 0 && !part.url.startsWith("data:");
     const basenameFromUrl = urlIsStableRef ? (part.url.split(/[\\/]/).pop() ?? "") : "";
+    // 截断事实在 resolve 时写进 part.metadata.preview，冷恢复据此与 live 的
+    // turn_attachments_resolved 给出一致结果；缺省即未知。
+    const truncated = part.metadata?.preview?.truncated === true;
     return {
       fileName: part.filename ?? (basenameFromUrl || `attachment-${index + 1}`),
       mime: part.mime,
       bytes: part.metadata?.sizeBytes ?? 0,
       ...(urlIsStableRef ? { ref: part.url } : {}),
+      ...(truncated ? { truncated: true } : {}),
+      ...(truncated && part.metadata?.preview?.totalLines !== undefined
+        ? { totalLines: part.metadata.preview.totalLines }
+        : {}),
     };
   });
 }

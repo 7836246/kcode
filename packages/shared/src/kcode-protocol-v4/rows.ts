@@ -169,6 +169,9 @@ export const userInputRowSchema = z.object({
         mime: z.string(),
         bytes: z.number(),
         previewRef: z.string().optional(),
+        // 附件在上下文里是否被截断；缺省表示未知（老 transcript 无此字段），不得当成「未截断」。
+        truncated: z.boolean().optional(),
+        totalLines: z.number().optional(),
       }),
     )
     .optional(),
