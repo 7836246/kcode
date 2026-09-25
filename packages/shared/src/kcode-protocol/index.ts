@@ -2128,6 +2128,9 @@ export const kcodeWorkspaceCancelGenerateTextParamsSchema = z
 export const kcodeWorkspaceCancelGenerateTextResultSchema = z
   .object({ operationId: nonEmptyString, cancelled: z.boolean() })
   .strict();
+export type KCodeWorkspaceCancelGenerateTextResult = z.infer<
+  typeof kcodeWorkspaceCancelGenerateTextResultSchema
+>;
 
 export const kcodeProviderTestModelConnectivityParamsSchema = z
   .object({

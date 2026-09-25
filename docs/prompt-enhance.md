@@ -49,7 +49,7 @@
 ### 模块划分
 
 - **设置 schema**：`packages/shared` 的 appSettings 校验 schema 增加 `promptEnhance` 嵌套对象（见下「设置数据形状」），patch schema 同步。`AppSettings` 类型随 schema 推导更新。
-- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 6 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（结构化闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`settings.ts`（设置补齐与整对象写回）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared` 只用 type-only 导入，保证 `tsx --test` 直接加载。
+- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 8 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（结构化闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`operationId.ts`（跨进程取消句柄生成）、`request.ts`（请求参数组装与请求级超时常量）、`settings.ts`（设置补齐与整对象写回）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared`、`@kcode/services` 只用 type-only 导入，保证 `tsx --test` 直接加载。
 - **Composer 入口**：新组件 `PromptEnhanceActions` 挂进 `ConversationComposer` 的 `leadingActionsNode`（与模式切换、CUA 入口同簇）；新 hook `usePromptEnhance` 承载增强流程状态机。
 - **设置分区**：新文件 `packages/ui/src/settings/PromptEnhanceSection.tsx`（自包含模式，先例：`ModelFallbackSetting` / `ProactiveSuggestionsSetting`），注册进设置导航（`SettingsSectionId` 增加 `"promptEnhance"`，分组 `basics`）与 SettingsPage 条件渲染链。
 - **i18n**：`zh-CN.ts` 与 `en-US.ts` 两个 locale 文件同步增加 `settings.promptEnhance.*` 与 `chat.toolbar.promptEnhance.*` 文案；无引用的旧 `chat.promptEnhance.*` 一并删除。
@@ -59,7 +59,8 @@
 - **草稿文本**：沿用现有双层结构——composer 本地 `text`/`textRef` + per-session 草稿 owner `useDraftConfigControl`（`updateComposerContent`）。增强回填走「编辑器句柄 `setText` + `updateText` + `updateComposerContent`」三连，与发送失败回滚（`restoreSubmittedDraft`）使用同一组写入路径。
 - **还原点**：composer 组件内 ref（内存态，随组件卸载消失），内容为「增强前原文 + 增强结果」两个字符串。不持久化、不进 store。跟随草稿生命周期：草稿 scope 变化、或草稿被清空（发送成功 / 手动清空）即刻失效——否则会留下一个点了必然被拒的「还原」。
 - **设置**：appSettings（`~/.kcode/v2/setting.json`，经 `ISettingService.update(patch)` 原子写盘）。不新增 localStorage 状态。
-- **进行中的请求**：hook 内 ref 持有 AbortController；「当前是否有活动 run」与「单调递增的 runId」是两件事，必须分开——用墓碑占位活动 run 会让取消后的下一次点击继续被判成取消，按钮再也发不出请求。runId 只用于丢弃迟到响应，且只增不复用。
+- **进行中的请求**：hook 内 ref 持有 run tracker；「当前是否有活动 run」与「单调递增的 runId」是两件事，必须分开——用墓碑占位活动 run 会让取消后的下一次点击继续被判成取消，按钮再也发不出请求。runId 只用于丢弃迟到响应，且只增不复用。
+- **取消句柄**：每次增强生成一个可序列化的 `operationId`（`promptEnhance/operationId.ts`），随 `generateWorkspaceText` 一起下发给 Host。hook 用一个 ref 持有「这次请求怎么取消」（operationId + 发起时的 workspace target），发起时固化、作废或正常结束时释放，取消 = 作废 run + 调 `kcodeAgentService.cancelWorkspaceGenerateText`。句柄必须固化 target：scope 变化后组件读到的是新 target，按新 target 发取消会打到另一台 Host 并返回 `cancelled:false`，旧请求继续跑到超时；发起与取消的 target 共用 `buildPromptEnhanceWorkspaceTarget`，避免两处字段漂移。取消是 best-effort：`cancelled:false`（进程已回收 / 请求已结束）与取消 RPC 失败各留一条 `warn` 轨迹，但用户可见结果不变（草稿不动 + toast「已取消」）。**不能靠 AbortSignal**：RPC 实参按 JSON 序列化（见 `packages/rpc/src/serialization.ts` 的 Object fallback），`AbortSignal` 没有可枚举字段，跨进程到服务侧只剩 `{}`，服务里 `params.signal?.addEventListener` 直接抛 `is not a function`。`signal` 字段仍留在服务接口上给同进程调用方用（当前仓库已无调用方传它，Git 提交消息生成也不传），跨进程一律走 `operationId`。
 - **草稿 scope 防护**：composer 用固定 key 跨 session 复用，因此 scope（`workspaceKey\0sessionId`）变化时会主动作废在途请求并清掉还原点——否则新会话会继承上一个草稿的「还原」按钮和一个不会结束的「增强中」。请求区间内 scope 变化时，迟到的结果一律丢弃：不回填、不立还原点。切会话/切草稿后 composer 属于另一个草稿 owner，回填会直接污染新会话的草稿。
 - **设置写入形状**：`ISettingService.update` 只做外层浅合并（`{ ...current, ...patch }`），嵌套对象是整体替换。因此写回必须提交完整 `promptEnhance` 对象（`mergePromptEnhanceSettingsPatch`），只交单个字段会被 schema 默认值重置掉用户其它选择。
 
@@ -81,7 +82,8 @@ promptEnhance: {
 
 ### 模型调用
 
-- 统一复用现有 `kcodeAgentService.generateWorkspaceText`（Git 提交消息生成同款链路），`querySource` 固定为 `"prompt_enhance"`，调用方传 `AbortSignal` 与 `requestTimeoutMs`（请求级 60s）。**不新增协议方法、不新增裸 HTTP 客户端。**
+- 统一复用现有 `kcodeAgentService.generateWorkspaceText`（Git 提交消息生成同款链路），`querySource` 固定为 `"prompt_enhance"`，调用方传 `operationId` 与 `requestTimeoutMs`（请求级 60s）。**不新增 CLI 协议方法、不新增裸 HTTP 客户端。**
+- **取消通道**：CLI 侧早在 `workspace/generateText` 的 `operationId` 上登记 AbortController（`bootstrap/src/kcode-protocol/server.ts` 的 `withWorkspaceGenerateTextSignal`），`workspace/cancelGenerateText` 按 id 触发。本次只把这条既有能力接到服务面：`KCodeAgentGenerateWorkspaceTextParams` 增加可选 `operationId`（Host 优先用它，缺省时才按 `signal` 自造 uuid），并新增 `cancelWorkspaceGenerateText(params)` 服务方法（控制面 best-effort，超时 5s；目标 workspace 无活跃 Agent 进程时直接返回 `cancelled: false`，不为此启动进程）。UI 因此不新增任何本地进程内状态。
 - **自动通道**：`selection = modelSelectionService.getView().preferredSelection`。模型配置变化自动跟随；OAuth 类 provider 由 CLI runtime 自身处理鉴权，无需回落逻辑。
 - **独立通道**：`selection = 设置中的 customSelection`（必须是 Registry 已发布模型；设置 UI 从 provider/model 视图读取候选，天然满足）。`reasoningLevel` 非 `"default"` 时写入 selection 的 options；为 `"default"` 时不下发。自动通道永远不改写 reasoning。
 - 调用结果须带回实际使用的模型名，用于成功提示与设置页「当前生效通道」展示。
@@ -95,9 +97,9 @@ promptEnhance: {
  ├─ 取草稿纯文本（编辑器句柄 getMarkdown，回退 textRef）
  ├─ contextEnabled 且会话有历史 → 从 composer 现有投影 snapshot 取最近 N 轮
  ├─ 拼装 system + user 消息（见「提示词与拼装」）
- ├─ generateWorkspaceText（runId+1，持有 AbortController，记录发起时 scopeKey）
- │    ├─ 用户再点按钮 → abort，toast「已取消」，迟到响应按 runId 丢弃
- │    ├─ 返回时 scopeKey 已变 → 丢弃结果，不回填、不立还原点
+ ├─ generateWorkspaceText（runId+1 并生成 operationId，记录发起时 scopeKey）
+ │    ├─ 用户再点按钮 → 作废 run + 按 operationId 发取消，toast「已取消」，迟到响应按 runId 丢弃
+ │    ├─ scope 变化 → 同样作废并取消，结果不回填、不立还原点
  │    ├─ 失败 / 超时 / 空内容 → toast 错误原因，草稿不动
  │    └─ 成功 → 回填三连 → 读回比对
  │         ├─ 比对失败 → 写回原文，toast 失败
@@ -362,7 +364,8 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
   - 上下文前置：有历史时带固定抬头与角色标注、开关关或无历史时整段省略、单条超长截断
   - 三个模式各自选中正确的 system/user 模板
 - **判定模块单测**：结构化闸的放行/拒绝矩阵（空草稿优先于结构化内容；附件/引用/mention 各自拒绝；显式放开后放行）；还原闸的「一致才允许还原」。
-- **run 跟踪模块单测**：取消后仍能发起新 run（不能被上一次的 run 挡住）；取消后迟到的旧结果不得被判成当前 run，旧 run 结束也不能让出新 run 的活动位；只有当前 run 能结束自己。
+- **run 跟踪模块单测**：取消后仍能发起新 run（不能被上一次的 run 挡住）；取消后迟到的旧结果不得被判成当前 run，旧 run 结束也不能让出新 run 的活动位；只有当前 run 能结束自己。`operationId.ts` 断言前缀与两次调用不重复。
+- **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
 - **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象；自动通道透传 preferredSelection，独立通道按设置下发档位、`default` 不下发、缺 customSelection 返回 null。
 - 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
 - **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换。
@@ -375,7 +378,8 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - 不做推理强度字段名探测；推理强度复用 kcode 的 reasoningLevel 语义，由 provider 链路处理字段映射。
 - 不自动发送增强结果；不提供「增强并发送」变体。
 - 不持久化还原点；不做多级撤销历史（只有一级还原点）。
-- 不做服务端/CLI 侧改动：`generateWorkspaceText` 现有接口已够用。
+- 不新增 CLI 协议方法：`workspace/generateText` 的 `operationId` 与 `workspace/cancelGenerateText` 已存在，服务面只做透传。
+- 不改 CLI 侧模型调用链，也不为取消新增本地状态机（取消成功与否对用户可见结果一致：草稿不变、toast「已取消」）。
 
 ## 备注
 

@@ -9,6 +9,12 @@ import {
   evaluatePromptEnhanceRequest,
   evaluatePromptEnhanceRestore,
 } from "../src/v4/composer/promptEnhance/gates.js";
+import { createPromptEnhanceOperationId } from "../src/v4/composer/promptEnhance/operationId.js";
+import {
+  PROMPT_ENHANCE_REQUEST_TIMEOUT_MS,
+  buildPromptEnhanceRequestParams,
+  buildPromptEnhanceWorkspaceTarget,
+} from "../src/v4/composer/promptEnhance/request.js";
 import { createPromptEnhanceRunTracker } from "../src/v4/composer/promptEnhance/runTracker.js";
 import { resolvePromptEnhanceSelection } from "../src/v4/composer/promptEnhance/selection.js";
 import {
@@ -336,4 +342,82 @@ test("只有当前 run 能结束自己，结束后不再有活动 run", () => {
   assert.equal(tracker.finish(run.runId), true);
   assert.equal(tracker.current(), null);
   assert.equal(tracker.finish(run.runId), false);
+});
+
+test("每次增强生成互不相同的取消句柄", () => {
+  const first = createPromptEnhanceOperationId();
+  const second = createPromptEnhanceOperationId();
+  assert.match(first, /^prompt-enhance-/);
+  assert.notEqual(first, second);
+});
+
+test("请求参数不带 AbortSignal，只带可序列化的取消句柄", () => {
+  const params = buildPromptEnhanceRequestParams({
+    workspacePath: "/tmp/ws",
+    workspaceIdentity: "local:/tmp/ws",
+    selection: { providerId: "provider-a", modelId: "model-a" },
+    messages: [
+      { role: "system", content: "sys" },
+      { role: "user", content: "usr" },
+    ],
+    operationId: "prompt-enhance-abc",
+  });
+
+  // 回归护栏：AbortSignal 过 RPC 的 JSON fallback 会变成 {}，服务侧读 addEventListener
+  // 直接抛「is not a function」（真实故障：提示词增强失败）。
+  assert.equal("signal" in params, false);
+  // 走一遍真实序列化路径：句柄与超时都必须原样存活。
+  const roundTripped = JSON.parse(JSON.stringify(params)) as typeof params;
+  assert.equal(roundTripped.operationId, "prompt-enhance-abc");
+  assert.equal(roundTripped.requestTimeoutMs, PROMPT_ENHANCE_REQUEST_TIMEOUT_MS);
+  assert.equal(roundTripped.querySource, "prompt_enhance");
+  assert.deepEqual(roundTripped.messages, [
+    { role: "system", content: "sys" },
+    { role: "user", content: "usr" },
+  ]);
+});
+
+test("请求参数只在有值时才带工作区身份字段", () => {
+  const params = buildPromptEnhanceRequestParams({
+    workspacePath: "/tmp/ws",
+    selection: { providerId: "provider-a", modelId: "model-a" },
+    messages: [{ role: "user", content: "usr" }],
+    operationId: "prompt-enhance-abc",
+  });
+
+  assert.equal("workspaceIdentity" in params, false);
+  assert.equal("remoteSessionId" in params, false);
+});
+
+test("发起与取消共用同一份 workspace target 构造", () => {
+  // 取消请求就是这份 target + operationId：少带一个字段就会落到别的 Host 并静默
+  // 返回 cancelled:false，所以两边必须由同一个函数产出。
+  const target = buildPromptEnhanceWorkspaceTarget({
+    workspacePath: "/tmp/ws",
+    workspaceIdentity: "remote:ssh:host",
+    remoteSessionId: "session-1",
+  });
+  assert.deepEqual(target, {
+    workspacePath: "/tmp/ws",
+    workspaceIdentity: "remote:ssh:host",
+    remoteSessionId: "session-1",
+  });
+  assert.deepEqual(
+    buildPromptEnhanceRequestParams({
+      ...target,
+      selection: { providerId: "provider-a", modelId: "model-a" },
+      messages: [{ role: "user", content: "usr" }],
+      operationId: "prompt-enhance-abc",
+    }),
+    {
+      workspacePath: "/tmp/ws",
+      workspaceIdentity: "remote:ssh:host",
+      remoteSessionId: "session-1",
+      selection: { providerId: "provider-a", modelId: "model-a" },
+      messages: [{ role: "user", content: "usr" }],
+      querySource: "prompt_enhance",
+      operationId: "prompt-enhance-abc",
+      requestTimeoutMs: PROMPT_ENHANCE_REQUEST_TIMEOUT_MS,
+    },
+  );
 });

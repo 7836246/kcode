@@ -5,8 +5,9 @@
  * - 只编排「读草稿 → 判定 → 调模型 → 回填 → 立还原点」这条链路，草稿的读写由 composer
  *   注入（与发送失败回滚共用同一组写入路径），本 hook 不持第二份草稿状态。
  * - 设置经 `useSettings()` 读取，缺省与写回形状由 promptEnhance/settings 纯函数负责。
- * - 进行中的请求用单调递增 runId + AbortController 管；迟到响应按 runId 丢弃，
- *   不靠超时掩盖竞态。
+ * - 进行中的请求用单调递增 runId 管，迟到响应按 runId 丢弃，不靠超时掩盖竞态。
+ * - 取消走可序列化的 `operationId` + `cancelWorkspaceGenerateText` 控制面调用：
+ *   Renderer 传不了 AbortSignal，跨 RPC 会被 JSON 序列化吃掉（详见 operationId.ts）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModelSelection, PromptEnhanceSettings } from "@kcode/shared";
@@ -32,14 +33,13 @@ import {
   type PromptEnhanceRun,
   type PromptEnhanceRunTracker,
 } from "./promptEnhance/runTracker.js";
+import { createPromptEnhanceOperationId } from "./promptEnhance/operationId.js";
+import {
+  buildPromptEnhanceRequestParams,
+  buildPromptEnhanceWorkspaceTarget,
+} from "./promptEnhance/request.js";
 import { resolvePromptEnhanceSelection } from "./promptEnhance/selection.js";
 import { resolvePromptEnhanceSettings } from "./promptEnhance/settings.js";
-
-/**
- * 请求级超时：协议 client 缺省 3 分钟会把一次改写拖到「像卡死」。
- * 这里显式透传自身 deadline，避免默认超时先触发。
- */
-const PROMPT_ENHANCE_REQUEST_TIMEOUT_MS = 60_000;
 
 /** 一轮背景 = 一条真实用户输入 + 其后的完整助手正文（可能多段，可能缺失）。 */
 interface PendingPromptEnhanceRound {
@@ -77,6 +77,18 @@ function collectPromptEnhanceContextRounds(
   }
   flush();
   return rounds.slice(-limit);
+}
+
+/**
+ * 在途请求的取消句柄：发起时把「怎样取消这一次」固化下来。
+ *
+ * 取消必须回到发起时的 workspace：scope 变化后组件读到的是新 target，按新 target 发取消会打到
+ * 另一台 Host，返回 cancelled:false，旧请求继续跑到超时。句柄只由这一个 ref 持有，
+ * 作废或正常结束时释放。
+ */
+interface PendingPromptEnhanceRun {
+  readonly operationId: string;
+  cancel: () => void;
 }
 
 export interface UsePromptEnhanceParams {
@@ -146,7 +158,7 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     runRef.current = createPromptEnhanceRunTracker();
   }
   const runTracker = runRef.current;
-  const abortRef = useRef<AbortController | null>(null);
+  const pendingRunRef = useRef<PendingPromptEnhanceRun | null>(null);
   const restorePointRef = useRef<{ original: string; enhanced: string } | null>(null);
   const [runningStartedAt, setRunningStartedAt] = useState<number | null>(null);
   const [canRestore, setCanRestore] = useState(false);
@@ -164,7 +176,8 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
   const finishRun = useCallback(
     (runId: number) => {
       if (!runTracker.finish(runId)) return;
-      abortRef.current = null;
+      // 正常结束的 run 不再需要取消；不能让它的句柄影响后来发起的新 run。
+      pendingRunRef.current = null;
       setRunningStartedAt(null);
     },
     [runTracker],
@@ -182,12 +195,49 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     [writeDraftText],
   );
 
+  /**
+   * 通知 Host 停掉发起时那一次模型请求。best-effort：Host 按 workspace 路由到对应 Agent
+   * 进程，进程已不在时返回 cancelled:false；失败只留日志，不覆盖调用方自己的取消语义。
+   */
+  const createRunCancel = useCallback(
+    (operationId: string): (() => void) => {
+      const target = buildPromptEnhanceWorkspaceTarget({
+        workspacePath,
+        workspaceIdentity,
+        remoteSessionId,
+      });
+      return () => {
+        void kcodeAgentService
+          .cancelWorkspaceGenerateText({ ...target, operationId })
+          .then((result) => {
+            // 进程已回收 / 请求已结束都会走到这里：界面已经按「已取消」收尾，
+            // 至少留一条轨迹，避免日后排查「说取消了但模型还在跑」时无线索。
+            if (!result.cancelled) {
+              logger.warn("[prompt-enhance] Host 未找到待取消的请求", { operationId });
+            }
+          })
+          .catch((error: unknown) => {
+            logger.warn("[prompt-enhance] 取消请求未送达", {
+              operationId,
+              error: getErrorMessage(error),
+            });
+          });
+      };
+    },
+    [kcodeAgentService, remoteSessionId, workspaceIdentity, workspacePath],
+  );
+
   const invalidateRun = useCallback((): PromptEnhanceRun | null => {
     const run = runTracker.invalidate();
-    const controller = abortRef.current;
-    abortRef.current = null;
+    const pending = pendingRunRef.current;
+    pendingRunRef.current = null;
     setRunningStartedAt(null);
-    controller?.abort();
+    if (pending) {
+      pending.cancel();
+      logger.info("[prompt-enhance] 已通知 Host 取消在途请求", {
+        operationId: pending.operationId,
+      });
+    }
     return run;
   }, [runTracker]);
 
@@ -257,8 +307,8 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     });
 
     const run = runTracker.start();
-    const controller = new AbortController();
-    abortRef.current = controller;
+    const operationId = createPromptEnhanceOperationId();
+    pendingRunRef.current = { operationId, cancel: createRunCancel(operationId) };
     setRunningStartedAt(run.startedAt);
     const requestedScopeKey = scopeKey;
     logger.info("[prompt-enhance] 发起增强", {
@@ -266,21 +316,22 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
       channel: enhanceSettings.channel,
       contextRoundCount: contextRounds.length,
       model: selection.modelId,
+      operationId,
       workspaceKind: workspaceIdentity?.trim() ? "remote" : "local",
     });
 
     void (async () => {
       try {
-        const result = await kcodeAgentService.generateWorkspaceText({
-          workspacePath,
-          ...(workspaceIdentity ? { workspaceIdentity } : {}),
-          ...(remoteSessionId ? { remoteSessionId } : {}),
-          selection,
-          messages,
-          querySource: "prompt_enhance",
-          signal: controller.signal,
-          requestTimeoutMs: PROMPT_ENHANCE_REQUEST_TIMEOUT_MS,
-        });
+        const result = await kcodeAgentService.generateWorkspaceText(
+          buildPromptEnhanceRequestParams({
+            workspacePath,
+            workspaceIdentity,
+            remoteSessionId,
+            selection,
+            messages,
+            operationId,
+          }),
+        );
         if (!runTracker.isCurrent(run.runId)) return;
         // 切会话/切草稿后 composer 属于另一个草稿 owner：结果按丢弃处理，不回填也不立还原点。
         if (scopeKeyRef.current !== requestedScopeKey) {
@@ -326,7 +377,8 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
           model: result.selection.modelId,
         });
       } catch (error) {
-        if (controller.signal.aborted || !runTracker.isCurrent(run.runId)) return;
+        // 取消（或切草稿）后这次 run 已作废：Host 侧的取消错误不该再弹失败提示。
+        if (!runTracker.isCurrent(run.runId)) return;
         logger.error("[prompt-enhance] 增强失败", { error: getErrorMessage(error) });
         showToast("chat.toolbar.promptEnhance.failed", { error: getErrorMessage(error) });
       } finally {
@@ -335,6 +387,7 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     })();
   }, [
     cancelRun,
+    createRunCancel,
     enhanceSettings,
     finishRun,
     hasAttachments,
