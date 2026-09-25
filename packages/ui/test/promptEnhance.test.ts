@@ -24,6 +24,7 @@ import {
   mergePromptEnhanceSettingsPatch,
   resolvePromptEnhanceSettings,
 } from "../src/v4/composer/promptEnhance/settings.js";
+import { PROMPT_ENHANCE_SETTINGS_DEFAULTS } from "@kcode/shared";
 
 /** 从基础档用户消息里取出外层 JSON 结构，验证内嵌草稿仍是合法 JSON 字段。 */
 function extractOriginalPromptJson(userMessage: string): unknown {
@@ -238,6 +239,12 @@ test("缺失或半截的持久化配置补齐成完整设置", () => {
     channel: "auto",
     reasoningLevel: "default",
   });
+});
+
+test("settings 模块的本地默认值与 shared 常量逐字一致，不得漂移", () => {
+  // settings.ts 为保持纯函数模块 type-only 导入而内联了默认值副本，
+  // shared 侧改默认值时两处必须同步改，否则此断言红。
+  assert.deepEqual(resolvePromptEnhanceSettings(undefined), PROMPT_ENHANCE_SETTINGS_DEFAULTS);
 });
 
 test("写回 patch 是完整对象，浅合并不会把其它字段重置回默认", () => {

@@ -251,7 +251,9 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     setCanRestore(false);
     if (!runTracker.current()) return;
     invalidateRun();
-    logger.info("[prompt-enhance] 草稿 scope 变化，已取消在途增强");
+    // spec 把「草稿 scope 已变化」列为可恢复异常的 warn 轨迹：在途请求作废属于
+    // 生命周期边界事件，不是正常流程的 info。
+    logger.warn("[prompt-enhance] 草稿 scope 变化，已取消在途增强");
   }, [invalidateRun, scopeKey]);
 
   useEffect(() => {
@@ -351,7 +353,7 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
         if (!runTracker.isCurrent(run.runId)) return;
         // 切会话/切草稿后 composer 属于另一个草稿 owner：结果按丢弃处理，不回填也不立还原点。
         if (scopeKeyRef.current !== requestedScopeKey) {
-          logger.info("[prompt-enhance] 草稿 scope 已变化，丢弃本次结果", {
+          logger.warn("[prompt-enhance] 草稿 scope 已变化，丢弃本次结果", {
             model: result.selection.modelId,
           });
           return;

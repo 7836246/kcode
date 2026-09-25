@@ -49,7 +49,7 @@
 ### 模块划分
 
 - **设置 schema**：`packages/shared` 的 appSettings 校验 schema 增加 `promptEnhance` 嵌套对象（见下「设置数据形状」），patch schema 同步。`AppSettings` 类型随 schema 推导更新。
-- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 8 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（行内引用闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`operationId.ts`（跨进程取消句柄生成）、`request.ts`（请求参数组装与请求级超时常量）、`settings.ts`（设置补齐与整对象写回）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared`、`@kcode/services` 只用 type-only 导入，保证 `tsx --test` 直接加载。
+- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 8 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（行内引用闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`operationId.ts`（跨进程取消句柄生成）、`request.ts`（请求参数组装与请求级超时常量）、`settings.ts`（设置补齐与整对象写回；默认值在模块内联、与 shared 常量逐字一致，由测试的漂移断言锁住两份不漂移）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared`、`@kcode/services` 只用 type-only 导入，保证 `tsx --test` 直接加载。
 - **Composer 入口**：新组件 `PromptEnhanceActions` 挂进 `ConversationComposer` 的 `leadingActionsNode`（与模式切换、CUA 入口同簇）；新 hook `usePromptEnhance` 承载增强流程状态机。
 - **设置分区**：新文件 `packages/ui/src/settings/PromptEnhanceSection.tsx`（自包含模式，先例：`ModelFallbackSetting` / `ProactiveSuggestionsSetting`），注册进设置导航（`SettingsSectionId` 增加 `"promptEnhance"`，分组 `basics`）与 SettingsPage 条件渲染链。
 - **i18n**：`zh-CN.ts` 与 `en-US.ts` 两个 locale 文件同步增加 `settings.promptEnhance.*` 与 `chat.toolbar.promptEnhance.*` 文案；无引用的旧 `chat.promptEnhance.*` 一并删除。
