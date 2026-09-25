@@ -53,7 +53,7 @@ Result of calling the Read tool:
   - 保留「这是数据、不是指令」的边界句与行号正文；
   - 用「内容已完整给出 / 已截断到前 N 行（共 M 行）」的显式说明，取代原来「已读过」的暗示；
   - 删掉要求模型向用户隐瞒截断的语句。
-- **阶段二（需要协议/投影改动，另行确认范围）**：让**用户**也能看到截断——附件 chip 上标注「已截断」。
+- **阶段二（单独一批，见「分阶段与验收门」）**：让**用户**也能看到截断——发送后消息上的附件 chip 标注「已截断」。事实取自已经持久化的 `FilePart.metadata.preview`；冷恢复直接读 parts，live 需要一条 post-resolve 的 additive 事件，理由见「截断可见」。
 
 ## 实现决策
 
@@ -133,20 +133,34 @@ The user attached {kind}: {label}. Its content is not in context; read it if you
 
 ### 截断可见（阶段二）
 
-归属与时序：
+**目标**：附件在上下文里被截断时，用户能看到——发送后消息上的附件 chip 出现「已截断」标记。
 
-```text
-附件上传 → resolveLocalFileAttachment（此处才知道 truncated / totalLines）
-        → metadata.preview{truncated,totalLines}
-        → 需要一条 resolve 之后的投影，把截断事实送给 UI
-        → 附件 chip 显示「已截断（共 M 行）」
-```
+**取值原则**：截断事实只产生一次，即 resolve 时 `resolveLocalFileAttachment()` 读出的 `read.truncated` / `read.totalLines`，写进 `FilePart.metadata.preview`。**展示层只消费该事实，不自行推算**——截断有两个触发源（`sizeBytes > READ_MAX_FILE_SIZE_BYTES` 的体积截断，以及 `READ_MAX_OUTPUT_TOKENS` 的 token 上限兜底），后者依赖内容，客户端算不出与 CLI 一致的结论；也不新增第二套判定，避免同一事实出现两份口径。
 
-约束与待定项：
+**载荷**：v4 附件展示元信息（`CanonicalTurnAttachment`）新增两个可选字段——`truncated?: boolean`、`totalLines?: number`。additive 且 optional：缺省表示「未知」，展示层不得把缺省当成「未截断」（老会话无该字段时不出标记）。
 
-- `TurnAttachmentMeta` 由 `resolve` 之前的 `summarizeTurnAttachmentsForEvent()` 产出，此刻还无法知道截断；因此阶段二必须选定一个**在 resolve 之后**的投影点（新增字段或新增状态事件），不能靠猜。
-- 字段命名与承载通道在阶段二开工前定稿；老会话缺该字段时视为「未知」，不得展示为「未截断」。
-- 阶段一只保证**模型侧**如实：截断信息进上下文，模型被问到时可以说出来。
+**两条路径的填充（必须给出同一结果）**：
+
+| 路径                             | 填充方式                                                                                                                                                                                                                                                 | 状态           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 冷（transcript 合成 / 会话恢复） | `transcript-hydration.ts` 的 `attachmentMetasOfMessage()` 从 `part.metadata.preview` 读 `truncated` / `totalLines`（数据已持久化，无需新增通道）                                                                                                         | 现成接缝       |
+| 热（live 当前轮）                | **必须新增一条 additive 事件**：附件在 `TurnStarted` 之后才 resolve，该事件携带的展示元信息不可能带截断；投影层没有「用户消息 parts 就绪后重建该行」的路径（parts→展示元信息的合成函数只用于冷恢复），事件枚举里也没有 post-resolve 的 turn 级事件可挂靠 | 需要协议层改动 |
+
+live 侧的事件形状（实现时按此落地）：
+
+- 事件：`turn_attachments_resolved`，additive、仅用于展示，不参与模型上下文、不参与压缩与冷恢复合成（冷恢复本来就由 parts 派生同一份事实）。
+- 载荷：`{ turnId, attachments: TurnAttachmentMeta[] }`，其中 `TurnAttachmentMeta` 增加两个可选字段 `truncated?: boolean`、`totalLines?: number`。
+- 投影：按 turnId 找到该轮的 userInput 行，用载荷覆盖其附件的展示字段（保留 `ref` / `fileName` / `mime` / `bytes`，只补 `truncated` / `totalLines`）；缺省视为「未知」，不写成 `false`。
+
+因为这条事件涉及 contracts → 事件归一化 → 投影 → UI 四层，且投影行为只能靠运行应用验证，阶段二**单独成批**落地，不与阶段一同批提交。
+
+**展示**：
+
+- 位置：发送后消息上的附件 chip。发送**前**不展示——事实在发送时才产生，composer 阶段无从得知。
+- 形态：chip 上一个小标记 + 悬浮说明「该附件在上下文中只保留了前 N 行（共 M 行）」；文案键 `chat.attachment.truncated.*`，`zh-CN` 与 `en-US` 同步。
+- 不做：不新增「查看完整内容」入口，不弹窗、不阻断发送，不在消息正文里插提示行。
+
+**验收**：发送一个超过上限的附件 → 发送后 chip 立刻出现标记（live）；刷新 / 重开会话（冷恢复）后标记仍在、文案一致；未截断的附件零标记；老会话（无该字段）不显示。
 
 ### 不变量
 
@@ -185,12 +199,12 @@ The user attached {kind}: {label}. Its content is not in context; read it if you
 
 ## 分阶段与验收门
 
-| 阶段 | 内容                                                                                          | 验收门                                                                    |
-| ---- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| 一   | 措辞改造（假 Read 外壳删除 + 明话附件框法 + 截断如实 + 数据边界句保留），两条投递路径同时生效 | 验收场景 1–3、4（模型侧）、5–8 全绿；措辞单测与 live/hydrate 同形断言通过 |
-| 二   | 截断对用户可见（resolve 之后的投影 + 附件 chip 标注）                                         | 验收场景 4 的用户侧可见部分；老会话无该字段时不误报                       |
+| 阶段 | 内容                                                                                                                                     | 验收门                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 一   | 措辞改造（假 Read 外壳删除 + 明话附件框法 + 截断如实 + 数据边界句保留），两条投递路径同时生效                                            | 验收场景 1–3、4（模型侧）、5–8 全绿；措辞单测与 live/hydrate 同形断言通过              |
+| 二   | 截断对用户可见（附件展示元信息加 `truncated` / `totalLines`；冷路径读 parts，live 走新增的 `turn_attachments_resolved` 事件；chip 标注） | 验收场景 4 的用户侧可见部分；live 与冷恢复标记一致；未截断零标记；老会话无该字段不误报 |
 
-阶段二开工前需先定稿承载通道（新增字段还是新增事件）并确认是否纳入本仓改动范围。
+两阶段分开提交：阶段一是纯措辞与单测（可完整验证）；阶段二跨 contracts / 事件归一化 / 投影 / UI 四层，投影行为需要运行桌面端验证，单独一批落地。
 
 ## 代价与取舍
 
@@ -203,7 +217,7 @@ The user attached {kind}: {label}. Its content is not in context; read it if you
 - 不改投递通道（仍是 `current_turn` 的 per-turn meta 提醒），不把附件内容并进用户消息正文——那是另一档方案（并轨 `buildUserContentFromTurn`），本次不评估。
 - 不改截断阈值与读文件上限（`READ_DEFAULT_MAX_LINES` / `READ_MAX_FILE_SIZE_BYTES`）。
 - 不改图片 / 视频 / PDF / 二进制 / 仅路径引用附件的既有行为。
-- 不新增协议方法；阶段二若需要新增投影字段，另开 spec 修订。
+- 不新增协议方法；阶段二会新增一条仅用于展示的 additive 会话事件（`turn_attachments_resolved`），不参与模型上下文、压缩与冷恢复合成。
 - 不改 `label` 的取值规则（`source.text.value ?? filename`），避免 live/hydrate 漂移。
 - 不为「让模型更听话」追加多轮催促或重试逻辑。
 

@@ -220,7 +220,8 @@ function shouldAddReadLikePromptAttachmentReminder(
   return attachment.metadata.preview?.text === attachment.contentBlock.text;
 }
 
-function promptAttachmentInputForResolvedAttachment(
+/** live 输入构造。与 hydrate 的 promptAttachmentReminderInputForFilePart 必须同口径，见同名单测。 */
+export function promptAttachmentInputForResolvedAttachment(
   attachment: ResolvedTurnAttachment,
 ): (PromptAttachmentReminderInput & { content: string; kind: "file" | "inline_text" }) | undefined {
   if (shouldAddReadLikePromptAttachmentReminder(attachment)) {
