@@ -49,17 +49,19 @@
 ### 模块划分
 
 - **设置 schema**：`packages/shared` 的 appSettings 校验 schema 增加 `promptEnhance` 嵌套对象（见下「设置数据形状」），patch schema 同步。`AppSettings` 类型随 schema 推导更新。
-- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含提示词常量模块与纯函数拼装模块（见下「提示词与拼装」）。拼装模块不依赖 React，可独立测试。
+- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 6 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（结构化闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`settings.ts`（设置补齐与整对象写回）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared` 只用 type-only 导入，保证 `tsx --test` 直接加载。
 - **Composer 入口**：新组件 `PromptEnhanceActions` 挂进 `ConversationComposer` 的 `leadingActionsNode`（与模式切换、CUA 入口同簇）；新 hook `usePromptEnhance` 承载增强流程状态机。
 - **设置分区**：新文件 `packages/ui/src/settings/PromptEnhanceSection.tsx`（自包含模式，先例：`ModelFallbackSetting` / `ProactiveSuggestionsSetting`），注册进设置导航（`SettingsSectionId` 增加 `"promptEnhance"`，分组 `basics`）与 SettingsPage 条件渲染链。
-- **i18n**：`zh-CN.ts` 与 `en-US.ts` 两个 locale 文件同步增加 `settings.promptEnhance.*` 与 `chat.toolbar.promptEnhance.*` 文案。
+- **i18n**：`zh-CN.ts` 与 `en-US.ts` 两个 locale 文件同步增加 `settings.promptEnhance.*` 与 `chat.toolbar.promptEnhance.*` 文案；无引用的旧 `chat.promptEnhance.*` 一并删除。
 
 ### 状态所有者
 
 - **草稿文本**：沿用现有双层结构——composer 本地 `text`/`textRef` + per-session 草稿 owner `useDraftConfigControl`（`updateComposerContent`）。增强回填走「编辑器句柄 `setText` + `updateText` + `updateComposerContent`」三连，与发送失败回滚（`restoreSubmittedDraft`）使用同一组写入路径。
-- **还原点**：composer 组件内 ref（内存态，随组件卸载消失），内容为「增强前原文 + 增强结果」两个字符串。不持久化、不进 store。
+- **还原点**：composer 组件内 ref（内存态，随组件卸载消失），内容为「增强前原文 + 增强结果」两个字符串。不持久化、不进 store。跟随草稿生命周期：草稿 scope 变化、或草稿被清空（发送成功 / 手动清空）即刻失效——否则会留下一个点了必然被拒的「还原」。
 - **设置**：appSettings（`~/.kcode/v2/setting.json`，经 `ISettingService.update(patch)` 原子写盘）。不新增 localStorage 状态。
-- **进行中的请求**：hook 内 ref 持有 AbortController 与单调递增 runId。
+- **进行中的请求**：hook 内 ref 持有 AbortController；「当前是否有活动 run」与「单调递增的 runId」是两件事，必须分开——用墓碑占位活动 run 会让取消后的下一次点击继续被判成取消，按钮再也发不出请求。runId 只用于丢弃迟到响应，且只增不复用。
+- **草稿 scope 防护**：composer 用固定 key 跨 session 复用，因此 scope（`workspaceKey\0sessionId`）变化时会主动作废在途请求并清掉还原点——否则新会话会继承上一个草稿的「还原」按钮和一个不会结束的「增强中」。请求区间内 scope 变化时，迟到的结果一律丢弃：不回填、不立还原点。切会话/切草稿后 composer 属于另一个草稿 owner，回填会直接污染新会话的草稿。
+- **设置写入形状**：`ISettingService.update` 只做外层浅合并（`{ ...current, ...patch }`），嵌套对象是整体替换。因此写回必须提交完整 `promptEnhance` 对象（`mergePromptEnhanceSettingsPatch`），只交单个字段会被 schema 默认值重置掉用户其它选择。
 
 ### 设置数据形状
 
@@ -87,14 +89,15 @@ promptEnhance: {
 ### 增强流程
 
 ```
-点「增强」
+ 点「增强」
  ├─ 草稿为空 → toast「草稿为空」，停止
  ├─ 结构化内容闸未通过 → toast 说明，停止（见下）
- ├─ 取草稿纯文本（textRef / 编辑器句柄 getMarkdown）
- ├─ contextEnabled 且会话有历史 → 从 conversation projection 取最近 N 轮
+ ├─ 取草稿纯文本（编辑器句柄 getMarkdown，回退 textRef）
+ ├─ contextEnabled 且会话有历史 → 从 composer 现有投影 snapshot 取最近 N 轮
  ├─ 拼装 system + user 消息（见「提示词与拼装」）
- ├─ generateWorkspaceText（runId+1，持有 AbortController）
+ ├─ generateWorkspaceText（runId+1，持有 AbortController，记录发起时 scopeKey）
  │    ├─ 用户再点按钮 → abort，toast「已取消」，迟到响应按 runId 丢弃
+ │    ├─ 返回时 scopeKey 已变 → 丢弃结果，不回填、不立还原点
  │    ├─ 失败 / 超时 / 空内容 → toast 错误原因，草稿不动
  │    └─ 成功 → 回填三连 → 读回比对
  │         ├─ 比对失败 → 写回原文，toast 失败
@@ -104,20 +107,26 @@ promptEnhance: {
  └─ 一致 → 写回原文，清还原点
 ```
 
+回填三连顺序与 `restoreSubmittedDraft` 一致：`updateComposerContent({ text })` → 编辑器句柄 `setText` → `updateText`。读回比对用编辑器 `getMarkdown()`，比对前只做 CRLF 与首尾空白归一化；写入抛异常或读回不一致都按「回填没有完整落地」处理：写回原文，不留半截文本。「还原」走同一条安全写入路径，写失败只记日志并提示，不让异常逃出点击回调。
+
 ### 结构化内容闸
 
 发送前的结构化内容分四类：文件附件、代码评论 / 网页元素 / PPT 元素引用、对话选区引用、Lexical mention 节点（markdown 中表现为 `[label](uri)` 链接）。任一存在时默认拒绝增强并 toast 说明。`allowStructuredOverwrite` 开启后放行，但 mention 节点会被替换为纯文本——这是设置里唯一保留的说明文字之一。判定复用 composer 现有的 `hasAttachments` / `hasContexts` / `hasReferences` 聚合，mention 判定用现有 `parseMentionMarkdown`。
 
+已知边界：`parseMentionMarkdown` 除了链接形态，还会把 `$技能`、`/命令`、`@子代理`、`#sess_*` 这类行内 token 认成 mention，因此「解释一下 $PATH」「看看 /tmp 目录」这种纯文本草稿也会被拦下。这是有意的保守取舍：真 mention 节点（尤其子代理）序列化后就是普通 token，无法和用户手打区分，误放行会把结构化引用静默降级成纯文本。提示语明确列出会受影响的内容类型，需要时由 `allowStructuredOverwrite` 放开。
+
 ### 取对话背景
 
-- 经 `useV4Conversation().layer.acquire(sessionId)` 拿 lease，读 projection snapshot 的 `rows.window`。
-- 过滤：`kind === "userInput"` 且 `origin === "realUser"`；`kind === "assistantText"` 且 `state === "complete"`。按 rowId 顺序取最近 N 轮（一轮 = 一条用户 + 一条助手，助手缺失时只取用户）。
-- 单条文本截断到合理长度（如 500 字符），避免背景膨胀。
-- 上下文一律前置到用户消息开头，固定抬头，与正文空行隔开：
+- 直接读 composer 已有的投影 `snapshotRef.current?.rows.window`，不再 `layer.acquire(sessionId)`：`SessionPane` 已经持有该 session 的 lease 并把 snapshot 传进 composer，二次 acquire 只是给同一条投影加一个订阅者，还会多出一份需要配平的生命周期。
+- 点击时经 ref 读取 rows（而非把 snapshot 灌进 `leadingActions` 的 memo 依赖）：流式期间 snapshot 每个 chunk 都换引用，直接依赖会让整簇工具条按钮跟着重建。
+- 过滤：`kind === "userInput"` 且 `origin === "realUser"`；`kind === "assistantText"` 且 `state === "complete"`。按 rowId 顺序取最近 N 轮（一轮 = 一条用户 + 一条助手，助手缺失时只取用户）。非 `realUser` 的 userInput 也断开轮次，避免其后的助手正文被错挂到上一个用户轮。
+- 单条文本截断到 500 字符，避免背景膨胀。
+- 上下文一律前置到用户消息开头，固定抬头，与正文空行隔开；行内用「用户：」「助手：」标注角色，否则模型无法区分指代来自用户还是上一轮回答：
 
   ```text
   【前序会话背景（仅作理解指代参考，切勿回答历史问题）】
-  <上下文文本>
+  用户：<上下文文本>
+  助手：<上下文文本>
 
   <拼好的用户消息>
   ```
@@ -324,14 +333,15 @@ REQUIREMENTS:
 7. 当前模式提示词正文：只读折叠查看
 8. 恢复默认按钮
 
-除第 3、5 条外不写任何说明小字。设置改动即写即生效（`update(patch)`），无需保存按钮（密钥类输入框不适用——本功能不存在密钥输入）。
+除第 3、5 条外不写任何说明小字。设置改动即写即生效（`update(patch)`），无需保存按钮（密钥类输入框不适用——本功能不存在密钥输入）。保存期间所有控件（含两个分段控件）禁用：写回是「读当前设置 + 完整对象」的形状，连续切两项时后一次会基于尚未回刷的旧值组装，把前一次的选择覆盖回旧值。
 
 Composer 工具条上的「设置」入口通过现有设置导航意图机制（`setPendingSettingsSectionIntent("promptEnhance")` + 打开设置页）直达该分区。
 
 ### 可用性与禁用
 
 - 「增强」禁用条件复用 composer 现有变量：`disabled || pending || mode === "reject"`。草稿为空不禁用按钮，点击后 toast 提示（保持可发现性）。
-- 增强进行中：按钮切加载态（Spinner + 「增强中 Ns」，秒数用 `useNowTicker` 跳动），再点 = 取消。
+- 增强进行中：按钮切加载态（Spinner + 「增强中 Ns」，秒数用 `useNowTicker` 跳动），再点 = 取消。「还原」同时禁用：进行中还原会与在途结果互相覆盖。
+- 入口外层先用 `useOptionalServices()` 判定，缺失（无 ServiceProvider 的宿主或组件级测试）即不渲染；内层才用 `useSettings()` / `useWorkspaceServices`。理由与先例见 `V4ComposerCuaEntry`。
 - 「还原」仅还原点存在时渲染；还原成功或拒绝后清除还原点。
 
 ### 日志
@@ -343,14 +353,18 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 
 好的测试只断言外部行为（拼装产物的字符串内容、闸门的放行/拒绝判定），不断言实现细节（内部函数名、调用次数）。
 
-**接缝选择**：最高且唯一的测试接缝是纯拼装/判定模块（`promptEnhance` 目录下的纯函数）。React 组件与服务调用不进单测，靠手动验证覆盖。
+**接缝选择**：最高且唯一的测试接缝是纯模块（`promptEnhance` 目录下的纯函数）。React 组件与服务调用不进单测，靠手动验证覆盖。
 
-- **拼装模块单测**（vitest，位置 `packages/ui/test/`，先例：`composerSubmissionConfig.test.ts`、`turnMetrics.test.ts`、`reasoningLevelCatalog.test.ts`）：
+- **拼装模块单测**（`node:test` + `tsx --test`，位置 `packages/ui/test/`，先例：`turnMetrics.test.ts`、`reasoningLevelCatalog.test.ts`；注意仓库没有 vitest）：
   - `{input}` 字面量替换：草稿含 `$&`、`$'`、`"`、换行时不被二次解释
+  - 草稿自身含 `{input}` / `{inputJson}` 字样时不被误替换（占位符只扫一遍模板）
   - `{inputJson}` 正确转义并嵌入外层 JSON（产物可被 `JSON.parse` 解析且字段值等于原草稿）
-  - 上下文前置：有历史时带固定抬头、开关关或无历史时整段省略
+  - 上下文前置：有历史时带固定抬头与角色标注、开关关或无历史时整段省略、单条超长截断
   - 三个模式各自选中正确的 system/user 模板
-- **还原闸判定单测**：当前文本与增强结果一致才允许还原；不一致返回拒绝原因。
+- **判定模块单测**：结构化闸的放行/拒绝矩阵（空草稿优先于结构化内容；附件/引用/mention 各自拒绝；显式放开后放行）；还原闸的「一致才允许还原」。
+- **run 跟踪模块单测**：取消后仍能发起新 run（不能被上一次的 run 挡住）；取消后迟到的旧结果不得被判成当前 run，旧 run 结束也不能让出新 run 的活动位；只有当前 run 能结束自己。
+- **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象；自动通道透传 preferredSelection，独立通道按设置下发档位、`default` 不下发、缺 customSelection 返回 null。
+- 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
 - **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
 
@@ -365,6 +379,9 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 
 ## 备注
 
-- 三档提示词模板是产品决策的一部分，正文逐字固定；后续调措辞视为行为变更，先改本文档。
+- 三档提示词模板是产品决策的一部分，正文逐字固定；后续调措辞视为行为变更，先改本文档。`prompts.ts` 的正文由本文档抽取生成，改完本文档要同步改常量并与本文档逐字比对。
 - 背景轮数上限 10 是防呆值，不是性能结论；若实测 token 压力大，再调上限并更新本文档。
+- 推理强度四档（默认/低/中/高）是产品给的固定选项。若所选模型的 registry `optionSpecs.reasoningLevel.values` 不含该档位，provider 侧归一化会静默丢掉 `options.reasoningLevel`，回落到模型默认档——这是预期降级，不做档位探测，也不按模型动态收窄选项。
+- 设置分区不额外包 `ServiceProvider`：写设置沿用 `SettingsPage` 外层绑定的 Host（与本页「备用模型」同一口径），读模型候选仍按活动 workspace 解析。`useSettingService` 按 Service 实例隔离 store，不会跨 Environment 串写。
 - 本功能全部位于 UI 层与既有服务接口之上，桌面端与 Web 端共享同一份代码，无平台分支。
+- 原 `chat.promptEnhance.*` 是一批无引用文案（对应更早的直连通道方案，本功能不采用自由 endpoint/key 通道）。本次实现改为 `chat.toolbar.promptEnhance.*`，旧键已删除，避免同一功能出现两套文案命名。
