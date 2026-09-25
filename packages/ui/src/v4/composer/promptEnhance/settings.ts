@@ -19,7 +19,8 @@ export function resolvePromptEnhanceSettings(
     mode: stored.mode ?? defaults.mode,
     contextEnabled: stored.contextEnabled ?? defaults.contextEnabled,
     contextRounds: stored.contextRounds ?? defaults.contextRounds,
-    allowStructuredOverwrite: stored.allowStructuredOverwrite ?? defaults.allowStructuredOverwrite,
+    allowInlineReferenceRewrite:
+      stored.allowInlineReferenceRewrite ?? defaults.allowInlineReferenceRewrite,
     channel: stored.channel ?? defaults.channel,
     ...(customSelection ? { customSelection } : {}),
     reasoningLevel: stored.reasoningLevel ?? defaults.reasoningLevel,

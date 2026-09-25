@@ -39,7 +39,11 @@ const promptEnhanceSettingsObjectSchema = z.object({
     .min(PROMPT_ENHANCE_CONTEXT_ROUNDS_MIN)
     .max(PROMPT_ENHANCE_CONTEXT_ROUNDS_MAX)
     .default(PROMPT_ENHANCE_DEFAULT_CONTEXT_ROUNDS),
-  allowStructuredOverwrite: z.boolean().default(false),
+  /**
+   * 允许把草稿里的行内引用（@文件 / @子代理 / `$技能` / `/命令` / `#会话`）改写成纯文本。
+   * 只覆盖这一处损失：附件与引用面板不在编辑器里，回填碰不到它们（见 docs/prompt-enhance.md）。
+   */
+  allowInlineReferenceRewrite: z.boolean().default(false),
   channel: promptEnhanceChannelSchema.default("auto"),
   /** 仅 custom 通道使用；切回 auto 时保留，便于用户切回来。 */
   customSelection: promptEnhanceCustomSelectionSchema.optional(),
@@ -54,7 +58,7 @@ export const PROMPT_ENHANCE_SETTINGS_DEFAULTS: PromptEnhanceSettings = {
   mode: "basic",
   contextEnabled: true,
   contextRounds: PROMPT_ENHANCE_DEFAULT_CONTEXT_ROUNDS,
-  allowStructuredOverwrite: false,
+  allowInlineReferenceRewrite: false,
   channel: "auto",
   reasoningLevel: "default",
 };

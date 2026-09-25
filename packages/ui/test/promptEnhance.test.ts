@@ -38,10 +38,8 @@ function extractOriginalPromptJson(userMessage: string): unknown {
 
 const PLAIN_GATE_INPUT = {
   draftText: "帮我写一个函数",
-  hasAttachments: false,
-  hasContexts: false,
-  hasReferences: false,
-  allowStructuredOverwrite: false,
+  hasInlineReferences: false,
+  allowInlineReferenceRewrite: false,
 };
 
 test("草稿里的特殊字符在字面量替换后原样保留", () => {
@@ -142,53 +140,50 @@ test("三个模式各自选中自己的 system 与 user 模板", () => {
   assert.equal(systems.size, 3);
 });
 
-test("空草稿先于结构化内容被拒绝", () => {
+test("空草稿先于行内引用被拒绝", () => {
   assert.deepEqual(evaluatePromptEnhanceRequest({ ...PLAIN_GATE_INPUT, draftText: "   " }), {
     allowed: false,
     reason: "emptyDraft",
   });
   assert.deepEqual(
-    evaluatePromptEnhanceRequest({ ...PLAIN_GATE_INPUT, draftText: "", hasAttachments: true }),
+    evaluatePromptEnhanceRequest({
+      ...PLAIN_GATE_INPUT,
+      draftText: "",
+      hasInlineReferences: true,
+    }),
     { allowed: false, reason: "emptyDraft" },
   );
 });
 
-test("纯文本草稿放行，含附件/引用/mention 的草稿默认拒绝", () => {
+test("闸门只看行内引用节点：无节点一律放行，有节点默认拒绝", () => {
   assert.deepEqual(evaluatePromptEnhanceRequest(PLAIN_GATE_INPUT), { allowed: true });
-  assert.deepEqual(
-    evaluatePromptEnhanceRequest({
-      ...PLAIN_GATE_INPUT,
-      draftText: "看下 https://example.com/a(b) 再改",
-    }),
-    { allowed: true },
-  );
-
-  for (const flagged of ["hasAttachments", "hasContexts", "hasReferences"] as const) {
-    assert.deepEqual(evaluatePromptEnhanceRequest({ ...PLAIN_GATE_INPUT, [flagged]: true }), {
-      allowed: false,
-      reason: "structuredDraft",
-    });
+  // 长得像引用但只是纯文本的草稿必须放行：手打 token 没有派发语义，改写它们不算丢内容。
+  for (const draftText of [
+    "解释一下 $PATH 和 $HOME",
+    "看看 /tmp 目录下有什么",
+    "看下 https://example.com/a(b) 再改",
+    "看下 [@app.ts](./app.ts) 的实现",
+    "参考 $my-skill 的做法",
+  ]) {
+    assert.deepEqual(
+      evaluatePromptEnhanceRequest({ ...PLAIN_GATE_INPUT, draftText }),
+      { allowed: true },
+      `纯文本草稿应放行：${draftText}`,
+    );
   }
 
   assert.deepEqual(
-    evaluatePromptEnhanceRequest({
-      ...PLAIN_GATE_INPUT,
-      draftText: "看下 [@app.ts](./app.ts) 的实现",
-    }),
-    { allowed: false, reason: "structuredDraft" },
-  );
-  assert.deepEqual(
-    evaluatePromptEnhanceRequest({ ...PLAIN_GATE_INPUT, draftText: "参考 $my-skill 的做法" }),
-    { allowed: false, reason: "structuredDraft" },
+    evaluatePromptEnhanceRequest({ ...PLAIN_GATE_INPUT, hasInlineReferences: true }),
+    { allowed: false, reason: "inlineReference" },
   );
 });
 
-test("显式放开结构化覆盖后放行", () => {
+test("显式放开行内引用改写后放行", () => {
   assert.deepEqual(
     evaluatePromptEnhanceRequest({
       ...PLAIN_GATE_INPUT,
-      hasAttachments: true,
-      allowStructuredOverwrite: true,
+      hasInlineReferences: true,
+      allowInlineReferenceRewrite: true,
     }),
     { allowed: true },
   );
@@ -196,7 +191,7 @@ test("显式放开结构化覆盖后放行", () => {
     evaluatePromptEnhanceRequest({
       ...PLAIN_GATE_INPUT,
       draftText: "[@app.ts](./app.ts)",
-      allowStructuredOverwrite: true,
+      allowInlineReferenceRewrite: true,
     }),
     { allowed: true },
   );
@@ -231,7 +226,7 @@ test("缺失或半截的持久化配置补齐成完整设置", () => {
     mode: "basic",
     contextEnabled: true,
     contextRounds: 3,
-    allowStructuredOverwrite: false,
+    allowInlineReferenceRewrite: false,
     channel: "auto",
     reasoningLevel: "default",
   });
@@ -239,7 +234,7 @@ test("缺失或半截的持久化配置补齐成完整设置", () => {
     mode: "creative",
     contextEnabled: true,
     contextRounds: 3,
-    allowStructuredOverwrite: false,
+    allowInlineReferenceRewrite: false,
     channel: "auto",
     reasoningLevel: "default",
   });
@@ -250,7 +245,7 @@ test("写回 patch 是完整对象，浅合并不会把其它字段重置回默�
     mode: "creative",
     contextEnabled: false,
     contextRounds: 8,
-    allowStructuredOverwrite: true,
+    allowInlineReferenceRewrite: true,
     channel: "custom",
     customSelection: { providerId: "provider-a", modelId: "model-a" },
     reasoningLevel: "high",

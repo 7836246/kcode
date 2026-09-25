@@ -104,10 +104,9 @@ export interface UsePromptEnhanceParams {
   scopeKey: string;
   /** 当前草稿是否有正文；发送成功或手动清空后为 false，还原点随之失效。 */
   hasDraftText: boolean;
-  hasAttachments: boolean;
-  hasContexts: boolean;
-  hasReferences: boolean;
   modelSelectionView: ModelSelectionView | null;
+  /** 点击时读取草稿里是否有行内引用节点（回填唯一会破坏的内容）。 */
+  readHasInlineReferences: () => boolean;
   /** 点击时读取当前投影 rows，避免把流式 snapshot 灌进调用方的 memo 依赖。 */
   readContextRows: () => readonly ConversationRow[];
   /** 读当前草稿正文：优先编辑器正文，回退 composer 本地文本。 */
@@ -128,14 +127,12 @@ export interface PromptEnhanceController {
 export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceController {
   const {
     disabled,
-    hasAttachments,
-    hasContexts,
     hasDraftText,
-    hasReferences,
     modelSelectionView,
     pending,
     readContextRows,
     readDraftText,
+    readHasInlineReferences,
     remoteSessionId,
     routingMode,
     scopeKey,
@@ -274,16 +271,15 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     const draftText = readDraftText();
     const decision = evaluatePromptEnhanceRequest({
       draftText,
-      hasAttachments,
-      hasContexts,
-      hasReferences,
-      allowStructuredOverwrite: enhanceSettings.allowStructuredOverwrite,
+      // 只查编辑器里的行内引用节点：附件与引用面板不在草稿内容里，回填不会破坏它们。
+      hasInlineReferences: readHasInlineReferences(),
+      allowInlineReferenceRewrite: enhanceSettings.allowInlineReferenceRewrite,
     });
     if (!decision.allowed) {
       showToast(
         decision.reason === "emptyDraft"
           ? "chat.toolbar.promptEnhance.empty"
-          : "chat.toolbar.promptEnhance.structuredBlocked",
+          : "chat.toolbar.promptEnhance.inlineReferenceBlocked",
       );
       return;
     }
@@ -410,13 +406,11 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     createRunCancel,
     enhanceSettings,
     finishRun,
-    hasAttachments,
-    hasContexts,
-    hasReferences,
     kcodeAgentService,
     modelSelectionView,
     readContextRows,
     readDraftText,
+    readHasInlineReferences,
     remoteSessionId,
     runTracker,
     scopeKey,

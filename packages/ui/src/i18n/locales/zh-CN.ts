@@ -3833,8 +3833,8 @@ const zhCN: Record<string, string> = {
   "chat.toolbar.promptEnhance.settingsLabel": "提示词增强设置",
   "chat.toolbar.promptEnhance.settingsTooltip": "打开提示词增强设置",
   "chat.toolbar.promptEnhance.empty": "请先输入需要增强的提示词",
-  "chat.toolbar.promptEnhance.structuredBlocked":
-    "草稿含结构化内容\n附件、引用、@提及，以及 $技能 / /命令 / 路径这类 token 都会被改写成纯文本；可在设置里放开。",
+  "chat.toolbar.promptEnhance.inlineReferenceBlocked":
+    "草稿里的行内引用（@引用 / $技能 / /命令）改写后会变成纯文本；可在设置里放开。",
   "chat.toolbar.promptEnhance.noModel": "没有可用的增强模型，请先在设置里选好模型通道。",
   "chat.toolbar.promptEnhance.cancelled": "已取消本次提示词增强",
   "chat.toolbar.promptEnhance.success": "已增强（{seconds}s · {model}）",
@@ -3887,8 +3887,8 @@ const zhCN: Record<string, string> = {
   "settings.promptEnhance.mode.creative": "创意",
   "settings.promptEnhance.context.label": "参考会话上下文",
   "settings.promptEnhance.context.rounds": "参考轮数",
-  "settings.promptEnhance.allowStructured.label": "允许覆盖含附件/引用的草稿",
-  "settings.promptEnhance.allowStructured.note": "开启后 @提及 会转为纯文本",
+  "settings.promptEnhance.allowInlineReference.label": "允许改写草稿里的行内引用",
+  "settings.promptEnhance.allowInlineReference.note": "行内引用会变成纯文本",
   "settings.promptEnhance.channel.label": "模型通道",
   "settings.promptEnhance.channel.auto": "自动",
   "settings.promptEnhance.channel.custom": "独立",

@@ -27,8 +27,8 @@
 12. 作为用户，我想在自己手改过增强结果之后「还原」被拒绝并说明原因，这样我的手改内容不会被覆盖。
 13. 作为用户，我想请求失败、超时或模型返回空内容时草稿保持原样并得到错误提示，这样我不会丢草稿。
 14. 作为用户，我想回填失败时绝不留下半截文本，这样我的草稿要么完整更新、要么完整保留。
-15. 作为用户，我想输入框含附件、引用、@提及 时默认拒绝增强覆盖，这样结构化内容不会被静默毁掉。
-16. 作为用户，我想能在设置里显式放开第 15 条的限制，这样我确认后果后仍可增强纯文本。
+15. 作为用户，我想输入框含行内引用（@文件 / @子代理 / `$技能` / `/命令` / `#会话`）时默认拒绝增强，这样这些引用不会被静默改写成纯文本；同时我不想因为加了附件或引用了代码评论就完全不能增强。
+16. 作为用户，我想能在设置里显式放开第 15 条的限制，这样我确认「行内引用会变成纯文本」后仍可改写。
 17. 作为用户，我想在三种改写模式（基础 / 编程任务 / 创意）中选择，默认是基础，这样不同场景用不同力度。
 18. 作为用户，我想让改写参考最近几轮对话来消解「那个」「刚才那个报错」这类指代，这样增强结果更贴合上下文。
 19. 作为用户，我想能关掉上下文参考、或调整参考轮数（默认 3 轮），这样我可以控制背景注入。
@@ -49,7 +49,7 @@
 ### 模块划分
 
 - **设置 schema**：`packages/shared` 的 appSettings 校验 schema 增加 `promptEnhance` 嵌套对象（见下「设置数据形状」），patch schema 同步。`AppSettings` 类型随 schema 推导更新。
-- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 8 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（结构化闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`operationId.ts`（跨进程取消句柄生成）、`request.ts`（请求参数组装与请求级超时常量）、`settings.ts`（设置补齐与整对象写回）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared`、`@kcode/services` 只用 type-only 导入，保证 `tsx --test` 直接加载。
+- **提示词常量与拼装**：新目录 `packages/ui/src/v4/composer/promptEnhance/`，含 8 个纯模块：`prompts.ts`（模板正文与展示用拼装）、`compose.ts`（占位符替换、背景前置、消息组装）、`gates.ts`（行内引用闸与还原闸）、`runTracker.ts`（活动 run 与递增 runId）、`operationId.ts`（跨进程取消句柄生成）、`request.ts`（请求参数组装与请求级超时常量）、`settings.ts`（设置补齐与整对象写回）、`selection.ts`（通道解析）。全部不依赖 React，可独立测试；对 `@kcode/shared`、`@kcode/services` 只用 type-only 导入，保证 `tsx --test` 直接加载。
 - **Composer 入口**：新组件 `PromptEnhanceActions` 挂进 `ConversationComposer` 的 `leadingActionsNode`（与模式切换、CUA 入口同簇）；新 hook `usePromptEnhance` 承载增强流程状态机。
 - **设置分区**：新文件 `packages/ui/src/settings/PromptEnhanceSection.tsx`（自包含模式，先例：`ModelFallbackSetting` / `ProactiveSuggestionsSetting`），注册进设置导航（`SettingsSectionId` 增加 `"promptEnhance"`，分组 `basics`）与 SettingsPage 条件渲染链。
 - **i18n**：`zh-CN.ts` 与 `en-US.ts` 两个 locale 文件同步增加 `settings.promptEnhance.*` 与 `chat.toolbar.promptEnhance.*` 文案；无引用的旧 `chat.promptEnhance.*` 一并删除。
@@ -71,7 +71,7 @@ promptEnhance: {
   mode: "basic" | "coding" | "creative"          // 默认 "basic"
   contextEnabled: boolean                           // 默认 true
   contextRounds: number, 整数 1–10                  // 默认 3
-  allowStructuredOverwrite: boolean                 // 默认 false
+  allowInlineReferenceRewrite: boolean              // 默认 false
   channel: "auto" | "custom"                        // 默认 "auto"
   customSelection?: { providerId: string, modelId: string }  // 仅 custom 通道
   reasoningLevel: "default" | "low" | "medium" | "high"      // 默认 "default"，仅 custom 生效
@@ -96,7 +96,7 @@ promptEnhance: {
 ```
  点「增强」
  ├─ 草稿为空 → toast「草稿为空」，停止
- ├─ 结构化内容闸未通过 → toast 说明，停止（见下）
+ ├─ 行内引用闸未通过（草稿含行内引用节点且未放开）→ toast 说明，停止（见下）
  ├─ 取草稿纯文本（编辑器句柄 getMarkdown，回退 textRef）
  ├─ contextEnabled 且会话有历史 → 从 composer 现有投影 snapshot 取最近 N 轮
  ├─ 拼装 system + user 消息（见「提示词与拼装」）
@@ -116,11 +116,22 @@ promptEnhance: {
 
 读回比对成立的前提是 `setText` 同步提交：Lexical 的非 discrete `update` 是批量异步提交，写后立即 `getMarkdown()` 读回的是旧 state，比对必然失败并把原文写回（用户表现为「写入输入框失败，草稿保持不变」，而模型调用实际成功）。因此 `LexicalChatInput` 的 `replaceEditorText` 必须带 `discrete: true`（`setText` 契约 = 调用返回即已落地）；比对恒等性依赖 `$getPromptMarkdown` 是纯序列化（无 markdown 转义），纯文本写入往返恒等，这条由「还原闸一致才放行」的手动验证兜底。
 
-### 结构化内容闸
+### 行内引用闸
 
-发送前的结构化内容分四类：文件附件、代码评论 / 网页元素 / PPT 元素引用、对话选区引用、Lexical mention 节点（markdown 中表现为 `[label](uri)` 链接）。任一存在时默认拒绝增强并 toast 说明。`allowStructuredOverwrite` 开启后放行，但 mention 节点会被替换为纯文本——这是设置里唯一保留的说明文字之一。判定复用 composer 现有的 `hasAttachments` / `hasContexts` / `hasReferences` 聚合，mention 判定用现有 `parseMentionMarkdown`。
+闸门只保护**回填会真正破坏的东西**，判据是「回填会不会毁掉它」，不是「草稿里有没有这类内容」。回填三连只重写编辑器内容（`updateComposerContent` + `setText` + `updateText`），因此：
 
-已知边界：`parseMentionMarkdown` 除了链接形态，还会把 `$技能`、`/命令`、`@子代理`、`#sess_*` 这类行内 token 认成 mention，因此「解释一下 $PATH」「看看 /tmp 目录」这种纯文本草稿也会被拦下。这是有意的保守取舍：真 mention 节点（尤其子代理）序列化后就是普通 token，无法和用户手打区分，误放行会把结构化引用静默降级成纯文本。提示语明确列出会受影响的内容类型，需要时由 `allowStructuredOverwrite` 放开。
+| 内容                                                          | 存放形态                                                           | 回填影响                                        | 闸门   |
+| ------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- | ------ |
+| 上传附件                                                      | `composerAttachmentUploadStore`（按 `workspaceKey\0scopeId` 分片） | 不涉及                                          | 不拦   |
+| 网页元素 contexts / PPT 元素引用 / 代码评论 / 对话选区引用    | 各自 hook 的组件内 state，渲染在编辑区外 chip 行                   | 不涉及                                          | 不拦   |
+| 行内引用节点（@文件 / @子代理 / `$技能` / `/命令` / `#会话`） | **编辑器内 Lexical 节点**                                          | `replaceEditorText` 会 `root.clear()`，**必丢** | 默认拦 |
+
+- 前四类不在编辑器里，`V4ComposerDraft` 类型里也没有它们的字段（草稿记录只有 `text` / `editorStateJson` / `mention` / 配置），回填根本碰不到；拦它们只会让「加了附件就不能增强」这种纯摩擦发生。
+- 后一类从 UI 插入时都是真实节点（斜杠命令走 `SlashCommandPlugin` 的 `$createPromptMentionNode`，mention 面板同路径），回填后节点消失、发送时只剩纯文本。
+- **判定必须查真实节点，不能解析文本形态**：旧实现用 `parseMentionMarkdown` 猜文本，会把「解释一下 `$PATH`」「看看 `/tmp` 目录」和普通 markdown 链接一并拦下。节点是精确可枚举的，改判定后这类误报消失。读取入口由 composer 注入（与 `readDraftText` / `readContextRows` 同族的可调用读取器，如编辑器句柄提供「是否存在行内引用节点」），闸门保持纯函数：入参为「是否有行内引用节点」，不再接收 `draftText` 做形态解析。
+- 设置项 `allowInlineReferenceRewrite`（原 `allowStructuredOverwrite`）开启后放行，代价是行内引用被改写成纯文本——这是设置里唯一保留的说明文字。被拒时的提示语同步改成只说行内引用：「草稿含行内引用（@引用 / `$技能` / `/命令`），改写会把它变成纯文本；可在设置里放开」，不再提附件与引用面板（它们不受影响）。
+
+已知边界：手打的 `$PATH`、`/tmp`、`@某人` 这类纯文本不再被拦（CLI 侧没有 `$技能` 文本展开，技能由 Skill 工具加载，斜杠命令走节点，故纯文本 token 无派发语义，改写它不算功能损失）。若将来发送链路改成按文本展开技能/命令，这条判据会漏，届时要重新评估是否需要「节点 + 文本 token」双判据。
 
 ### 取对话背景
 
@@ -333,7 +344,7 @@ REQUIREMENTS:
 
 1. 改写模式：三档分段控件（基础 / 编程任务 / 创意），默认「基础」
 2. 参考会话上下文：Switch + 轮数选择（1–10，默认 3）
-3. 允许覆盖含附件/引用的草稿：Switch（默认关）——**保留一条说明**：开启后 @提及 会转为纯文本
+3. 允许改写草稿里的行内引用：Switch（默认关）——**保留一条说明**：行内引用会变成纯文本
 4. 模型通道：自动 / 独立分段控件；独立时展开 provider 与 model 两个下拉（候选来自 provider/model 视图）
 5. 推理强度：默认/低/中/高，仅独立通道显示——**保留一条说明**：仅对独立通道生效
 6. 当前生效通道与模型名：只读一行（自动 → preferredSelection 模型名；独立 → 所选 provider/model）
@@ -368,13 +379,13 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
   - `{inputJson}` 正确转义并嵌入外层 JSON（产物可被 `JSON.parse` 解析且字段值等于原草稿）
   - 上下文前置：有历史时带固定抬头与角色标注、开关关或无历史时整段省略、单条超长截断
   - 三个模式各自选中正确的 system/user 模板
-- **判定模块单测**：结构化闸的放行/拒绝矩阵（空草稿优先于结构化内容；附件/引用/mention 各自拒绝；显式放开后放行）；还原闸的「一致才允许还原」。
+- **判定模块单测**：行内引用闸的放行/拒绝矩阵（空草稿优先于引用判定；**有行内引用节点**时拒绝、放开后放行；**无节点但有附件/引用/手打 token 的入参**一律放行——入参里已经没有这几项，测试用「不存在该入参」锁住口径）；还原闸的「一致才允许还原」。
 - **run 跟踪模块单测**：取消后仍能发起新 run（不能被上一次的 run 挡住）；取消后迟到的旧结果不得被判成当前 run，旧 run 结束也不能让出新 run 的活动位；只有当前 run 能结束自己。`operationId.ts` 断言前缀与两次调用不重复。
 - **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `maxOutputTokens` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
 - **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象。选型解析（`selection.ts`）用 Selection View 替身断言：输出预算取模型声明的上限；档位落在模型档位集合内（设置 `default` → 模型默认档；不支持的档位 → 回落默认档并回传被替换的档位）；自动通道跟随当前生效档位；缺 preferredSelection / 缺 customSelection / 模型不在视图 / 模型配置缺上限或缺档位一律返回 null（不发请求）。
 - 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
 - **CLI 流式累积模块单测**（colocated，`node:test`，位置 `apps/kcode-cli/packages/core/src/runtime/methods/workspace-generate-text-accumulate.test.ts`，先例 `model-fallback.test.ts`）：text_delta 顺序拼接；tool_call 按 id 去重；finish 提供 finishReason 与 usage；error 事件按流式错误语义抛出（非 Error 形态不丢信息）；流在 finish 前结束判失败；无 toolCalls 时结果不携带该字段。
-- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误；以及在非标准 openai-compatible 网关（非流式响应带自定义信封，如 CPA）下增强仍成功。
+- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、设置持久化（重启后保留）、自动通道跟随模型切换；闸门口径三条——**加了附件仍可增强**（chip 保留、增强结果正常回填）、草稿里插入行内引用（@文件 或 `/命令`）默认被拒、开着「允许改写草稿里的行内引用」时放行且引用变成纯文本；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误；以及在非标准 openai-compatible 网关（非流式响应带自定义信封，如 CPA）下增强仍成功。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
 
 ## 不做的事
@@ -395,3 +406,5 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - 设置分区不额外包 `ServiceProvider`：写设置沿用 `SettingsPage` 外层绑定的 Host（与本页「备用模型」同一口径），读模型候选仍按活动 workspace 解析。`useSettingService` 按 Service 实例隔离 store，不会跨 Environment 串写。
 - 本功能全部位于 UI 层与既有服务接口之上，桌面端与 Web 端共享同一份代码，无平台分支。
 - 本功能的文案只存在于两个命名空间：工具条用 `chat.toolbar.promptEnhance.*`，设置分区用 `settings.promptEnhance.*`；不要再引入第三套命名（更早的直连通道方案留下的 `chat.promptEnhance.*` 已删除）。
+- 闸门收窄到「只看行内引用节点」的依据是取证结论：附件在 `composerAttachmentUploadStore`、四类引用在各自 hook 的组件 state，草稿记录 `V4ComposerDraft` 里没有这些字段，回填三连碰不到它们；只有 mention 是编辑器节点。这意味着「加了附件不能增强」属于误拦，已按上表摘掉。设置字段随之改名 `allowStructuredOverwrite` → `allowInlineReferenceRewrite`；功能尚未发布，直接改名不做兼容读旧值。
+- 已评估但未采纳的方案：占位符往返（回填前把行内引用节点序列化成不透明占位符交给模型，回填时还原成节点，还原失败沿用 `fillFailed` 分支拒绝回填）。它能保住引用节点、从而删掉这个开关，但要同时改 compose、回填与还原点三处口径，并额外防模型改坏占位符；本次先做闸门收窄，若后续收到「为了增强而不得不丢引用」的反馈再启动。编辑器已有「markdown → 重建节点」的先例可复用（`replaceEditorTextWithPluginMentions`）。

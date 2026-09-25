@@ -34,6 +34,7 @@ import {
   $getNodeByKey,
   $setSelection,
   $getRoot,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -44,6 +45,7 @@ import {
   KEY_ENTER_COMMAND,
   type EditorState,
   type LexicalEditor,
+  type LexicalNode,
 } from "lexical";
 import { SlashCommandPlugin } from "./SlashCommandPlugin.js";
 import type { AppSlashCommand } from "./slashCommandHelpers.js";
@@ -72,6 +74,8 @@ export interface LexicalChatInputHandle {
   focus: () => void;
   getEditorState: () => EditorState;
   getMarkdown: () => string;
+  /** 草稿里是否存在行内引用节点；提示词增强的发起闸门用它判定是否会丢引用。 */
+  hasInlineReferences: () => boolean;
   getText: () => string;
   appendText: (text: string) => void;
   appendFileMention: (
@@ -183,6 +187,27 @@ function getEditorMarkdown(editorState: EditorState): string {
     text = $getPromptMarkdown();
   });
   return text;
+}
+
+/**
+ * 行内引用节点判定：@文件 / @子代理 / `$技能` / `/命令` / `#会话` 都是 PromptMentionNode。
+ *
+ * 这是回填唯一会破坏的内容（`replaceEditorText` 会 clear root）。附件与引用面板不在编辑器里，
+ * 判定因此必须查真实节点而不是解析文本形态——手打的 `$PATH`、`/tmp` 没有派发语义，
+ * 解析文本会把它们一并误拦（见 docs/prompt-enhance.md「行内引用闸」）。
+ */
+function $hasInlineReferenceNodes(node: LexicalNode): boolean {
+  if ($isPromptMentionNode(node)) return true;
+  if (!$isElementNode(node)) return false;
+  return node.getChildren().some((child) => $hasInlineReferenceNodes(child));
+}
+
+function editorHasInlineReferenceNodes(editor: LexicalEditor): boolean {
+  let has = false;
+  editor.getEditorState().read(() => {
+    has = $hasInlineReferenceNodes($getRoot());
+  });
+  return has;
 }
 
 function replaceEditorText(editor: LexicalEditor, text: string) {
@@ -1275,6 +1300,7 @@ function EditorApiPlugin({
       focus: () => editor.focus(),
       getEditorState: () => editor.getEditorState(),
       getMarkdown: () => getEditorMarkdown(editor.getEditorState()),
+      hasInlineReferences: () => editorHasInlineReferenceNodes(editor),
       getText: () => getEditorMarkdown(editor.getEditorState()),
       appendText: (text: string) => appendEditorPlainText(editor, text),
       appendFileMention: (

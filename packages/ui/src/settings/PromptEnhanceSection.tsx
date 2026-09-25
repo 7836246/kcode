@@ -174,16 +174,18 @@ export function PromptEnhanceSection({
           }
         />
         <SettingsRow
-          label={intl.formatMessage({ id: "settings.promptEnhance.allowStructured.label" })}
-          description={intl.formatMessage({ id: "settings.promptEnhance.allowStructured.note" })}
+          label={intl.formatMessage({ id: "settings.promptEnhance.allowInlineReference.label" })}
+          description={intl.formatMessage({
+            id: "settings.promptEnhance.allowInlineReference.note",
+          })}
           control={
             <Switch
-              checked={current.allowStructuredOverwrite}
+              checked={current.allowInlineReferenceRewrite}
               disabled={disabled}
               aria-label={intl.formatMessage({
-                id: "settings.promptEnhance.allowStructured.label",
+                id: "settings.promptEnhance.allowInlineReference.label",
               })}
-              onCheckedChange={(checked) => void write({ allowStructuredOverwrite: checked })}
+              onCheckedChange={(checked) => void write({ allowInlineReferenceRewrite: checked })}
             />
           }
         />

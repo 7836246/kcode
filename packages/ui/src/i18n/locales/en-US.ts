@@ -4090,8 +4090,8 @@ const enUS: Record<string, string> = {
   "chat.toolbar.promptEnhance.settingsLabel": "Prompt enhancement settings",
   "chat.toolbar.promptEnhance.settingsTooltip": "Open prompt enhancement settings",
   "chat.toolbar.promptEnhance.empty": "Type a prompt before enhancing it",
-  "chat.toolbar.promptEnhance.structuredBlocked":
-    "This draft has structured content\nAttachments, references, @mentions and $skill / /command / path tokens would all be rewritten as plain text. You can allow it in settings.",
+  "chat.toolbar.promptEnhance.inlineReferenceBlocked":
+    "Inline references in this draft (@references / $skills / /commands) become plain text after rewriting. You can allow it in settings.",
   "chat.toolbar.promptEnhance.noModel":
     "No enhancement model available. Choose a model channel in settings first.",
   "chat.toolbar.promptEnhance.cancelled": "Cancelled this prompt enhancement",
@@ -4147,9 +4147,9 @@ const enUS: Record<string, string> = {
   "settings.promptEnhance.mode.creative": "Creative",
   "settings.promptEnhance.context.label": "Use conversation context",
   "settings.promptEnhance.context.rounds": "Rounds",
-  "settings.promptEnhance.allowStructured.label":
-    "Allow overwriting drafts with attachments or references",
-  "settings.promptEnhance.allowStructured.note": "@mentions become plain text when enabled",
+  "settings.promptEnhance.allowInlineReference.label":
+    "Allow rewriting inline references in the draft",
+  "settings.promptEnhance.allowInlineReference.note": "Inline references become plain text",
   "settings.promptEnhance.channel.label": "Model channel",
   "settings.promptEnhance.channel.auto": "Automatic",
   "settings.promptEnhance.channel.custom": "Dedicated",

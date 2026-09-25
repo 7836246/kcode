@@ -624,6 +624,12 @@ function ConversationComposerImpl({
     () => inputApiRef.current?.getMarkdown() ?? textRef.current,
     [],
   );
+  // 发起闸门只关心「回填会不会丢内容」：编辑器里只有行内引用节点会被 replaceEditorText 清掉，
+  // 附件与引用面板不在草稿内容里（见 docs/prompt-enhance.md「行内引用闸」）。
+  const readPromptEnhanceHasInlineReferences = useCallback(
+    () => inputApiRef.current?.hasInlineReferences() ?? false,
+    [],
+  );
   const writePromptEnhanceDraft = useCallback(
     (next: string) => {
       updateComposerContent({ text: next });
@@ -2196,12 +2202,10 @@ function ConversationComposerImpl({
           scopeKey={configPickerScopeKey}
           // 发送成功会清空草稿，还原点跟着失效（否则会留下点了必然被拒的「还原」）。
           hasDraftText={hasText}
-          hasAttachments={hasAttachments}
-          hasContexts={hasWebElementContexts || hasCodeCommentContexts}
-          hasReferences={hasPptxElementReferences || hasConversationSelectionReferences}
           modelSelectionView={modelSelectionView}
           readContextRows={readPromptEnhanceContextRows}
           readDraftText={readPromptEnhanceDraft}
+          readHasInlineReferences={readPromptEnhanceHasInlineReferences}
           writeDraftText={writePromptEnhanceDraft}
         />
         {/* 附件画廊重构曾整段覆盖 leadingActions，误删 CUA 常驻入口。
@@ -2242,6 +2246,7 @@ function ConversationComposerImpl({
       provider,
       readPromptEnhanceContextRows,
       readPromptEnhanceDraft,
+      readPromptEnhanceHasInlineReferences,
       remoteSessionId,
       runningSubagentCount,
       snapshot?.backgroundWorks,

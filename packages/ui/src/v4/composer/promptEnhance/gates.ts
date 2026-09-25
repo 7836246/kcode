@@ -1,11 +1,10 @@
 /**
- * 提示词增强的两道闸：发起前的结构化内容闸，以及「还原」的覆盖闸。
+ * 提示词增强的两道闸：发起前的行内引用闸，以及「还原」的覆盖闸。
  *
  * 纯判定模块，不依赖 React 与服务；单测直接断言放行/拒绝结果。
  */
-import { parseMentionMarkdown } from "../../../mentions/mentionMarkdown.js";
 
-export type PromptEnhanceRequestBlockReason = "emptyDraft" | "structuredDraft";
+export type PromptEnhanceRequestBlockReason = "emptyDraft" | "inlineReference";
 
 export type PromptEnhanceRequestDecision =
   | { readonly allowed: true }
@@ -15,31 +14,26 @@ export type PromptEnhanceRestoreDecision =
   | { readonly allowed: true }
   | { readonly allowed: false; readonly reason: "modifiedAfterEnhance" };
 
-/** Lexical mention 在 markdown 里表现为链接或 `@`/`$` 行内 token，改写会把它降级成纯文本。 */
-export function hasPromptEnhanceMentions(draftText: string): boolean {
-  return parseMentionMarkdown(draftText).some((part) => part.type !== "text");
-}
-
+/**
+ * 只拦「回填会真正破坏的东西」：回填三连重写编辑器内容，因此唯一会丢的是行内引用节点
+ * （@文件 / @子代理 / `$技能` / `/命令` / `#会话`）。附件与引用面板（网页元素、PPT 元素、
+ * 代码评论、对话选区）都不在编辑器里，草稿记录里也没有它们的字段，回填碰不到——
+ * 因此不参与判定。判定用真实节点而不是解析文本形态：`$PATH`、`/tmp` 这类手打 token
+ * 没有派发语义，解析文本会误拦（详见 docs/prompt-enhance.md「行内引用闸」）。
+ */
 export function evaluatePromptEnhanceRequest(params: {
   draftText: string;
-  hasAttachments: boolean;
-  hasContexts: boolean;
-  hasReferences: boolean;
-  allowStructuredOverwrite: boolean;
+  hasInlineReferences: boolean;
+  allowInlineReferenceRewrite: boolean;
 }): PromptEnhanceRequestDecision {
-  // 空草稿先于结构化闸：用户看到的是「没有可改写内容」，而不是附件相关提示。
+  // 空草稿先于引用闸：用户看到的是「没有可改写内容」，而不是引用相关提示。
   if (!params.draftText.trim()) {
     return { allowed: false, reason: "emptyDraft" };
   }
-  if (params.allowStructuredOverwrite) {
-    return { allowed: true };
+  if (params.hasInlineReferences && !params.allowInlineReferenceRewrite) {
+    return { allowed: false, reason: "inlineReference" };
   }
-  const structured =
-    params.hasAttachments ||
-    params.hasContexts ||
-    params.hasReferences ||
-    hasPromptEnhanceMentions(params.draftText);
-  return structured ? { allowed: false, reason: "structuredDraft" } : { allowed: true };
+  return { allowed: true };
 }
 
 /**
