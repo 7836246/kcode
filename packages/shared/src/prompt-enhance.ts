@@ -11,8 +11,9 @@ export const promptEnhanceChannels = ["auto", "custom"] as const;
 export const promptEnhanceChannelSchema = z.enum(promptEnhanceChannels);
 
 /**
- * 独立通道下发的推理强度。`default` 表示不下发 reasoningLevel，由 provider 链路决定；
- * 其余档位直接写进 selection.options，具体取值由 registry 的 optionSpecs 决定是否生效。
+ * 独立通道下发的推理强度。档位只能落在所选模型 `optionSpecs.reasoningLevel.values` 内，
+ * `default` 表示「交给模型默认档」——解析时同样会下发一个具体档位（模型取值末位），
+ * 因为 selection 缺档位会被 Registry 直接拒；请求的档位不被模型支持时也回落到默认档。
  */
 export const promptEnhanceReasoningLevels = ["default", "low", "medium", "high"] as const;
 export const promptEnhanceReasoningLevelSchema = z.enum(promptEnhanceReasoningLevels);
@@ -42,7 +43,7 @@ const promptEnhanceSettingsObjectSchema = z.object({
   channel: promptEnhanceChannelSchema.default("auto"),
   /** 仅 custom 通道使用；切回 auto 时保留，便于用户切回来。 */
   customSelection: promptEnhanceCustomSelectionSchema.optional(),
-  /** 仅 custom 通道生效；auto 通道不改写草稿模型自带的 reasoning。 */
+  /** 仅 custom 通道生效；auto 通道沿用当前生效档位（档位不被模型支持时才回落默认档）。 */
   reasoningLevel: promptEnhanceReasoningLevelSchema.default("default"),
 });
 

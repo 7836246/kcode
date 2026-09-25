@@ -16,7 +16,10 @@ import {
   buildPromptEnhanceWorkspaceTarget,
 } from "../src/v4/composer/promptEnhance/request.js";
 import { createPromptEnhanceRunTracker } from "../src/v4/composer/promptEnhance/runTracker.js";
-import { resolvePromptEnhanceSelection } from "../src/v4/composer/promptEnhance/selection.js";
+import {
+  resolvePromptEnhanceTarget,
+  type PromptEnhanceSelectionView,
+} from "../src/v4/composer/promptEnhance/selection.js";
 import {
   mergePromptEnhanceSettingsPatch,
   resolvePromptEnhanceSettings,
@@ -263,47 +266,187 @@ test("写回 patch 是完整对象，浅合并不会把其它字段重置回默�
   });
 });
 
-test("自动通道原样跟随当前生效选型，独立通道按设置下发档位", () => {
-  const auto = resolvePromptEnhanceSettings({ channel: "auto" });
-  assert.deepEqual(
-    resolvePromptEnhanceSelection({
-      settings: auto,
-      preferredSelection: {
-        providerId: "provider-a",
-        modelId: "model-a",
-        options: { reasoningLevel: "medium" },
-      },
-    }),
-    { providerId: "provider-a", modelId: "model-a", options: { reasoningLevel: "medium" } },
-  );
-  assert.equal(resolvePromptEnhanceSelection({ settings: auto, preferredSelection: null }), null);
+/**
+ * Selection View 的最小替身：只放解析要读的 Model Config 事实。
+ * 类型就是解析模块自己声明的最小形状，字段路径漂移会在编译期暴露。
+ */
+function modelSelectionViewFixture(
+  models: ReadonlyArray<{
+    providerId: string;
+    modelId: string;
+    maxOutputTokens?: number;
+    reasoningLevels?: readonly string[];
+  }>,
+): PromptEnhanceSelectionView {
+  const providers = new Map<string, string[]>();
+  for (const model of models) {
+    providers.set(model.providerId, [...(providers.get(model.providerId) ?? []), model.modelId]);
+  }
+  return {
+    providers: [...providers].map(([providerId, modelIds]) => ({
+      providerId,
+      models: modelIds.map((modelId) => {
+        const model = models.find(
+          (candidate) => candidate.providerId === providerId && candidate.modelId === modelId,
+        )!;
+        return {
+          modelId,
+          config: {
+            optionSpecs: {
+              maxOutputTokens:
+                model.maxOutputTokens === undefined ? {} : { max: model.maxOutputTokens },
+              reasoningLevel: { values: [...(model.reasoningLevels ?? [])] },
+            },
+          },
+        };
+      }),
+    })),
+  };
+}
 
-  const custom = resolvePromptEnhanceSettings({
-    channel: "custom",
-    customSelection: { providerId: "provider-b", modelId: "model-b" },
-    reasoningLevel: "high",
-  });
-  assert.deepEqual(resolvePromptEnhanceSelection({ settings: custom, preferredSelection: null }), {
-    providerId: "provider-b",
-    modelId: "model-b",
-    options: { reasoningLevel: "high" },
-  });
-
-  const customDefault = resolvePromptEnhanceSettings({
-    channel: "custom",
-    customSelection: { providerId: "provider-b", modelId: "model-b" },
-  });
-  assert.deepEqual(
-    resolvePromptEnhanceSelection({ settings: customDefault, preferredSelection: null }),
+test("选型解析从模型配置取输出预算，并保证档位在模型的档位集合内", () => {
+  const settings = resolvePromptEnhanceSettings({ channel: "auto" });
+  const view = modelSelectionViewFixture([
+    {
+      providerId: "provider-a",
+      modelId: "model-a",
+      maxOutputTokens: 32_768,
+      reasoningLevels: ["off", "low", "high"],
+    },
     {
       providerId: "provider-b",
       modelId: "model-b",
+      maxOutputTokens: 8_192,
+      reasoningLevels: ["low", "high"],
+    },
+  ]);
+  const preferred = {
+    providerId: "provider-a",
+    modelId: "model-a",
+    options: { reasoningLevel: "low" },
+  };
+
+  // 自动通道：沿用当前生效档位，预算取模型声明的上限（与普通 Turn 同口径）。
+  assert.deepEqual(
+    resolvePromptEnhanceTarget({ settings, preferredSelection: preferred, modelSelectionView: view }),
+    {
+      selection: { providerId: "provider-a", modelId: "model-a", options: { reasoningLevel: "low" } },
+      maxOutputTokens: 32_768,
     },
   );
+
+  // 自动通道里档位不被模型支持时回落到模型声明的默认档（末位），而不是原样透传被 CLI 拒；
+  // 被替换掉的档位要回传出来，调用方才有据可查。
   assert.deepEqual(
-    resolvePromptEnhanceSelection({
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: { ...preferred, options: { reasoningLevel: "medium" } },
+      modelSelectionView: view,
+    }),
+    {
+      selection: { providerId: "provider-a", modelId: "model-a", options: { reasoningLevel: "high" } },
+      maxOutputTokens: 32_768,
+      unsupportedReasoningLevel: "medium",
+    },
+  );
+
+  // 独立通道："default" 不等于「不带档位」——选择缺档位会被 Registry 直接拒。
+  assert.deepEqual(
+    resolvePromptEnhanceTarget({
+      settings: resolvePromptEnhanceSettings({
+        channel: "custom",
+        customSelection: { providerId: "provider-b", modelId: "model-b" },
+      }),
+      preferredSelection: preferred,
+      modelSelectionView: view,
+    }),
+    {
+      selection: { providerId: "provider-b", modelId: "model-b", options: { reasoningLevel: "high" } },
+      maxOutputTokens: 8_192,
+    },
+  );
+
+  // 设置里的档位被模型支持时按其下发。
+  assert.deepEqual(
+    resolvePromptEnhanceTarget({
+      settings: resolvePromptEnhanceSettings({
+        channel: "custom",
+        customSelection: { providerId: "provider-b", modelId: "model-b" },
+        reasoningLevel: "low",
+      }),
+      preferredSelection: preferred,
+      modelSelectionView: view,
+    }),
+    {
+      selection: { providerId: "provider-b", modelId: "model-b", options: { reasoningLevel: "low" } },
+      maxOutputTokens: 8_192,
+    },
+  );
+});
+
+test("模型不在已发布列表、或缺少输出上限/档位时不给请求参数", () => {
+  const settings = resolvePromptEnhanceSettings({ channel: "auto" });
+  const preferred = { providerId: "provider-a", modelId: "model-a" };
+  const view = modelSelectionViewFixture([
+    {
+      providerId: "provider-a",
+      modelId: "model-a",
+      maxOutputTokens: 4_096,
+      reasoningLevels: ["low"],
+    },
+  ]);
+
+  assert.equal(
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: { providerId: "provider-gone", modelId: "model-a" },
+      modelSelectionView: view,
+    }),
+    null,
+  );
+  assert.equal(
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: { providerId: "provider-a", modelId: "model-gone" },
+      modelSelectionView: view,
+    }),
+    null,
+  );
+  assert.equal(
+    resolvePromptEnhanceTarget({ settings, preferredSelection: preferred, modelSelectionView: null }),
+    null,
+  );
+  assert.equal(
+    resolvePromptEnhanceTarget({ settings, preferredSelection: null, modelSelectionView: view }),
+    null,
+  );
+  assert.equal(
+    resolvePromptEnhanceTarget({
       settings: resolvePromptEnhanceSettings({ channel: "custom" }),
-      preferredSelection: { providerId: "provider-a", modelId: "model-a" },
+      preferredSelection: preferred,
+      modelSelectionView: view,
+    }),
+    null,
+  );
+
+  // 模型配置半截（缺 max 或档位为空）同样无法构造合法请求。
+  assert.equal(
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: preferred,
+      modelSelectionView: modelSelectionViewFixture([
+        { providerId: "provider-a", modelId: "model-a", reasoningLevels: ["low"] },
+      ]),
+    }),
+    null,
+  );
+  assert.equal(
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: preferred,
+      modelSelectionView: modelSelectionViewFixture([
+        { providerId: "provider-a", modelId: "model-a", maxOutputTokens: 4_096 },
+      ]),
     }),
     null,
   );
@@ -351,7 +494,7 @@ test("每次增强生成互不相同的取消句柄", () => {
   assert.notEqual(first, second);
 });
 
-test("请求参数不带 AbortSignal，只带可序列化的取消句柄", () => {
+test("请求参数不带 AbortSignal，只带可序列化的取消句柄与输出预算", () => {
   const params = buildPromptEnhanceRequestParams({
     workspacePath: "/tmp/ws",
     workspaceIdentity: "local:/tmp/ws",
@@ -360,15 +503,20 @@ test("请求参数不带 AbortSignal，只带可序列化的取消句柄", () =>
       { role: "system", content: "sys" },
       { role: "user", content: "usr" },
     ],
+    maxOutputTokens: 8_192,
     operationId: "prompt-enhance-abc",
   });
 
-  // 回归护栏：AbortSignal 过 RPC 的 JSON fallback 会变成 {}，服务侧读 addEventListener
+  // 回归护栏一：AbortSignal 过 RPC 的 JSON fallback 会变成 {}，服务侧读 addEventListener
   // 直接抛「is not a function」（真实故障：提示词增强失败）。
   assert.equal("signal" in params, false);
-  // 走一遍真实序列化路径：句柄与超时都必须原样存活。
+  // 回归护栏二：预算必须随请求下发，缺了会被模型校验判成越界
+  // （真实故障：maxOutputTokens is outside the model option range）。
+  assert.equal(params.maxOutputTokens, 8_192);
+  // 走一遍真实序列化路径：句柄、预算与超时都必须原样存活。
   const roundTripped = JSON.parse(JSON.stringify(params)) as typeof params;
   assert.equal(roundTripped.operationId, "prompt-enhance-abc");
+  assert.equal(roundTripped.maxOutputTokens, 8_192);
   assert.equal(roundTripped.requestTimeoutMs, PROMPT_ENHANCE_REQUEST_TIMEOUT_MS);
   assert.equal(roundTripped.querySource, "prompt_enhance");
   assert.deepEqual(roundTripped.messages, [
@@ -382,6 +530,7 @@ test("请求参数只在有值时才带工作区身份字段", () => {
     workspacePath: "/tmp/ws",
     selection: { providerId: "provider-a", modelId: "model-a" },
     messages: [{ role: "user", content: "usr" }],
+    maxOutputTokens: 4_096,
     operationId: "prompt-enhance-abc",
   });
 
@@ -407,6 +556,7 @@ test("发起与取消共用同一份 workspace target 构造", () => {
       ...target,
       selection: { providerId: "provider-a", modelId: "model-a" },
       messages: [{ role: "user", content: "usr" }],
+      maxOutputTokens: 4_096,
       operationId: "prompt-enhance-abc",
     }),
     {
@@ -416,6 +566,7 @@ test("发起与取消共用同一份 workspace target 构造", () => {
       selection: { providerId: "provider-a", modelId: "model-a" },
       messages: [{ role: "user", content: "usr" }],
       querySource: "prompt_enhance",
+      maxOutputTokens: 4_096,
       operationId: "prompt-enhance-abc",
       requestTimeoutMs: PROMPT_ENHANCE_REQUEST_TIMEOUT_MS,
     },

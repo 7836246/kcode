@@ -36,6 +36,11 @@ export function buildPromptEnhanceWorkspaceTarget(
 export interface PromptEnhanceRequestParamsInput extends PromptEnhanceWorkspaceTargetInput {
   selection: ModelSelection;
   messages: readonly PromptEnhanceRequestMessage[];
+  /**
+   * 请求级输出预算。**必须给**：CLI 的模型校验把缺失的预算判成越界
+   * （`maxOutputTokens is outside the model option range`），普通 Turn 也是显式下发这一项。
+   */
+  maxOutputTokens: number;
   /** 取消句柄：取消端按同一个 id 调 cancelWorkspaceGenerateText。 */
   operationId: string;
 }
@@ -55,6 +60,7 @@ export function buildPromptEnhanceRequestParams(
     selection: input.selection,
     messages: [...input.messages],
     querySource: PROMPT_ENHANCE_QUERY_SOURCE,
+    maxOutputTokens: input.maxOutputTokens,
     operationId: input.operationId,
     requestTimeoutMs: PROMPT_ENHANCE_REQUEST_TIMEOUT_MS,
   };

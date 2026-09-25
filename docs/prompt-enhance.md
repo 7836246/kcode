@@ -82,10 +82,12 @@ promptEnhance: {
 
 ### 模型调用
 
-- 统一复用现有 `kcodeAgentService.generateWorkspaceText`（Git 提交消息生成同款链路），`querySource` 固定为 `"prompt_enhance"`，调用方传 `operationId` 与 `requestTimeoutMs`（请求级 60s）。**不新增 CLI 协议方法、不新增裸 HTTP 客户端。**
+- 统一复用现有 `kcodeAgentService.generateWorkspaceText`（Git 提交消息生成同款链路），`querySource` 固定为 `"prompt_enhance"`，调用方传 `operationId`、`maxOutputTokens` 与 `requestTimeoutMs`（请求级 60s）。**不新增 CLI 协议方法、不新增裸 HTTP 客户端。**
 - **取消通道**：CLI 侧早在 `workspace/generateText` 的 `operationId` 上登记 AbortController（`bootstrap/src/kcode-protocol/server.ts` 的 `withWorkspaceGenerateTextSignal`），`workspace/cancelGenerateText` 按 id 触发。本次只把这条既有能力接到服务面：`KCodeAgentGenerateWorkspaceTextParams` 增加可选 `operationId`（Host 优先用它，缺省时才按 `signal` 自造 uuid），并新增 `cancelWorkspaceGenerateText(params)` 服务方法（控制面 best-effort，超时 5s；目标 workspace 无活跃 Agent 进程时直接返回 `cancelled: false`，不为此启动进程）。UI 因此不新增任何本地进程内状态。
-- **自动通道**：`selection = modelSelectionService.getView().preferredSelection`。模型配置变化自动跟随；OAuth 类 provider 由 CLI runtime 自身处理鉴权，无需回落逻辑。
-- **独立通道**：`selection = 设置中的 customSelection`（必须是 Registry 已发布模型；设置 UI 从 provider/model 视图读取候选，天然满足）。`reasoningLevel` 非 `"default"` 时写入 selection 的 options；为 `"default"` 时不下发。自动通道永远不改写 reasoning。
+- **请求必须自带输出预算**：CLI 的模型校验把「请求没给 `maxOutputTokens`」与「超出模型上限」判成同一个错误（`maxOutputTokens is outside the model option range`，见 `adapters/src/model/model.ts` 的 `validateOptions`），而唯一权威上限在 CLI 进程的 `optionSpecs` 里。因此 UI 从 Selection View 的完整 Model Config 读模型声明的上限（`config.optionSpecs.maxOutputTokens.max`）直接作为请求预算——与 `workspace/generateText` 非 git 分支的既有口径一致（普通 Turn 会再按剩余上下文窗口收窄，辅助改写请求没有这个必要）。模型视图还没就绪时增强入口直接禁用（此时构造不出合法请求）；视图就绪但模型已不在已发布列表时不发请求，提示用户重选。
+- **选型必须满足模型的档位契约**：Registry 校验拒绝「options 里没有 reasoningLevel」与「档位不在模型 `optionSpecs.reasoningLevel.values` 内」（`reasoning-level-missing` / `reasoning-level-not-supported`）。所以自动通道沿用当前生效档位、独立通道用设置档位，两者都要落到模型声明的档位集合上：设置里的 `"default"` 表示「交给模型默认档」（Model Config 末位即默认档），显式档位不被支持时同样回落到模型默认档并留一条 `warn`（不静默：轨迹里能看到被替换掉的档位）。
+- **自动通道**：基准选型取 `modelSelectionView.preferredSelection`。模型配置变化自动跟随；OAuth 类 provider 由 CLI runtime 自身处理鉴权，无需回落逻辑。
+- **独立通道**：基准选型取设置中的 `customSelection`（必须是 Registry 已发布模型；设置 UI 从 provider/model 视图读取候选，天然满足）。只下发 provider/model/档位，不携带设置里的其它字段。
 - 调用结果须带回实际使用的模型名，用于成功提示与设置页「当前生效通道」展示。
 
 ### 增强流程
@@ -365,8 +367,8 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
   - 三个模式各自选中正确的 system/user 模板
 - **判定模块单测**：结构化闸的放行/拒绝矩阵（空草稿优先于结构化内容；附件/引用/mention 各自拒绝；显式放开后放行）；还原闸的「一致才允许还原」。
 - **run 跟踪模块单测**：取消后仍能发起新 run（不能被上一次的 run 挡住）；取消后迟到的旧结果不得被判成当前 run，旧 run 结束也不能让出新 run 的活动位；只有当前 run 能结束自己。`operationId.ts` 断言前缀与两次调用不重复。
-- **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
-- **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象；自动通道透传 preferredSelection，独立通道按设置下发档位、`default` 不下发、缺 customSelection 返回 null。
+- **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `maxOutputTokens` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
+- **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象。选型解析（`selection.ts`）用 Selection View 替身断言：输出预算取模型声明的上限；档位落在模型档位集合内（设置 `default` → 模型默认档；不支持的档位 → 回落默认档并回传被替换的档位）；自动通道跟随当前生效档位；缺 preferredSelection / 缺 customSelection / 模型不在视图 / 模型配置缺上限或缺档位一律返回 null（不发请求）。
 - 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
 - **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
@@ -385,7 +387,7 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 
 - 三档提示词模板是产品决策的一部分，正文逐字固定；后续调措辞视为行为变更，先改本文档。`prompts.ts` 的正文由本文档抽取生成，改完本文档要同步改常量并与本文档逐字比对。
 - 背景轮数上限 10 是防呆值，不是性能结论；若实测 token 压力大，再调上限并更新本文档。
-- 推理强度四档（默认/低/中/高）是产品给的固定选项。若所选模型的 registry `optionSpecs.reasoningLevel.values` 不含该档位，provider 侧归一化会静默丢掉 `options.reasoningLevel`，回落到模型默认档——这是预期降级，不做档位探测，也不按模型动态收窄选项。
+- 推理强度四档（默认/低/中/高）是产品给的固定选项，设置页不按模型动态收窄（后续可选：按选中模型的档位集合过滤选项，避免用户选到会被替换的档位）。所选模型的 `optionSpecs.reasoningLevel.values` 不含该档位时，选择会被 Registry 直接拒（不是 provider 侧静默归一化），因此由解析层回落到模型默认档并留 `warn` 轨迹。
 - 设置分区不额外包 `ServiceProvider`：写设置沿用 `SettingsPage` 外层绑定的 Host（与本页「备用模型」同一口径），读模型候选仍按活动 workspace 解析。`useSettingService` 按 Service 实例隔离 store，不会跨 Environment 串写。
 - 本功能全部位于 UI 层与既有服务接口之上，桌面端与 Web 端共享同一份代码，无平台分支。
 - 原 `chat.promptEnhance.*` 是一批无引用文案（对应更早的直连通道方案，本功能不采用自由 endpoint/key 通道）。本次实现改为 `chat.toolbar.promptEnhance.*`，旧键已删除，避免同一功能出现两套文案命名。

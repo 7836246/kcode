@@ -10,7 +10,7 @@
  *   Renderer 传不了 AbortSignal，跨 RPC 会被 JSON 序列化吃掉（详见 operationId.ts）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ModelSelection, PromptEnhanceSettings } from "@kcode/shared";
+import type { PromptEnhanceSettings } from "@kcode/shared";
 import type { ConversationRow } from "@kcode/shared/kcode-protocol-v4";
 import type { ModelSelectionView } from "@kcode/services";
 import { toast } from "@/components/ui/toast.js";
@@ -38,7 +38,7 @@ import {
   buildPromptEnhanceRequestParams,
   buildPromptEnhanceWorkspaceTarget,
 } from "./promptEnhance/request.js";
-import { resolvePromptEnhanceSelection } from "./promptEnhance/selection.js";
+import { resolvePromptEnhanceTarget } from "./promptEnhance/selection.js";
 import { resolvePromptEnhanceSettings } from "./promptEnhance/settings.js";
 
 /** 一轮背景 = 一条真实用户输入 + 其后的完整助手正文（可能多段，可能缺失）。 */
@@ -288,13 +288,30 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
       return;
     }
 
-    const selection: ModelSelection | null = resolvePromptEnhanceSelection({
+    const target = resolvePromptEnhanceTarget({
       settings: enhanceSettings,
       preferredSelection: modelSelectionView?.preferredSelection ?? null,
+      modelSelectionView,
     });
-    if (!selection) {
+    if (!target) {
+      // 没有模型、或选中模型已不在已发布列表里（Selection View 读不到 Model Config）：
+      // 后者无法构造合法请求（预算与档位都取自模型配置），只能先请用户重选。
+      logger.warn("[prompt-enhance] 没有可用的增强模型选型", {
+        channel: enhanceSettings.channel,
+        hasModelSelectionView: modelSelectionView !== null,
+      });
       showToast("chat.toolbar.promptEnhance.noModel");
       return;
+    }
+    const { selection, maxOutputTokens, unsupportedReasoningLevel } = target;
+    if (unsupportedReasoningLevel !== undefined) {
+      // 档位选择不能原样下发（Registry 会直接拒），这里回落到模型声明的默认档，
+      // 留一条轨迹，避免「我设了低档为什么按默认档跑」这种无据可查的疑问。
+      logger.warn("[prompt-enhance] 所选推理档位不被模型支持，已回落到模型默认档", {
+        requestedReasoningLevel: unsupportedReasoningLevel,
+        appliedReasoningLevel: selection.options?.reasoningLevel,
+        model: selection.modelId,
+      });
     }
 
     const contextRounds = enhanceSettings.contextEnabled
@@ -316,6 +333,8 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
       channel: enhanceSettings.channel,
       contextRoundCount: contextRounds.length,
       model: selection.modelId,
+      reasoningLevel: selection.options?.reasoningLevel ?? null,
+      maxOutputTokens,
       operationId,
       workspaceKind: workspaceIdentity?.trim() ? "remote" : "local",
     });
@@ -329,6 +348,7 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
             remoteSessionId,
             selection,
             messages,
+            maxOutputTokens,
             operationId,
           }),
         );
@@ -426,7 +446,9 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
   }, [readDraftText, showToast, writeDraftSafely]);
 
   return {
-    disabled: disabled || pending || routingMode === "reject",
+    // 模型视图没就绪时构造不出合法请求（预算与档位都取自 Model Config），
+    // 直接禁用而不是点了再弹「没有可用模型」——那会把加载中的瞬态说成配置问题。
+    disabled: disabled || pending || routingMode === "reject" || modelSelectionView === null,
     runningStartedAt,
     canRestore,
     enhance,
