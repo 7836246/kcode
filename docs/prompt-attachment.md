@@ -135,7 +135,16 @@ The user attached {kind}: {label}. Its content is not in context; read it if you
 
 **目标**：附件在上下文里被截断时，用户能看到——发送后消息上的附件 chip 出现「已截断」标记。
 
-**取值原则**：截断事实只产生一次，即 resolve 时 `resolveLocalFileAttachment()` 读出的 `read.truncated` / `read.totalLines`，写进 `FilePart.metadata.preview`。**展示层只消费该事实，不自行推算**——截断有两个触发源（`sizeBytes > READ_MAX_FILE_SIZE_BYTES` 的体积截断，以及 `READ_MAX_OUTPUT_TOKENS` 的 token 上限兜底），后者依赖内容，客户端算不出与 CLI 一致的结论；也不新增第二套判定，避免同一事实出现两份口径。
+**取值原则**：截断事实只产生一次，即 resolve 时 `resolveLocalFileAttachment()` 读出的 `read.truncated` / `read.numLines` / `read.totalLines`，经 `isPartialAttachmentTextRead()` 判定后写进 `FilePart.metadata.preview.truncated`。**展示层只消费该事实，不自行推算**——判定依赖读取结果，客户端算不出与 CLI 一致的结论；也不新增第二套判定，避免同一事实出现两份口径。
+
+判定必须**同时覆盖两个触发源**：
+
+| 触发源                              | 读取层返回                                       | 判定依据                |
+| ----------------------------------- | ------------------------------------------------ | ----------------------- |
+| `READ_MAX_OUTPUT_TOKENS` token 硬截 | `truncated: true`、带 `truncatedByTokenCap`      | `truncated === true`    |
+| 超限文件按行限流（只取前 2000 行）  | `truncated: **false**`（读取层视为 range view）  | `numLines < totalLines` |
+
+第二行必须补上：读取层对 `offset`/`limit` 的 range view 一律返回 `truncated: false`——那是给 Read 工具的 `readFileState`（Write/Edit 的完整性守卫）用的语义，两者不可混同，但附件预读恰恰是用 `limit: READ_DEFAULT_MAX_LINES` 实现的按行限流。实测（1138KB / 12005 行文档只交付前 984 行）若不补这一条，就会出现**模型只拿到文件开头、提示词却告诉它「内容完整」、界面也不给标记**的静默丢失。展示元信息与 `recoverability` 必须与这一判定同源，不得一处判截断、另一处报 `provider_ready`。
 
 **载荷**：v4 附件展示元信息（`CanonicalTurnAttachment`）新增两个可选字段——`truncated?: boolean`、`totalLines?: number`。additive 且 optional：缺省表示「未知」，展示层不得把缺省当成「未截断」（老会话无该字段时不出标记）。
 
@@ -159,10 +168,10 @@ live 侧的事件形状（实现时按此落地）：
 **展示**：
 
 - 位置：发送后消息上的附件 chip。发送**前**不展示——事实在发送时才产生，composer 阶段无从得知。
-- 形态：chip 上一个小标记 + 悬浮说明「该附件在上下文中只保留了前 N 行（共 M 行）」；文案键 `chat.attachment.truncated.*`，`zh-CN` 与 `en-US` 同步。
+- 形态：chip 上文件名右侧一个小标记 + 悬浮说明「该附件内容过长，上下文中只保留了前面部分（文件共 M 行）」；文案键 `chat.attachments.truncated.marker` / `.tooltip` / `.tooltipNoTotal`（无总行数时用后者），`zh-CN` 与 `en-US` 同步。
 - 不做：不新增「查看完整内容」入口，不弹窗、不阻断发送，不在消息正文里插提示行。
 
-**验收**：发送一个超过上限的附件 → 发送后 chip 立刻出现标记（live）；刷新 / 重开会话（冷恢复）后标记仍在、文案一致；未截断的附件零标记；老会话（无该字段）不显示。
+**验收**：发送一个超过 token 上限的附件（如 1MB 中文文档）→ 发送后 chip 立刻出现标记（live）；刷新 / 重开会话（冷恢复）后标记仍在、文案一致；发送一个超过体积上限但首 2000 行在 token 预算内的附件（如 20 万行短行文件）→ 同样必须出现标记（这一档过去是静默的）；未截断的附件零标记；老会话（无该字段）不显示。
 
 ### 不变量
 

@@ -226,6 +226,22 @@ async function resolvedInlineAttachment(
   };
 }
 
+/**
+ * 附件正文是否只是文件的一部分。
+ *
+ * 读取层只把「被 token 上限硬截」标成 truncated；超限文件按行数限流（只取前
+ * READ_DEFAULT_MAX_LINES 行）属于 range view，读取层一律返回 truncated=false。
+ * 但对附件来说两种都意味着模型只看到文件开头，必须判成截断：否则会出现「只交付
+ * 前 2000 行、却告诉模型内容完整、界面也不给标记」的静默丢失。
+ */
+export function isPartialAttachmentTextRead(read: {
+  numLines: number;
+  totalLines: number;
+  truncated?: boolean;
+}): boolean {
+  return read.truncated === true || read.numLines < read.totalLines;
+}
+
 async function resolveLocalFileAttachment(
   attachment: TurnAttachment,
   options: {
@@ -295,6 +311,7 @@ async function resolveLocalFileAttachment(
         : {}),
       trace: options.traceContext,
     });
+    const truncated = isPartialAttachmentTextRead(read);
     return {
       contentBlock: { type: "text", text: read.content },
       filename,
@@ -302,7 +319,7 @@ async function resolveLocalFileAttachment(
         originalUrl: attachment.path,
         preview: {
           text: read.content,
-          truncated: read.truncated ?? false,
+          truncated,
           ...(read.sizeBytes !== undefined ? { originalBytes: read.sizeBytes } : {}),
           startLine: read.startLine,
           totalLines: read.totalLines,
@@ -313,7 +330,7 @@ async function resolveLocalFileAttachment(
             ? { partialViewNotice: read.partialViewNotice }
             : {}),
         },
-        recoverability: read.truncated ? "preview_only" : "provider_ready",
+        recoverability: truncated ? "preview_only" : "provider_ready",
         ...(read.sizeBytes !== undefined ? { sizeBytes: read.sizeBytes } : {}),
         storageKind: "inline",
       },
