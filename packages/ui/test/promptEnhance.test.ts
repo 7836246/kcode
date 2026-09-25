@@ -328,9 +328,17 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
 
   // 自动通道：沿用当前生效档位，预算取模型声明的上限（与普通 Turn 同口径）。
   assert.deepEqual(
-    resolvePromptEnhanceTarget({ settings, preferredSelection: preferred, modelSelectionView: view }),
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: preferred,
+      modelSelectionView: view,
+    }),
     {
-      selection: { providerId: "provider-a", modelId: "model-a", options: { reasoningLevel: "low" } },
+      selection: {
+        providerId: "provider-a",
+        modelId: "model-a",
+        options: { reasoningLevel: "low" },
+      },
       maxOutputTokens: 32_768,
     },
   );
@@ -344,7 +352,11 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
       modelSelectionView: view,
     }),
     {
-      selection: { providerId: "provider-a", modelId: "model-a", options: { reasoningLevel: "high" } },
+      selection: {
+        providerId: "provider-a",
+        modelId: "model-a",
+        options: { reasoningLevel: "high" },
+      },
       maxOutputTokens: 32_768,
       unsupportedReasoningLevel: "medium",
     },
@@ -361,7 +373,11 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
       modelSelectionView: view,
     }),
     {
-      selection: { providerId: "provider-b", modelId: "model-b", options: { reasoningLevel: "high" } },
+      selection: {
+        providerId: "provider-b",
+        modelId: "model-b",
+        options: { reasoningLevel: "high" },
+      },
       maxOutputTokens: 8_192,
     },
   );
@@ -378,7 +394,11 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
       modelSelectionView: view,
     }),
     {
-      selection: { providerId: "provider-b", modelId: "model-b", options: { reasoningLevel: "low" } },
+      selection: {
+        providerId: "provider-b",
+        modelId: "model-b",
+        options: { reasoningLevel: "low" },
+      },
       maxOutputTokens: 8_192,
     },
   );
@@ -413,7 +433,11 @@ test("模型不在已发布列表、或缺少输出上限/档位时不给请求�
     null,
   );
   assert.equal(
-    resolvePromptEnhanceTarget({ settings, preferredSelection: preferred, modelSelectionView: null }),
+    resolvePromptEnhanceTarget({
+      settings,
+      preferredSelection: preferred,
+      modelSelectionView: null,
+    }),
     null,
   );
   assert.equal(

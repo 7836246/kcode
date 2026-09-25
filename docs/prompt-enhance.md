@@ -1,6 +1,6 @@
 # 提示词增强（Prompt Enhance）实现规范
 
-> 本文档是「提示词增强」功能的完整实现规范，自包含、可独立实施，不依赖任何外部文档。
+> 本文档是「提示词增强」功能的完整规范：产品规则、状态所有者、接口与验收场景；自包含，不依赖任何外部文档。
 > 源码事实以当前检出的 kcode 仓库为准；本文档与源码冲突时，先对齐本文档再改代码。
 
 ## 问题陈述
@@ -143,9 +143,9 @@ promptEnhance: {
 
 占位符规则：
 
-| 占位符 | 含义 | 用途 |
-|---|---|---|
-| `{input}` | 草稿原文 | 直接嵌入草稿作为正文 |
+| 占位符        | 含义                                                     | 用途                             |
+| ------------- | -------------------------------------------------------- | -------------------------------- |
+| `{input}`     | 草稿原文                                                 | 直接嵌入草稿作为正文             |
 | `{inputJson}` | 草稿的 JSON 字符串字面量（带引号、换行与特殊字符已转义） | 草稿放进外层 JSON 结构时必须用它 |
 
 - 替换必须是字面量替换（函数式 `replaceAll` 或等价手段），草稿含 `$&`、`$'`、引号、换行时不得被二次解释。
@@ -326,7 +326,7 @@ REQUIREMENTS:
 
 ### 设置分区界面
 
-设置页新增「提示词增强」分区（分组 `basics`），全部复用现有设置控件（`SettingsRow`、`Switch`、`Select`、`SettingsSegmentedTabs`、`Input`）。项序：
+设置页新增「提示词增强」分区（分组 `basics`），全部复用现有设置控件（`SettingsGroupCard`、`SettingsRow`、`Switch`、`Select`、`SettingsSegmentedTabs`、`Button`）。项序：
 
 1. 改写模式：三档分段控件（基础 / 编程任务 / 创意），默认「基础」
 2. 参考会话上下文：Switch + 轮数选择（1–10，默认 3）
@@ -343,14 +343,14 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 
 ### 可用性与禁用
 
-- 「增强」禁用条件复用 composer 现有变量：`disabled || pending || mode === "reject"`。草稿为空不禁用按钮，点击后 toast 提示（保持可发现性）。
+- 「增强」禁用条件：composer 现有变量 `disabled || pending || mode === "reject"`，再加「模型视图未就绪」（`modelSelectionView === null`）——此时预算与档位都读不到，请求构造不出来，禁用比点了再弹「没有可用模型」更准确。草稿为空不禁用按钮，点击后 toast 提示（保持可发现性）。
 - 增强进行中：按钮切加载态（Spinner + 「增强中 Ns」，秒数用 `useNowTicker` 跳动），再点 = 取消。「还原」同时禁用：进行中还原会与在途结果互相覆盖。
 - 入口外层先用 `useOptionalServices()` 判定，缺失（无 ServiceProvider 的宿主或组件级测试）即不渲染；内层才用 `useSettings()` / `useWorkspaceServices`。理由与先例见 `V4ComposerCuaEntry`。
 - 「还原」仅还原点存在时渲染；还原成功或拒绝后清除还原点。
 
 ### 日志
 
-- UI 层用 `packages/ui` 的 `logger`；发起、成功（带耗时与模型名）、取消、失败各一条 `info`/`warn`，失败详情 `error`。
+- UI 层用 `packages/ui` 的 `logger`；发起、成功（带耗时与模型名）、取消、失败各一条 `info`/`warn`，失败详情 `error`。可恢复异常另各留一条 `warn`：档位被回退、取消未送达 / Host 未找到待取消请求、无可用选型、回填未完整落地、模型返回空内容、草稿 scope 已变化。
 - 不把草稿正文写入日志（用户数据）。
 
 ## 测试决策
@@ -370,7 +370,7 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `maxOutputTokens` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
 - **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象。选型解析（`selection.ts`）用 Selection View 替身断言：输出预算取模型声明的上限；档位落在模型档位集合内（设置 `default` → 模型默认档；不支持的档位 → 回落默认档并回传被替换的档位）；自动通道跟随当前生效档位；缺 preferredSelection / 缺 customSelection / 模型不在视图 / 模型配置缺上限或缺档位一律返回 null（不发请求）。
 - 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
-- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换。
+- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
 
 ## 不做的事
@@ -390,4 +390,4 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - 推理强度四档（默认/低/中/高）是产品给的固定选项，设置页不按模型动态收窄（后续可选：按选中模型的档位集合过滤选项，避免用户选到会被替换的档位）。所选模型的 `optionSpecs.reasoningLevel.values` 不含该档位时，选择会被 Registry 直接拒（不是 provider 侧静默归一化），因此由解析层回落到模型默认档并留 `warn` 轨迹。
 - 设置分区不额外包 `ServiceProvider`：写设置沿用 `SettingsPage` 外层绑定的 Host（与本页「备用模型」同一口径），读模型候选仍按活动 workspace 解析。`useSettingService` 按 Service 实例隔离 store，不会跨 Environment 串写。
 - 本功能全部位于 UI 层与既有服务接口之上，桌面端与 Web 端共享同一份代码，无平台分支。
-- 原 `chat.promptEnhance.*` 是一批无引用文案（对应更早的直连通道方案，本功能不采用自由 endpoint/key 通道）。本次实现改为 `chat.toolbar.promptEnhance.*`，旧键已删除，避免同一功能出现两套文案命名。
+- 本功能的文案只存在于两个命名空间：工具条用 `chat.toolbar.promptEnhance.*`，设置分区用 `settings.promptEnhance.*`；不要再引入第三套命名（更早的直连通道方案留下的 `chat.promptEnhance.*` 已删除）。
