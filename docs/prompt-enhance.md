@@ -114,6 +114,8 @@ promptEnhance: {
 
 回填三连顺序与 `restoreSubmittedDraft` 一致：`updateComposerContent({ text })` → 编辑器句柄 `setText` → `updateText`。读回比对用编辑器 `getMarkdown()`，比对前只做 CRLF 与首尾空白归一化；写入抛异常或读回不一致都按「回填没有完整落地」处理：写回原文，不留半截文本。「还原」走同一条安全写入路径，写失败只记日志并提示，不让异常逃出点击回调。
 
+读回比对成立的前提是 `setText` 同步提交：Lexical 的非 discrete `update` 是批量异步提交，写后立即 `getMarkdown()` 读回的是旧 state，比对必然失败并把原文写回（用户表现为「写入输入框失败，草稿保持不变」，而模型调用实际成功）。因此 `LexicalChatInput` 的 `replaceEditorText` 必须带 `discrete: true`（`setText` 契约 = 调用返回即已落地）；比对恒等性依赖 `$getPromptMarkdown` 是纯序列化（无 markdown 转义），纯文本写入往返恒等，这条由「还原闸一致才放行」的手动验证兜底。
+
 ### 结构化内容闸
 
 发送前的结构化内容分四类：文件附件、代码评论 / 网页元素 / PPT 元素引用、对话选区引用、Lexical mention 节点（markdown 中表现为 `[label](uri)` 链接）。任一存在时默认拒绝增强并 toast 说明。`allowStructuredOverwrite` 开启后放行，但 mention 节点会被替换为纯文本——这是设置里唯一保留的说明文字之一。判定复用 composer 现有的 `hasAttachments` / `hasContexts` / `hasReferences` 聚合，mention 判定用现有 `parseMentionMarkdown`。

@@ -202,7 +202,10 @@ function replaceEditorText(editor: LexicalEditor, text: string) {
 
       root.getLastChild()?.selectEnd();
     },
-    { tag: PROGRAMMATIC_UPDATE_TAG },
+    // 非 discrete update 是批量异步提交：调用方 setText 后立即 getMarkdown 读回的
+    // 仍是旧 state（提示词增强的回填读回比对因此误判失败并把原文写回）。setText 的
+    // 契约必须是「调用返回即已落地」，与 prependEditorMentionIfMissing 的 discrete 先例同口径。
+    { discrete: true, tag: PROGRAMMATIC_UPDATE_TAG },
   );
 }
 
