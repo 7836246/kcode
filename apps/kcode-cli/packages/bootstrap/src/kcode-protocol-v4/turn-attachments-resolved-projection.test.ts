@@ -7,6 +7,9 @@ import {
   type SessionId,
   type TraceId,
   type TurnId,
+  // 直接用契约类型，别再在测试里手写窄化副本：漏掉 truncated/totalLines 时会先在这里编译失败，
+  // 而不是把「自带截断事实」这条用例悄悄变成不可编译。
+  type TurnAttachmentMeta,
 } from "@kcode/contracts";
 import type { UserInputRow } from "@kcode/shared/kcode-protocol-v4";
 import { ProductProjection } from "./product-projection.js";
@@ -136,7 +139,7 @@ const GUIDE_ATTACHMENT_REF = {
  */
 function projectionWithGuideDrain(options: {
   attachmentRefs?: typeof GUIDE_ATTACHMENT_REF[];
-  attachments?: Array<{ fileName: string; mime: string; bytes: number; ref?: string }>;
+  attachments?: TurnAttachmentMeta[];
   delivery: "guide" | "queue";
 }): ProductProjection {
   const target = new ProductProjection(sessionId, "turn-steer-drain-test");

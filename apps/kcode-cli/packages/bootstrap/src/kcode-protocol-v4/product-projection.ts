@@ -2712,7 +2712,9 @@ export class ProductProjection {
   private steerDrainedRowAttachments(item: {
     intent?: TurnInputIntentMetadata;
     attachments?: TurnAttachmentMeta[];
-  }): { attachments: NonNullable<UserInputRow["attachments"]> } {
+    // 两个分支都必有 attachments，只有「既无 refs 也无自带元信息」返回空对象（调用方 spread，
+    // 字段缺席即「无附件」），所以这里只能声明为可选。
+  }): { attachments?: NonNullable<UserInputRow["attachments"]> } {
     const refs = item.intent?.attachmentRefs;
     const metas = item.attachments;
     if (refs?.length) {
