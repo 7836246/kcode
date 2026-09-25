@@ -207,7 +207,7 @@ live 侧的事件形状（实现时按此落地）：
   - 空 `content` 分支只给一句提及，不编造正文。
 - **live/hydrate 同形**：对同一附件分别走 `promptAttachmentInputForResolvedAttachment` 与 `promptAttachmentReminderInputForFilePart`（或等价的夹具），断言两者产出的提醒文本逐字相等。
 - **手动验证**（`pnpm dev:desktop`）：覆盖验收场景 1–8，重点是场景 1（本次故障回归）与场景 4（截断如实）。
-- 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
+- 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。若新测试经 import 链间接加载某个 workspace 包的构建产物（该包 `exports` 的子路径指向 `dist/`），必须在同一 step 补一条 `pnpm --filter <包名> build`：CI 是全新检出，根目录 `typecheck` 只做 `--noEmit`、不产出 `dist`，漏构建会让整个文件以 `ERR_MODULE_NOT_FOUND` 失败。`attachments.test.ts` 与 `prompt-attachment-parity.test.ts` 经 hydrator 依赖 `@kcode/dynamic-workflow/projections`，即按此条补构建。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
 
 ## 分阶段与验收门
