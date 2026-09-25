@@ -83,6 +83,7 @@ promptEnhance: {
 ### 模型调用
 
 - 统一复用现有 `kcodeAgentService.generateWorkspaceText`（Git 提交消息生成同款链路），`querySource` 固定为 `"prompt_enhance"`，调用方传 `operationId`、`maxOutputTokens` 与 `requestTimeoutMs`（请求级 60s）。**不新增 CLI 协议方法、不新增裸 HTTP 客户端。**
+- **CLI 执行链走流式累积**：`workspace/generateText`（CLI core 的 `generateWorkspaceTextImpl`）此前用 `model.generateText`（AI SDK 非流式 `doGenerate`）。实测部分 openai-compatible 网关的非流式响应包在自定义信封里（如 `{"success":…,"data":…}`），AI SDK 按标准 OpenAI 形状做 schema 校验失败后统一报 `Invalid JSON response`，经失败归类器到 UI 只剩 "Model request failed."；同一网关的流式 SSE 是标准格式（主回合与连通性探测都走流式）。因此该入口改为 `model.streamText` 流式累积出等价结果（text / finishReason / usage / toolCalls，见 `workspace-generate-text-accumulate.ts`），结果形状与非流式返回值一致；Git 提交消息同一入口一并受益。取消不受影响：仍是 operationId → AbortController，流式下中断更及时。
 - **取消通道**：CLI 侧早在 `workspace/generateText` 的 `operationId` 上登记 AbortController（`bootstrap/src/kcode-protocol/server.ts` 的 `withWorkspaceGenerateTextSignal`），`workspace/cancelGenerateText` 按 id 触发。本次只把这条既有能力接到服务面：`KCodeAgentGenerateWorkspaceTextParams` 增加可选 `operationId`（Host 优先用它，缺省时才按 `signal` 自造 uuid），并新增 `cancelWorkspaceGenerateText(params)` 服务方法（控制面 best-effort，超时 5s；目标 workspace 无活跃 Agent 进程时直接返回 `cancelled: false`，不为此启动进程）。UI 因此不新增任何本地进程内状态。
 - **请求必须自带输出预算**：CLI 的模型校验把「请求没给 `maxOutputTokens`」与「超出模型上限」判成同一个错误（`maxOutputTokens is outside the model option range`，见 `adapters/src/model/model.ts` 的 `validateOptions`），而唯一权威上限在 CLI 进程的 `optionSpecs` 里。因此 UI 从 Selection View 的完整 Model Config 读模型声明的上限（`config.optionSpecs.maxOutputTokens.max`）直接作为请求预算——与 `workspace/generateText` 非 git 分支的既有口径一致（普通 Turn 会再按剩余上下文窗口收窄，辅助改写请求没有这个必要）。模型视图还没就绪时增强入口直接禁用（此时构造不出合法请求）；视图就绪但模型已不在已发布列表时不发请求，提示用户重选。
 - **选型必须满足模型的档位契约**：Registry 校验拒绝「options 里没有 reasoningLevel」与「档位不在模型 `optionSpecs.reasoningLevel.values` 内」（`reasoning-level-missing` / `reasoning-level-not-supported`）。所以自动通道沿用当前生效档位、独立通道用设置档位，两者都要落到模型声明的档位集合上：设置里的 `"default"` 表示「交给模型默认档」（Model Config 末位即默认档），显式档位不被支持时同样回落到模型默认档并留一条 `warn`（不静默：轨迹里能看到被替换掉的档位）。
@@ -370,7 +371,8 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `maxOutputTokens` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
 - **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象。选型解析（`selection.ts`）用 Selection View 替身断言：输出预算取模型声明的上限；档位落在模型档位集合内（设置 `default` → 模型默认档；不支持的档位 → 回落默认档并回传被替换的档位）；自动通道跟随当前生效档位；缺 preferredSelection / 缺 customSelection / 模型不在视图 / 模型配置缺上限或缺档位一律返回 null（不发请求）。
 - 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。
-- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误。
+- **CLI 流式累积模块单测**（colocated，`node:test`，位置 `apps/kcode-cli/packages/core/src/runtime/methods/workspace-generate-text-accumulate.test.ts`，先例 `model-fallback.test.ts`）：text_delta 顺序拼接；tool_call 按 id 去重；finish 提供 finishReason 与 usage；error 事件按流式错误语义抛出（非 Error 形态不丢信息）；流在 finish 前结束判失败；无 toolCalls 时结果不携带该字段。
+- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、含附件被拒、设置持久化（重启后保留）、自动通道跟随模型切换；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误；以及在非标准 openai-compatible 网关（非流式响应带自定义信封，如 CPA）下增强仍成功。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
 
 ## 不做的事
@@ -381,7 +383,7 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - 不自动发送增强结果；不提供「增强并发送」变体。
 - 不持久化还原点；不做多级撤销历史（只有一级还原点）。
 - 不新增 CLI 协议方法：`workspace/generateText` 的 `operationId` 与 `workspace/cancelGenerateText` 已存在，服务面只做透传。
-- 不改 CLI 侧模型调用链，也不为取消新增本地状态机（取消成功与否对用户可见结果一致：草稿不变、toast「已取消」）。
+- 不为取消新增本地状态机（取消成功与否对用户可见结果一致：草稿不变、toast「已取消」）。CLI 侧的行为改动只有一处：workspace 生成的执行链从非流式 `generateText` 改为流式累积（原因见「模型调用」），除此之外不改模型调用链。
 
 ## 备注
 
