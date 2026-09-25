@@ -121,3 +121,120 @@ test("该轮没有附件时不产生附件字段", () => {
   assert.ok(row);
   assert.equal(row.attachments, undefined);
 });
+
+const GUIDE_TURN_ID = "turn-guide" as TurnId;
+const GUIDE_ATTACHMENT_REF = {
+  ref: "/tmp/guide-report.md",
+  fileName: "guide-report.md",
+  mime: "text/plain",
+  bytes: 8_192,
+};
+
+/**
+ * guide 内联输入没有自己那一轮的 turn_attachments_resolved 补发，
+ * 截断事实必须由 TurnSteerDrained 的 drainedInputs[].attachments 自带。
+ */
+function projectionWithGuideDrain(options: {
+  attachmentRefs?: typeof GUIDE_ATTACHMENT_REF[];
+  attachments?: Array<{ fileName: string; mime: string; bytes: number; ref?: string }>;
+  delivery: "guide" | "queue";
+}): ProductProjection {
+  const target = new ProductProjection(sessionId, "turn-steer-drain-test");
+  target.applyEvent(
+    createSessionEvent(
+      SessionEventType.TurnStarted,
+      sessionId,
+      { turnNumber: 1, input: "原始输入", messageId: "msg-3" as MessageId },
+      { turnId: GUIDE_TURN_ID, traceId, sequenceNumber: 1 },
+    ),
+  );
+  target.applyEvent(
+    createSessionEvent(
+      SessionEventType.TurnSteerDrained,
+      sessionId,
+      {
+        pendingInputIds: ["steer-1"],
+        injectedMessageIds: ["msg-4" as MessageId],
+        targetTurnId: GUIDE_TURN_ID,
+        drainedInputs: [
+          {
+            pendingInputId: "steer-1",
+            messageId: "msg-4" as MessageId,
+            text: "引导输入",
+            delivery: options.delivery,
+            ...(options.attachmentRefs?.length
+              ? { intent: { attachmentRefs: options.attachmentRefs } }
+              : {}),
+            ...(options.attachments?.length ? { attachments: options.attachments } : {}),
+          },
+        ],
+      },
+      { turnId: GUIDE_TURN_ID, traceId, sequenceNumber: 2 },
+    ),
+  );
+  return target;
+}
+
+function rowsOf(target: ProductProjection): UserInputRow[] {
+  return target
+    .getSnapshot()
+    .rows.window.filter((candidate): candidate is UserInputRow => candidate.kind === "userInput");
+}
+
+test("guide drain 自带截断事实，并保留 intent 附件的 ref 字段", () => {
+  const target = projectionWithGuideDrain({
+    attachmentRefs: [GUIDE_ATTACHMENT_REF],
+    attachments: [{ ...GUIDE_ATTACHMENT_REF, truncated: true, totalLines: 2_048 }],
+    delivery: "guide",
+  });
+
+  const guidedRow = rowsOf(target).find((row) => row.guided === true);
+  assert.ok(guidedRow);
+  const attachment = guidedRow.attachments?.[0];
+  assert.ok(attachment);
+  assert.equal(attachment.truncated, true);
+  assert.equal(attachment.totalLines, 2_048);
+  assert.equal(attachment.ref, GUIDE_ATTACHMENT_REF.ref);
+  assert.equal(attachment.fileName, GUIDE_ATTACHMENT_REF.fileName);
+});
+
+test("guide drain 无 intent 附件引用时直接采用自带元信息", () => {
+  const target = projectionWithGuideDrain({
+    attachments: [{ ...ATTACHMENT, truncated: true, totalLines: 4_000 }],
+    delivery: "guide",
+  });
+
+  const guidedRow = rowsOf(target).find((row) => row.guided === true);
+  assert.ok(guidedRow);
+  const attachment = guidedRow.attachments?.[0];
+  assert.ok(attachment);
+  assert.equal(attachment.truncated, true);
+  assert.equal(attachment.totalLines, 4_000);
+  assert.equal(attachment.fileName, ATTACHMENT.fileName);
+});
+
+test("guide drain 附件未截断时不写入截断字段，原输入行不受影响", () => {
+  const target = projectionWithGuideDrain({
+    attachmentRefs: [GUIDE_ATTACHMENT_REF],
+    attachments: [{ ...GUIDE_ATTACHMENT_REF }],
+    delivery: "guide",
+  });
+
+  const guidedRow = rowsOf(target).find((row) => row.guided === true);
+  assert.ok(guidedRow);
+  const attachment = guidedRow.attachments?.[0];
+  assert.ok(attachment);
+  assert.equal(attachment.truncated, undefined);
+  assert.equal(attachment.totalLines, undefined);
+  const originalRow = rowsOf(target).find((row) => row.text === "原始输入");
+  assert.ok(originalRow);
+  assert.equal(originalRow.attachments, undefined);
+});
+
+test("drainedInputs 不带附件时保持旧行为（无附件字段）", () => {
+  const target = projectionWithGuideDrain({ delivery: "guide" });
+
+  const guidedRow = rowsOf(target).find((row) => row.guided === true);
+  assert.ok(guidedRow);
+  assert.equal(guidedRow.attachments, undefined);
+});

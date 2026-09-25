@@ -37,6 +37,7 @@ import {
   MAX_TURN_STEER_INPUT_BYTES,
   previewInput,
   resolveTurnAttachments,
+  summarizeResolvedTurnAttachmentsForEvent,
 } from "../helpers/index.js";
 import type {
   ActiveTurnKind,
@@ -1208,8 +1209,14 @@ async function drainPendingInputUnlocked(
       turnId: options.activeTurn.turnId,
       workingDirectory: this.workingDirectory,
     });
-    // 截断标记不在这里发：此刻该输入的 userInput 行还没建（要等它自己那轮 TurnStarted），
-    // 事件会被投影丢弃。排队输入由它自己的 turn 走主路径 resolve 后补发。
+    // guide 内联进当前轮、没有「自己那一轮」，主路径的 turn_attachments_resolved
+    // 永远不会为它发射，且按 turnId 补发会错打到当前轮的原输入行；截断事实改由
+    // 本事件 drainedInputs[].attachments 自带（resolve 已完成，含 truncated/totalLines）。
+    // 普通 queue 输入提升后走主路径 resolve 补发，这里不重复携带。
+    const resolvedAttachmentMetas =
+      delivery === "guide"
+        ? summarizeResolvedTurnAttachmentsForEvent(resolvedAttachments)
+        : undefined;
     // 只在实际 guide 消费且无附件时固化新标记；审批反馈仍走原合同。
     const inputPresentation =
       delivery === "guide" && !pendingInput.source && !pendingInput.attachments?.length
@@ -1244,6 +1251,7 @@ async function drainPendingInputUnlocked(
       delivery,
       ...(pendingInput.intent ? { intent: pendingInput.intent } : {}),
       ...(pendingInput.toolDisallowlist ? { toolDisallowlist: pendingInput.toolDisallowlist } : {}),
+      ...(resolvedAttachmentMetas ? { attachments: resolvedAttachmentMetas } : {}),
     });
   }
 

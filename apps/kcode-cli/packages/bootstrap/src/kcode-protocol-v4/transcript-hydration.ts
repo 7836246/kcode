@@ -1424,6 +1424,9 @@ function collectTurnOutput(options: {
       // sourceCommandId/clientId/attachments，命令去重与展示也不再和 live 等价。
       // 新数据优先复用原 queueItemId，legacy 才使用可诊断的 hydration fallback。
       const pendingInputId = intent?.queueItemId ?? `hydrate-steer-${String(message.info.id)}`;
+      // guide 合成事件同样自带附件元信息（含截断事实，从已持久化 parts 派生），
+      // 与 live drain 的 drainedInputs[].attachments 同一形状与口径。
+      const attachmentMetas = attachmentMetasOfMessage(message.parts);
       push(
         SessionEventType.TurnSteerDrained,
         {
@@ -1436,6 +1439,7 @@ function collectTurnOutput(options: {
               text: textOfMessage(message.parts),
               delivery: "guide",
               ...(intent ? { intent } : {}),
+              ...(attachmentMetas.length > 0 ? { attachments: attachmentMetas } : {}),
             },
           ],
           targetTurnId: turnId,

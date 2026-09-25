@@ -562,6 +562,12 @@ export interface TurnSteerDrainedPayload {
     delivery?: TurnSteerDeliveryMode;
     intent?: TurnInputIntentMetadata;
     toolDisallowlist?: readonly string[];
+    /**
+     * drain 时 resolve 出的附件展示元信息（含截断事实）。guide 内联进当前轮、
+     * 没有自己的 TurnAttachmentsResolved 补发，截断标记只能由本事件自带；
+     * 普通 queue 提升后走主路径补发，该字段缺省。additive，缺省表示未知。
+     */
+    attachments?: TurnAttachmentMeta[];
   }>;
 }
 

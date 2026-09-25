@@ -22,6 +22,7 @@ import type {
   ModelStreamingPayload,
   ModelUsage,
   PermissionDeniedPayload,
+  TurnAttachmentMeta,
   TurnAttachmentsResolvedPayload,
   PermissionRequestedPayload,
   PermissionResolvedPayload,
@@ -2701,6 +2702,49 @@ export class ProductProjection {
     return [{ op: "row.upserted", row: { ...row, attachments: next } }];
   }
 
+  /**
+   * steer-drain 输入行的附件展示字段。guide 内联进当前轮、没有
+   * turn_attachments_resolved 补发，截断事实只能由 drainedInputs[].attachments
+   * 自带；基准仍取 intent.attachmentRefs（保留稳定 ref / previewRef），按行内序号
+   * 合并截断字段。无 refs 时直接采用自带元信息（无 ref 的附件在此处没有
+   * turn-attachment 占位口径可用，展示层只用 fileName/mime/bytes）。
+   */
+  private steerDrainedRowAttachments(item: {
+    intent?: TurnInputIntentMetadata;
+    attachments?: TurnAttachmentMeta[];
+  }): { attachments: NonNullable<UserInputRow["attachments"]> } {
+    const refs = item.intent?.attachmentRefs;
+    const metas = item.attachments;
+    if (refs?.length) {
+      return {
+        attachments: refs.map((attachment, index) => {
+          const meta = metas?.[index];
+          const truncated = meta?.truncated === true;
+          return {
+            ...attachment,
+            ...(truncated ? { truncated: true } : {}),
+            ...(truncated && meta?.totalLines !== undefined ? { totalLines: meta.totalLines } : {}),
+          };
+        }),
+      };
+    }
+    if (metas?.length) {
+      return {
+        attachments: metas.map((meta) => ({
+          ref: meta.ref ?? "",
+          fileName: meta.fileName,
+          mime: meta.mime,
+          bytes: meta.bytes,
+          ...(meta.truncated === true ? { truncated: true } : {}),
+          ...(meta.truncated === true && meta.totalLines !== undefined
+            ? { totalLines: meta.totalLines }
+            : {}),
+        })),
+      };
+    }
+    return {};
+  }
+
   private onAssistantFeedbackUpdated(event: SessionEvent): ConversationDelta[] {
     const payload = event.payload as AssistantFeedbackUpdatedPayload;
     const row = this.snapshot.rows.window.find(
@@ -3649,7 +3693,7 @@ export class ProductProjection {
         ...(item.intent?.sourceCommandId ? { sourceCommandId: item.intent.sourceCommandId } : {}),
         ...(rootSourceCommandId ? { rootSourceCommandId } : {}),
         ...(item.intent?.clientId ? { clientId: item.intent.clientId } : {}),
-        ...(item.intent?.attachmentRefs?.length ? { attachments: item.intent.attachmentRefs } : {}),
+        ...this.steerDrainedRowAttachments(item),
       };
       // queue/guide 消费后的 real-user row 与普通 TurnStarted 共用完整 canonical target；
       // 缺 messageId 的旧事件仍只可展示，不暴露无法执行的 edit action。

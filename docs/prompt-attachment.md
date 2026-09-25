@@ -163,7 +163,9 @@ live 侧的事件形状（实现时按此落地）：
 
 因为这条事件涉及 contracts → 事件归一化 → 投影 → UI 四层，且投影行为只能靠运行应用验证，阶段二**单独成批**落地，不与阶段一同批提交。
 
-**发射点的时序约束**：该事件必须在**该轮 userInput 行已存在之后**发出，否则投影按 turnId 找不到行、事件被丢弃。因此只在主 turn 流程里、附件 resolve 之后发；排队/引导输入不在 drain 阶段发（那时它自己的行还没建），由它自己那一轮走主路径 resolve 后补发。
+**发射点的时序约束**：该事件必须在**该轮 userInput 行已存在之后**发出，否则投影按 turnId 找不到行、事件被丢弃。因此只在主 turn 流程里、附件 resolve 之后发；普通排队输入不在 drain 阶段发（那时它自己的行还没建），由它自己那一轮走主路径 resolve 后补发。
+
+**引导（guide）内联输入走 TurnSteerDrained 自带附件元信息**：guide 被 drain 时直接内联进当前轮，没有「自己那一轮」，主路径的 `turn_attachments_resolved` 永远不会为它发射；且当前轮已有原输入行，按 turnId 补发还会错把截断标记打到原输入行上。因此 drain 阶段（`drainPendingInputUnlocked`）在 resolve 附件之后，把 `summarizeResolvedTurnAttachmentsForEvent()` 的结果写进 `TurnSteerDrained` 载荷 `drainedInputs[].attachments`（`TurnAttachmentMeta` 数组，含 `truncated` / `totalLines`）：建 guide 行与携带截断事实是同一条事件，无时序问题、无 turnId 歧义。冷恢复合成 guide 的 `TurnSteerDrained` 时用 `attachmentMetasOfMessage()` 从 parts 派生同一形状，保证 live / 冷恢复同口径。普通 queue 输入提升后走主路径，不在此列。
 
 **展示**：
 
@@ -171,7 +173,7 @@ live 侧的事件形状（实现时按此落地）：
 - 形态：chip 上文件名右侧一个小标记 + 悬浮说明「该附件内容过长，上下文中只保留了前面部分（文件共 M 行）」；文案键 `chat.attachments.truncated.marker` / `.tooltip` / `.tooltipNoTotal`（无总行数时用后者），`zh-CN` 与 `en-US` 同步。
 - 不做：不新增「查看完整内容」入口，不弹窗、不阻断发送，不在消息正文里插提示行。
 
-**验收**：发送一个超过 token 上限的附件（如 1MB 中文文档）→ 发送后 chip 立刻出现标记（live）；刷新 / 重开会话（冷恢复）后标记仍在、文案一致；发送一个超过体积上限但首 2000 行在 token 预算内的附件（如 20 万行短行文件）→ 同样必须出现标记（这一档过去是静默的）；未截断的附件零标记；老会话（无该字段）不显示。
+**验收**：发送一个超过 token 上限的附件（如 1MB 中文文档）→ 发送后 chip 立刻出现标记（live）；busy 中以「引导」方式发送带截断附件的输入 → chip 同样立刻出现标记（TurnSteerDrained 载荷自带，见上）；刷新 / 重开会话（冷恢复）后标记仍在、文案一致；发送一个超过体积上限但首 2000 行在 token 预算内的附件（如 20 万行短行文件）→ 同样必须出现标记（这一档过去是静默的）；未截断的附件零标记；老会话（无该字段）不显示。
 
 ### 不变量
 
