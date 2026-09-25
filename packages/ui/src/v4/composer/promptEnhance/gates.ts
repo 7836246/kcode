@@ -1,5 +1,5 @@
 /**
- * 提示词增强的两道闸：发起前的行内引用闸，以及「还原」的覆盖闸。
+ * 提示词增强的三道闸：发起前的行内引用闸、「还原」的覆盖闸，以及「回填」的覆盖闸。
  *
  * 纯判定模块，不依赖 React 与服务；单测直接断言放行/拒绝结果。
  */
@@ -13,6 +13,10 @@ export type PromptEnhanceRequestDecision =
 export type PromptEnhanceRestoreDecision =
   | { readonly allowed: true }
   | { readonly allowed: false; readonly reason: "modifiedAfterEnhance" };
+
+export type PromptEnhanceFillDecision =
+  | { readonly allowed: true }
+  | { readonly allowed: false; readonly reason: "draftChanged" };
 
 /**
  * 只拦「回填会真正破坏的东西」：回填三连重写编辑器内容，因此唯一会丢的是行内引用节点
@@ -55,4 +59,20 @@ export function evaluatePromptEnhanceRestore(params: {
   return promptEnhanceTextMatches(params.currentDraftText, params.enhancedText)
     ? { allowed: true }
     : { allowed: false, reason: "modifiedAfterEnhance" };
+}
+
+/**
+ * 回填闸：结果只允许覆盖「与发起时逐字一致」的草稿。
+ *
+ * 请求在途期间编辑器不受 running 约束，用户可以接着输入；此时无条件回填会连他刚写的
+ * 内容一起盖掉，而随后立下的还原点只含发起时的原文——那些新输入没有任何找回路径。
+ * 因此以发起时的快照为基准比对，不一致就把整条结果丢弃（与取消、scope 变化同口径）。
+ */
+export function evaluatePromptEnhanceFill(params: {
+  capturedDraftText: string;
+  currentDraftText: string;
+}): PromptEnhanceFillDecision {
+  return promptEnhanceTextMatches(params.capturedDraftText, params.currentDraftText)
+    ? { allowed: true }
+    : { allowed: false, reason: "draftChanged" };
 }

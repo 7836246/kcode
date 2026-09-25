@@ -24,6 +24,7 @@ import {
   type PromptEnhanceContextRound,
 } from "./promptEnhance/compose.js";
 import {
+  evaluatePromptEnhanceFill,
   evaluatePromptEnhanceRequest,
   evaluatePromptEnhanceRestore,
   promptEnhanceTextMatches,
@@ -180,16 +181,23 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     [runTracker],
   );
 
-  /** 写入失败时只记日志：调用方已各自给出提示，异常不能逃出点击回调。 */
-  const writeDraftSafely = useCallback(
-    (text: string) => {
+  /**
+   * 写入草稿并读回确认是否完整落地；写入异常只记日志，不逃出点击回调。
+   *
+   * 回填与还原共用这一条写入路径：两者都要求「要么完整落地、要么完整保留」，
+   * 因此写入后必须读回比对，由调用方据返回值决定是否立/清还原点。
+   */
+  const writeDraftVerified = useCallback(
+    (text: string): boolean => {
       try {
         writeDraftText(text);
+        return promptEnhanceTextMatches(readDraftText(), text);
       } catch (error) {
-        logger.error("[prompt-enhance] 写入草稿失败", { error: getErrorMessage(error) });
+        logger.error("[prompt-enhance] 写入草稿异常", { error: getErrorMessage(error) });
+        return false;
       }
     },
-    [writeDraftText],
+    [readDraftText, writeDraftText],
   );
 
   /**
@@ -255,6 +263,18 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     // 生命周期边界事件，不是正常流程的 info。
     logger.warn("[prompt-enhance] 草稿 scope 变化，已取消在途增强");
   }, [invalidateRun, scopeKey]);
+
+  useEffect(
+    () => () => {
+      // 卸载（切标签页 / 关标签 / 切 workspace）后组件不再渲染，但闭包仍持有 run tracker：
+      // 不作废的话，迟到的成功结果会继续回填并弹出属于已离开会话的 toast，Host 侧请求也
+      // 会空跑到超时。这里按发起时固化的 operationId 发与取消同一条 best-effort 通知。
+      if (!runTracker.current()) return;
+      invalidateRun();
+      logger.warn("[prompt-enhance] 组件卸载，已取消在途增强");
+    },
+    [invalidateRun, runTracker],
+  );
 
   useEffect(() => {
     // 草稿被清空（发送成功 / 手动清空）后还原点已无意义：留着会让工具条出现一个
@@ -366,16 +386,26 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
           return;
         }
 
-        // 回填要么完整落地、要么完整保留：写入异常或读回不一致都写回原文。
-        let filled = false;
-        try {
-          writeDraftText(enhanced);
-          filled = promptEnhanceTextMatches(readDraftText(), enhanced);
-        } catch (error) {
-          logger.error("[prompt-enhance] 回填草稿异常", { error: getErrorMessage(error) });
+        // 在途期间用户改过草稿：无条件回填会连他刚写的内容一起盖掉，而随后立的还原点
+        // 只有发起时的原文，那些新输入再无找回路径。整条结果按丢弃处理，与取消、scope
+        // 变化同一口径（编辑器不受 running 约束，这一支必须显式挡）。
+        if (
+          !evaluatePromptEnhanceFill({
+            capturedDraftText: draftText,
+            currentDraftText: readDraftText(),
+          }).allowed
+        ) {
+          logger.warn("[prompt-enhance] 草稿在增强期间被修改，丢弃本次结果", {
+            model: result.selection.modelId,
+          });
+          showToast("chat.toolbar.promptEnhance.draftChanged");
+          return;
         }
-        if (!filled) {
-          writeDraftSafely(draftText);
+
+        // 回填要么完整落地、要么完整保留：写入异常或读回不一致都写回原文。
+        if (!writeDraftVerified(enhanced)) {
+          // 写回原文是收尾动作，它若同样失败也只能到此为止，不再二次比对。
+          writeDraftVerified(draftText);
           logger.warn("[prompt-enhance] 回填未完整落地，已写回原文", {
             model: result.selection.modelId,
           });
@@ -419,8 +449,7 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
     showToast,
     workspaceIdentity,
     workspacePath,
-    writeDraftSafely,
-    writeDraftText,
+    writeDraftVerified,
   ]);
 
   const restore = useCallback(() => {
@@ -430,16 +459,31 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
       currentDraftText: readDraftText(),
       enhancedText: point.enhanced,
     });
-    restorePointRef.current = null;
-    setCanRestore(false);
     if (!decision.allowed) {
+      // 还原点只在草稿仍等于增强结果时有效：用户已手改，它不可能再被用上，清掉以免
+      // 工具条留着一个点了必然被拒的「还原」。
+      restorePointRef.current = null;
+      setCanRestore(false);
       logger.info("[prompt-enhance] 还原被拒：草稿已被手动修改");
       showToast("chat.toolbar.promptEnhance.restoreRejected");
       return;
     }
-    writeDraftSafely(point.original);
+
+    // 清还原点必须晚于「确认写入已落地」：写失败还清点，用户既拿不回原文、也没有重试
+    // 路径，却收到成功提示（回填路径同样是先比对再立点，此处对齐同一口径）。
+    // 复用回填的读回确认写入路径：写异常与读回不一致都由它归成 false，失败时下面的
+    // warn 会标明是「还原」这一支。
+    if (!writeDraftVerified(point.original)) {
+      logger.warn("[prompt-enhance] 还原未完整落地，保留还原点以便重试");
+      showToast("chat.toolbar.promptEnhance.restoreFailed");
+      return;
+    }
+
+    restorePointRef.current = null;
+    setCanRestore(false);
+    logger.info("[prompt-enhance] 已还原为增强前的原文");
     showToast("chat.toolbar.promptEnhance.restored");
-  }, [readDraftText, showToast, writeDraftSafely]);
+  }, [readDraftText, showToast, writeDraftVerified]);
 
   return {
     // 模型视图没就绪时构造不出合法请求（预算与档位都取自 Model Config），

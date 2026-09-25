@@ -4099,9 +4099,13 @@ const enUS: Record<string, string> = {
   "chat.toolbar.promptEnhance.emptyResult": "The model returned no text; the draft is unchanged",
   "chat.toolbar.promptEnhance.fillFailed":
     "Could not write into the composer; the draft is unchanged",
+  "chat.toolbar.promptEnhance.draftChanged":
+    "The draft changed while enhancing, so this result was not applied",
   "chat.toolbar.promptEnhance.failed": "Prompt enhancement failed: {error}",
   "chat.toolbar.promptEnhance.restored": "Restored the text from before the enhancement",
   "chat.toolbar.promptEnhance.restoreRejected": "The draft was edited, so it cannot be restored",
+  "chat.toolbar.promptEnhance.restoreFailed":
+    "Restore did not apply; the draft is unchanged — you can try again",
   "chat.queue.enqueue": "Queue message",
   "chat.queue.title": "Queued messages ({count})",
   "chat.queue.drag": "Drag to reorder",

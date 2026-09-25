@@ -51,7 +51,7 @@ const BASIC_TEMPLATE: PromptEnhanceTemplate = {
 - 提升表达的清晰度和可理解性
 - 确保优化后的提示词能够产生更好的AI回应
 
-## Constrains
+## Constraints
 - 保持用户的原始意图和核心需求不变
 - 避免过度复杂化，保持简洁实用
 - 不添加用户未提及的新需求

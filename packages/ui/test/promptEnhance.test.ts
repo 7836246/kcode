@@ -6,6 +6,7 @@ import {
   buildPromptEnhanceMessages,
 } from "../src/v4/composer/promptEnhance/compose.js";
 import {
+  evaluatePromptEnhanceFill,
   evaluatePromptEnhanceRequest,
   evaluatePromptEnhanceRestore,
 } from "../src/v4/composer/promptEnhance/gates.js";
@@ -219,6 +220,40 @@ test("还原只在草稿仍是增强结果时放行", () => {
       enhancedText: "改写后的正文",
     }),
     { allowed: true },
+  );
+});
+
+test("回填只在草稿仍等于发起时快照时放行", () => {
+  // 用户没动过草稿（含编辑器引入的 CRLF / 首尾空白噪音）→ 允许覆盖。
+  assert.deepEqual(
+    evaluatePromptEnhanceFill({
+      capturedDraftText: "帮我看看这个报错",
+      currentDraftText: "帮我看看这个报错",
+    }),
+    { allowed: true },
+  );
+  assert.deepEqual(
+    evaluatePromptEnhanceFill({
+      capturedDraftText: "帮我看看这个报错",
+      currentDraftText: "  帮我看看这个报错\r\n",
+    }),
+    { allowed: true },
+  );
+  // 用户在途补了一句 → 整条结果丢弃，绝不覆盖新输入（还原点里也没有这句）。
+  assert.deepEqual(
+    evaluatePromptEnhanceFill({
+      capturedDraftText: "帮我看看这个报错",
+      currentDraftText: "帮我看看这个报错，日志在下面",
+    }),
+    { allowed: false, reason: "draftChanged" },
+  );
+  // 用户在途清空草稿同样算改动：不得把结果重新写回空白输入框。
+  assert.deepEqual(
+    evaluatePromptEnhanceFill({
+      capturedDraftText: "帮我看看这个报错",
+      currentDraftText: "",
+    }),
+    { allowed: false, reason: "draftChanged" },
   );
 });
 
