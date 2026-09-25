@@ -52,5 +52,6 @@ jobs:
             packages/ui/test/loginApiKeyContinue.test.ts \
             packages/ui/test/turnMetrics.test.ts \
             apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-metrics-projection.test.ts \
-            packages/ui/test/reasoningLevelCatalog.test.ts
+            packages/ui/test/reasoningLevelCatalog.test.ts \
+            packages/ui/test/promptEnhance.test.ts
           node --test packages/desktop/scripts/release-signing-plan.test.mjs

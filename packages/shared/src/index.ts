@@ -241,6 +241,7 @@ export { formatTimestamp, formatLogPrefix } from "./log-format.js";
 export * from "./model-provider-types.js";
 export * from "./model-provider-family.js";
 export * from "./provider-family-connection-selection.js";
+export * from "./prompt-enhance.js";
 export * from "./provider-provisioning.js";
 export * from "./custom-model-value.js";
 export * from "./model-selection-types.js";

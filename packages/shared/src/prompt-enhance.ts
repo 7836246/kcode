@@ -1,0 +1,70 @@
+import { z } from "zod";
+
+const nonEmptyString = z.string().trim().min(1);
+
+/** 改写模式；展示名由 UI 提供，提示词模板正文不随展示名改动。 */
+export const promptEnhanceModes = ["basic", "coding", "creative"] as const;
+export const promptEnhanceModeSchema = z.enum(promptEnhanceModes);
+
+/** auto = 跟随当前生效模型；custom = 使用 customSelection 指定的 provider/model。 */
+export const promptEnhanceChannels = ["auto", "custom"] as const;
+export const promptEnhanceChannelSchema = z.enum(promptEnhanceChannels);
+
+/**
+ * 独立通道下发的推理强度。`default` 表示不下发 reasoningLevel，由 provider 链路决定；
+ * 其余档位直接写进 selection.options，具体取值由 registry 的 optionSpecs 决定是否生效。
+ */
+export const promptEnhanceReasoningLevels = ["default", "low", "medium", "high"] as const;
+export const promptEnhanceReasoningLevelSchema = z.enum(promptEnhanceReasoningLevels);
+
+export const PROMPT_ENHANCE_CONTEXT_ROUNDS_MIN = 1;
+export const PROMPT_ENHANCE_CONTEXT_ROUNDS_MAX = 10;
+const PROMPT_ENHANCE_DEFAULT_CONTEXT_ROUNDS = 3;
+
+export type PromptEnhanceMode = (typeof promptEnhanceModes)[number];
+export type PromptEnhanceReasoningLevel = (typeof promptEnhanceReasoningLevels)[number];
+
+const promptEnhanceCustomSelectionSchema = z.object({
+  providerId: nonEmptyString,
+  modelId: nonEmptyString,
+});
+
+const promptEnhanceSettingsObjectSchema = z.object({
+  mode: promptEnhanceModeSchema.default("basic"),
+  contextEnabled: z.boolean().default(true),
+  contextRounds: z
+    .number()
+    .int()
+    .min(PROMPT_ENHANCE_CONTEXT_ROUNDS_MIN)
+    .max(PROMPT_ENHANCE_CONTEXT_ROUNDS_MAX)
+    .default(PROMPT_ENHANCE_DEFAULT_CONTEXT_ROUNDS),
+  allowStructuredOverwrite: z.boolean().default(false),
+  channel: promptEnhanceChannelSchema.default("auto"),
+  /** 仅 custom 通道使用；切回 auto 时保留，便于用户切回来。 */
+  customSelection: promptEnhanceCustomSelectionSchema.optional(),
+  /** 仅 custom 通道生效；auto 通道不改写草稿模型自带的 reasoning。 */
+  reasoningLevel: promptEnhanceReasoningLevelSchema.default("default"),
+});
+
+export type PromptEnhanceSettings = z.infer<typeof promptEnhanceSettingsObjectSchema>;
+
+/** 显式写出默认值：zod v4 的 `.default()` 不再解析缺省值，传对象字面量会丢掉内层默认。 */
+export const PROMPT_ENHANCE_SETTINGS_DEFAULTS: PromptEnhanceSettings = {
+  mode: "basic",
+  contextEnabled: true,
+  contextRounds: PROMPT_ENHANCE_DEFAULT_CONTEXT_ROUNDS,
+  allowStructuredOverwrite: false,
+  channel: "auto",
+  reasoningLevel: "default",
+};
+
+export const promptEnhanceSettingsSchema = promptEnhanceSettingsObjectSchema.default(
+  PROMPT_ENHANCE_SETTINGS_DEFAULTS,
+);
+
+/**
+ * 设置 patch 的嵌套形状。`.partial()` 只放宽校验，**不会**去掉内层默认值：
+ * `parse({ mode: "coding" })` 仍会补齐其余字段的 schema 默认值。配合外层浅合并，
+ * 按单个字段写入等于把未提交字段重置为默认——写回必须提交完整对象。
+ */
+export const promptEnhanceSettingsPatchSchema = promptEnhanceSettingsObjectSchema.partial();

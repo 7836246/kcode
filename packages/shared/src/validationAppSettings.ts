@@ -11,6 +11,7 @@ import {
   embeddedBrowserViewportPreferenceSchema,
 } from "./browser-use/command-metadata.js";
 import { providerFamilyConnectionSelectionSettingsSchema } from "./provider-family-connection-selection.js";
+import { promptEnhanceSettingsPatchSchema, promptEnhanceSettingsSchema } from "./prompt-enhance.js";
 
 /** 引导职业枚举；单独导出供 onboarding 记录回填 settings 时做窄化校验。 */
 const appSettingsOccupationSchema = z.enum([
@@ -463,6 +464,8 @@ const appSettingsObjectSchema = z.object({
   nativeSearchEnhancementsEnabled: z.boolean().default(true),
   onboardingOccupation: appSettingsOccupationSchema.nullish(),
   proactiveSuggestionsEnabled: z.boolean().optional(),
+  /** 输入框草稿改写（增强）通道与力度；整对象带默认值，写回时必须整体提交。 */
+  promptEnhance: promptEnhanceSettingsSchema,
   memoryEnabled: z.boolean().default(false),
   managedSystemRoleEnabled: z.boolean().default(false),
   lastWorkspaceSession: z.array(appWorkspaceSessionEntrySchema).default([]),
@@ -550,6 +553,7 @@ export const appSettingsPatchSchema = z.object({
     ])
     .nullish(),
   proactiveSuggestionsEnabled: z.boolean().optional(),
+  promptEnhance: promptEnhanceSettingsPatchSchema.optional(),
   memoryEnabled: z.boolean().optional(),
   managedSystemRoleEnabled: z.boolean().optional(),
   lastWorkspaceSession: z.array(appWorkspaceSessionEntrySchema).optional(),
