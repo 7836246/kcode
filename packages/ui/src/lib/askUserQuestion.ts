@@ -175,7 +175,10 @@ function parseKCodeAskUserQuestionOutput(
 
   const data = normalizeAskUserQuestionInput(input);
   const question = data.questions[0];
-  if (!question) {
+  // 该旧形态只携带一个答案、不带任何问题标识，因此只能归属到「这一次请求就问了一个问题」的输入。
+  // 多题输入下把它记到第一题上属于凭空归属（用户可能回答的是别的题），宁可返回 undefined
+  // 让卡片走无答案文案，也不显示一条错位答案。
+  if (!question || data.questions.length > 1) {
     return undefined;
   }
 
@@ -279,11 +282,39 @@ export function readAskUserQuestionInput(value: {
   return value.input;
 }
 
+const ASK_USER_QUESTION_DISPLAY_KIND = "ask_user_question";
+
+// v4 卡片的单条答案在**上游**就已被合并成字符串（客户端提交与 broker 归一化都用 ", " 连接多选）。
+// 卡片按产品列表约定用「，」显示，所以这里把多选的合并分隔符换回展示分隔符；只处理 multiple，
+// 单选（含自定义输入里字面出现的 ", "）原样显示。
+const ANSWER_MERGE_SEPARATOR = ", ";
+const ANSWER_LIST_SEPARATOR = "，";
+
+/**
+ * v4 工具卡的结构化答案载荷（kind = ask_user_question）。
+ *
+ * Bug 修复：desktop v4 运行时唯一携带结构化 answers 的通道就是它——模型可见文本由 CLI 的
+ * formatModelContent 拍成 `User has answered your questions: "Q"="A"`，而前端被设计为不解析该
+ * 文本。载荷由 CLI 产出、随 tool part metadata 持久化，冷恢复与实时链路同源。
+ * 空对象是「用户未作答、runtime 自动继续」的显式语义，必须原样返回，不能当成缺失。
+ */
+function readAskUserQuestionDisplayAnswers(display: unknown): KCodeUserQuestionAnswers | undefined {
+  if (!isPlainRecord(display) || display.kind !== ASK_USER_QUESTION_DISPLAY_KIND) {
+    return undefined;
+  }
+  return isPlainRecord(display.answers) ? display.answers : undefined;
+}
+
 export function readAskUserQuestionAnswers(value: {
   input?: unknown;
   output?: unknown;
   raw?: unknown;
+  display?: unknown;
 }): KCodeUserQuestionAnswers | undefined {
+  const displayAnswers = readAskUserQuestionDisplayAnswers(value.display);
+  if (displayAnswers) {
+    return displayAnswers;
+  }
   const nestedOutputAnswers = readNestedAskUserQuestionAnswers(value.output);
   if (nestedOutputAnswers) {
     return nestedOutputAnswers;
@@ -329,6 +360,17 @@ export function readAskUserQuestionAnswers(value: {
   return undefined;
 }
 
+function toDisplayAnswerText(question: AskUserQuestionItem, text: string) {
+  if (question.type !== "multiple") {
+    return text;
+  }
+  const parts = text
+    .split(ANSWER_MERGE_SEPARATOR)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  return parts.length > 1 ? parts.join(ANSWER_LIST_SEPARATOR) : text;
+}
+
 export function getAskUserQuestionAnswerText(
   question: AskUserQuestionItem,
   answers: KCodeUserQuestionAnswers | undefined,
@@ -337,10 +379,10 @@ export function getAskUserQuestionAnswerText(
   const value = answers?.[question.question] ?? answers?.[question.id];
   if (Array.isArray(value)) {
     const values = value.map((item) => String(item).trim()).filter((item) => item.length > 0);
-    return values.length > 0 ? values.join("，") : noAnswerText;
+    return values.length > 0 ? values.join(ANSWER_LIST_SEPARATOR) : noAnswerText;
   }
   if (typeof value === "string") {
-    return value.trim().length > 0 ? value : noAnswerText;
+    return value.trim().length > 0 ? toDisplayAnswerText(question, value) : noAnswerText;
   }
   if (value === undefined || value === null) {
     return noAnswerText;

@@ -8,6 +8,7 @@ import {
 } from "@/lib/askUserQuestion.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { ToolLayout } from "@/ToolCallBlocks/ToolLayout.js";
+import { readToolResultDisplay } from "@/ToolCallBlocks/toolResultDisplay.js";
 import type { ToolCallBlockRenderContext } from "@/ToolCallBlocks/shared.js";
 
 const ASK_QUESTION_TOOL_ICON = (
@@ -20,7 +21,11 @@ export function AskQuestionToolCallBlock(context: ToolCallBlockRenderContext) {
   const { toolCall } = toolCallNode;
   const input = readAskUserQuestionInput(toolCall);
   const data = normalizeAskUserQuestionInput(input);
-  const answers = readAskUserQuestionAnswers(toolCall) ?? data.answers;
+  // 结构化答案只走 display 通道（desktop v4 唯一携带 answers 的载体，冷恢复同源）；
+  // 其余载体继续兜住旧快照与旧客户端形态。
+  const answers =
+    readAskUserQuestionAnswers({ ...toolCall, display: readToolResultDisplay(toolCall.raw) }) ??
+    data.answers;
   const wasAutomaticallyContinued =
     !isRunning &&
     toolCall.status !== "failed" &&
