@@ -157,8 +157,8 @@ function createSettingsMutationTarget(
       configService.renamePersonalModel(providerId, currentModelId, nextModelId, membership),
     deletePersonalModel: (providerId, modelId, membership) =>
       configService.deletePersonalModel(providerId, modelId, membership),
-    importRemoteModels: (providerId, remoteModelIds, membership) =>
-      configService.importRemoteModels(providerId, remoteModelIds, membership),
+    importRemoteModels: (providerId, remoteModelIds, membership, modelConfigs) =>
+      configService.importRemoteModels(providerId, remoteModelIds, membership, modelConfigs),
     clearVisibleModels: (providerId, membership) =>
       configService.clearVisibleModels(providerId, membership),
     setPersonalModelEnabled: (providerId, modelId, enabled, membership) =>

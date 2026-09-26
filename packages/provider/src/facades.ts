@@ -88,6 +88,7 @@ export interface ProviderSettingsMutationTarget {
     providerId: ProviderId,
     remoteModelIds: readonly ModelId[],
     membership?: ProviderModelMembership,
+    modelConfigs?: Readonly<Record<string, ModelConfig>>,
   ): Promise<RemoteModelImportPlan>;
   clearVisibleModels(
     providerId: ProviderId,
@@ -314,6 +315,25 @@ export class ProviderSettingsFacade {
     });
   }
 
+  /** 不含通用 `.*` 模型兜底，供目录信息只填补真正空缺的字段。 */
+  resolveSpecificBuiltinModelConfig(input: {
+    readonly providerId: ProviderId;
+    readonly modelId: ModelId;
+  }): ModelConfigObject {
+    const snapshot = requireSnapshot(this.#source);
+    const provider = requireEffectiveProvider(snapshot, input.providerId);
+    return snapshot.config.kcodeBuiltinModelRules
+      .withoutGenericModelFallback()
+      .resolve({
+        providerId: input.providerId,
+        templateId: provider.templateId,
+        modelId: input.modelId,
+        apiType: provider.config.api?.type,
+        baseUrl: provider.config.api?.baseUrl,
+      })
+      .toJSON();
+  }
+
   onDidChange(listener: (view: ProviderSettingsView) => void): () => void {
     return this.#source.onDidChange(() => listener(this.getView()));
   }
@@ -413,6 +433,7 @@ export class ProviderSettingsFacade {
   async importRemoteModels(
     providerId: ProviderId,
     remoteModelIds: readonly ModelId[],
+    modelConfigs?: Readonly<Record<string, ModelConfig>>,
   ): Promise<ProviderSettingsRemoteModelsImportResult> {
     let plan: RemoteModelImportPlan | undefined;
     const view = await this.#mutateProvider(providerId, "import-remote-models", async (target) => {
@@ -420,6 +441,7 @@ export class ProviderSettingsFacade {
         providerId,
         remoteModelIds,
         this.#modelMembership(providerId),
+        modelConfigs,
       );
     });
     if (!plan) throw new Error(`导入远端模型失败: ${providerId}`);

@@ -1,6 +1,7 @@
 import type { Event } from "@kcode/rpc";
 import { ServiceChannels } from "@kcode/shared";
 import {
+  ModelConfig,
   type ModelConfigObject,
   type ModelId,
   type ModelSelection,
@@ -18,9 +19,15 @@ import {
   isApiKeyAccess,
 } from "@kcode/provider";
 import {
-  fetchProviderRemoteModelIds,
+  fetchProviderRemoteModels,
   ProviderRemoteModelsError,
 } from "./providerRemoteModels.js";
+import { mergeCatalogModelInfo, modelConfigFromCatalog } from "./modelInfoCatalog.js";
+import {
+  cachedProviderModelInfo,
+  lookupPublicModelInfo,
+  rememberProviderModelInfo,
+} from "./modelInfoCatalogFetch.js";
 import { createServiceDescriptor } from "../descriptors.js";
 import type { ModelConnectivityResult } from "@kcode/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
@@ -148,7 +155,17 @@ export function createProviderSettingsService(
     },
     resolveModelConfig: async (input) => {
       await ensureReady();
-      return facade.resolveModelConfig(input);
+      const resolution = facade.resolveModelConfig(input);
+      const patch = await catalogPatchForModel(facade, input.providerId, input.modelId);
+      if (!patch) return resolution;
+      const inheritedConfig = ModelConfig.fromData(resolution.inheritedConfig).overlay(patch).toJSON();
+      const effectiveConfig =
+        "personalConfig" in input
+          ? ModelConfig.fromData(inheritedConfig)
+              .overlay(ModelConfig.fromData(input.personalConfig))
+              .toJSON()
+          : ModelConfig.fromData(resolution.effectiveConfig).overlay(patch).toJSON();
+      return { ...resolution, inheritedConfig, effectiveConfig };
     },
     savePersonalProviderOverlay: async (providerId, config, metadata) => {
       await ensureReady();
@@ -195,18 +212,19 @@ export function createProviderSettingsService(
           "请先填写 Base URL 和 API Key",
         );
       }
-      return {
-        modelIds: await fetchProviderRemoteModelIds({
-          apiType: api.type ?? undefined,
-          baseUrl: api.baseUrl,
-          apiKey: access.apiKey,
-          headers: api.headers,
-        }),
-      };
+      const listed = await fetchProviderRemoteModels({
+        apiType: api.type ?? undefined,
+        baseUrl: api.baseUrl,
+        apiKey: access.apiKey,
+        headers: api.headers,
+      });
+      rememberProviderModelInfo(providerId, listed.info);
+      return { modelIds: listed.modelIds };
     },
     importRemoteProviderModels: async (providerId, modelIds) => {
       await ensureReady();
-      const imported = await facade.importRemoteModels(providerId, modelIds);
+      const modelConfigs = await catalogConfigsForModels(facade, providerId, modelIds);
+      const imported = await facade.importRemoteModels(providerId, modelIds, modelConfigs);
       return {
         view: imported.view,
         addedCount: imported.addedModelIds.length,
@@ -219,7 +237,11 @@ export function createProviderSettingsService(
     },
     savePersonalModelDraft: async (input) => {
       await ensureReady();
-      return facade.savePersonalModelDraft(input);
+      const patch = await catalogPatchForModel(facade, input.providerId, input.nextModelId);
+      const personalConfig = patch
+        ? patch.overlay(ModelConfig.fromData(input.personalConfig)).toJSON()
+        : input.personalConfig;
+      return facade.savePersonalModelDraft({ ...input, personalConfig });
     },
     setPersonalModelEnabled: async (providerId, modelId, enabled) => {
       await ensureReady();
@@ -328,4 +350,36 @@ function toEvent<T>(subscribe: (listener: (event: T) => void) => () => void): Ev
     const dispose = subscribe(listener);
     return { dispose };
   };
+}
+
+async function catalogConfigsForModels(
+  facade: ProviderSettingsFacade,
+  providerId: string,
+  modelIds: readonly string[],
+): Promise<Record<string, ModelConfig>> {
+  const configs: Record<string, ModelConfig> = {};
+  await Promise.all(
+    modelIds.map(async (modelId) => {
+      const patch = await catalogPatchForModel(facade, providerId, modelId);
+      if (patch) configs[modelId] = patch;
+    }),
+  );
+  return configs;
+}
+
+async function catalogPatchForModel(
+  facade: ProviderSettingsFacade,
+  providerId: string,
+  modelId: string,
+): Promise<ModelConfig | undefined> {
+  const trimmed = modelId.trim();
+  if (!trimmed) return undefined;
+  const specific = facade.resolveSpecificBuiltinModelConfig({
+    providerId,
+    modelId: trimmed,
+  });
+  const providerInfo = cachedProviderModelInfo(providerId, trimmed);
+  const publicInfo = await lookupPublicModelInfo(trimmed);
+  const info = publicInfo ? mergeCatalogModelInfo(providerInfo, publicInfo) : providerInfo;
+  return modelConfigFromCatalog(specific, info);
 }

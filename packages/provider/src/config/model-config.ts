@@ -384,6 +384,13 @@ export class ModelConfigRules {
     return this.#rules;
   }
 
+  /** 去掉通用 `.*` 模型兜底，用来判断某字段是否已有更具体的内置规则。 */
+  withoutGenericModelFallback(): ModelConfigRules {
+    return new ModelConfigRules(
+      this.#rules.filter((rule) => !(rule.type === "model" && rule.modelMatch === ".*")),
+    );
+  }
+
   resolve(input: ModelConfigRuleResolutionInput): ModelConfig {
     let result = ModelConfig.empty();
     const baseUrl = input.baseUrl == null ? undefined : normalizeBaseURLForRuleMatch(input.baseUrl);

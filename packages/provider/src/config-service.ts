@@ -579,6 +579,7 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
     providerId: ProviderId,
     remoteModelIds: readonly ModelId[],
     membership?: ProviderModelMembership,
+    modelConfigs?: Readonly<Record<string, ModelConfig>>,
   ): Promise<RemoteModelImportPlan> {
     const normalizedProviderId = normalizeId("providerId", providerId);
     const builtin = await this.#kcodeBuiltinSource.read();
@@ -598,10 +599,13 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
       resolvedPlan = plan;
       let models = current.models;
       for (const modelId of plan.addedModelIds) {
+        const provided = modelConfigs?.[modelId];
         models = models.setExact(
           normalizedProviderId,
           modelId,
-          new ModelConfig({ enabled: true }),
+          provided
+            ? new ModelConfig({ enabled: true }).overlay(provided)
+            : new ModelConfig({ enabled: true }),
           true,
         );
       }

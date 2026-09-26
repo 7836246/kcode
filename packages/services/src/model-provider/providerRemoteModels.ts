@@ -1,5 +1,6 @@
 import type { ModelId, ProviderApiType } from "@kcode/provider";
 import { normalizeApiKeyForHeader } from "../providers/api/apiKeyHeaders.js";
+import { parseProviderModelCatalog, type CatalogModelInfo } from "./modelInfoCatalog.js";
 
 const ANTHROPIC_VERSION = "2023-06-01";
 
@@ -26,38 +27,14 @@ export function resolveProviderModelsUrl(apiType: ProviderApiType | undefined, b
 }
 
 export function parseProviderRemoteModelIds(payload: unknown): ModelId[] {
-  const ids: string[] = [];
-  const seen = new Set<string>();
-  const push = (value: unknown) => {
-    if (typeof value !== "string") return;
-    const modelId = value.trim();
-    if (!modelId || seen.has(modelId)) return;
-    seen.add(modelId);
-    ids.push(modelId);
-  };
+  return parseProviderModelCatalog(payload).modelIds;
+}
 
-  if (Array.isArray(payload)) {
-    for (const item of payload) {
-      if (typeof item === "string") push(item);
-      else if (item && typeof item === "object" && "id" in item) push(item.id);
-    }
-    return ids;
-  }
-
-  if (!payload || typeof payload !== "object") return ids;
-  const record = payload as Record<string, unknown>;
-  if (Array.isArray(record.data)) {
-    for (const item of record.data) {
-      if (item && typeof item === "object" && "id" in item) push(item.id);
-    }
-  }
-  if (ids.length === 0 && Array.isArray(record.models)) {
-    for (const item of record.models) {
-      if (typeof item === "string") push(item);
-      else if (item && typeof item === "object" && "id" in item) push(item.id);
-    }
-  }
-  return ids;
+export function parseProviderRemoteModelCatalog(payload: unknown): {
+  readonly modelIds: readonly ModelId[];
+  readonly info: Readonly<Record<string, CatalogModelInfo>>;
+} {
+  return parseProviderModelCatalog(payload);
 }
 
 export function buildProviderModelsRequestHeaders(input: {
@@ -80,14 +57,17 @@ export function buildProviderModelsRequestHeaders(input: {
   return headers;
 }
 
-export async function fetchProviderRemoteModelIds(input: {
+export async function fetchProviderRemoteModels(input: {
   readonly apiType?: ProviderApiType;
   readonly baseUrl: string;
   readonly apiKey: string;
   readonly headers?: Readonly<Record<string, string>> | null;
   readonly fetchImpl?: typeof fetch;
   readonly signal?: AbortSignal;
-}): Promise<readonly ModelId[]> {
+}): Promise<{
+  readonly modelIds: readonly ModelId[];
+  readonly info: Readonly<Record<string, CatalogModelInfo>>;
+}> {
   const url = resolveProviderModelsUrl(input.apiType, input.baseUrl);
   const headers = buildProviderModelsRequestHeaders(input);
   const fetchImpl = input.fetchImpl ?? globalThis.fetch;
@@ -117,9 +97,15 @@ export async function fetchProviderRemoteModelIds(input: {
   } catch {
     throw new ProviderRemoteModelsError("invalid-response", "远端返回的模型列表不是 JSON");
   }
-  const modelIds = parseProviderRemoteModelIds(payload);
-  if (modelIds.length === 0) {
+  const catalog = parseProviderRemoteModelCatalog(payload);
+  if (catalog.modelIds.length === 0) {
     throw new ProviderRemoteModelsError("invalid-response", "远端返回的模型列表为空或格式无法识别");
   }
-  return modelIds;
+  return catalog;
+}
+
+export async function fetchProviderRemoteModelIds(
+  input: Parameters<typeof fetchProviderRemoteModels>[0],
+): Promise<readonly ModelId[]> {
+  return (await fetchProviderRemoteModels(input)).modelIds;
 }
