@@ -101,6 +101,9 @@ export interface CanonicalTurnAttachment {
   mime: string;
   bytes: number;
   previewRef?: string;
+  /** 附件在上下文里是否被截断；缺省表示未知，不写成 false。 */
+  truncated?: boolean;
+  totalLines?: number;
 }
 
 export interface CanonicalModelStream {
@@ -393,6 +396,10 @@ function normalizeAttachment(attachment: TurnAttachmentMeta): CanonicalTurnAttac
     fileName: attachment.fileName,
     mime: attachment.mime,
     bytes: attachment.bytes,
+    ...(attachment.truncated === true ? { truncated: true } : {}),
+    ...(attachment.truncated === true && attachment.totalLines !== undefined
+      ? { totalLines: attachment.totalLines }
+      : {}),
   };
 }
 

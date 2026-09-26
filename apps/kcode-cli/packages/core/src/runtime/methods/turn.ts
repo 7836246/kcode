@@ -36,6 +36,7 @@ import {
   buildUserContentFromTurn,
   logResolvedTurnAttachments,
   resolveTurnAttachments,
+  summarizeResolvedTurnAttachmentsForEvent,
   summarizeTurnAttachmentsForEvent,
   runtimeMetadataForSyntheticUserMessageSource,
 } from "../helpers/index.js";
@@ -434,6 +435,20 @@ export async function executeTurnCommand(
           workingDirectory: this.workingDirectory,
         });
         logResolvedTurnAttachments(this.logger, turnTraceContext, resolvedAttachments);
+        // TurnStarted 早于 resolve，那里给不出截断事实；resolve 之后补发一条展示用事件，
+        // 让消息上的附件 chip 能标出「已截断」。不参与模型上下文与冷恢复合成。
+        const resolvedAttachmentMetas =
+          summarizeResolvedTurnAttachmentsForEvent(resolvedAttachments);
+        if (resolvedAttachmentMetas) {
+          await this.appendEvent(
+            this.createEvent(
+              SessionEventType.TurnAttachmentsResolved,
+              { attachments: resolvedAttachmentMetas },
+              turnTraceContext,
+            ),
+            turnTraceContext,
+          );
+        }
         const sharedContextRefs = options?.sharedContextRefs ?? options?.intent?.sharedContextRefs;
         if (sharedContextRefs && sharedContextRefs.length > 0) {
           const [reference] = sharedContextRefs;

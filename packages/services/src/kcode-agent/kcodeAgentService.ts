@@ -150,6 +150,7 @@ import type {
   KCodeAgentCreateSessionParams,
   KCodeAgentInstallPluginParams,
   KCodeAgentGenerateWorkspaceTextParams,
+  KCodeAgentCancelWorkspaceGenerateTextParams,
   KCodeAgentTestModelConnectivityParams,
   KCodeAgentGoalParams,
   KCodeAgentGrantWorkspaceHookTrustParams,
@@ -327,6 +328,8 @@ const PLUGIN_MANAGEMENT_REQUEST_TIMEOUT_MS = 5 * 60_000;
 /** 资源管理器每秒刷新；子进程映射是纯内存请求，超时就当本轮无映射，不能拖慢采样节拍。 */
 const CHILD_PROCESSES_REQUEST_TIMEOUT_MS = 800;
 const PLUGIN_OPERATION_CANCEL_REQUEST_TIMEOUT_MS = 5_000;
+/** 取消是 best-effort 控制面调用：超时不能反过来拖住 UI，失败按 cancelled:false 处理。 */
+const WORKSPACE_GENERATE_TEXT_CANCEL_REQUEST_TIMEOUT_MS = 5_000;
 const SESSION_COMPACT_REQUEST_TIMEOUT_MS = 5 * 60_000;
 
 interface PendingPermissionRequest {
@@ -4361,7 +4364,10 @@ export function createKCodeAgentService(
         reason: "workspace_generate_text",
         workspace: params,
       });
-      const operationId = params.signal ? randomUUID() : undefined;
+      // 跨进程调用方自带 operationId（AbortSignal 过不了 RPC 序列化）；同进程调用方
+      // 仍按 signal 是否存在决定这次请求可不可以取消。
+      const requestedOperationId = params.operationId?.trim();
+      const operationId = requestedOperationId || (params.signal ? randomUUID() : undefined);
       const cancel = () => {
         if (!operationId) return;
         void client
@@ -4407,6 +4413,24 @@ export function createKCodeAgentService(
       } finally {
         params.signal?.removeEventListener("abort", cancel);
       }
+    },
+
+    async cancelWorkspaceGenerateText(params: KCodeAgentCancelWorkspaceGenerateTextParams) {
+      // 只对已存在的 workspace client 发取消。没有活跃进程时该 operationId 必然不存在，
+      // 为一条取消走 getClient 会把 Agent 进程拉起来，与取消意图相反。
+      const active = activeClientsByWorkspaceKey.get(resolveWorkspaceKey(params));
+      if (!active || !isReusableActiveClientEntry(params, active)) {
+        return { operationId: params.operationId, cancelled: false };
+      }
+      // 与 generateWorkspaceText 的 trim 口径一致：登记进 CLI 的 id 是 trim 过的，
+      // 取消端带着空白转发就会查不到控制器。
+      const operationId = params.operationId.trim();
+      return active.client.request(
+        kcodeProtocolMethods.workspaceCancelGenerateText,
+        { operationId },
+        kcodeWorkspaceCancelGenerateTextResultSchema,
+        { timeoutMs: WORKSPACE_GENERATE_TEXT_CANCEL_REQUEST_TIMEOUT_MS },
+      );
     },
 
     async testModelConnectivity(params: KCodeAgentTestModelConnectivityParams) {

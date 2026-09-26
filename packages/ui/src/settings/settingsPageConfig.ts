@@ -18,6 +18,7 @@ import {
   WandSparkles,
   Keyboard,
   FileSearch,
+  Sparkles,
 } from "lucide-react";
 import { isSettingsSectionEnabled, type SettingsSectionId } from "@/lib/settingsNavigation.js";
 import type { Theme } from "@/useTheme.js";
@@ -71,6 +72,13 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     id: "modelProvider",
     icon: Package,
     titleId: "settings.modelProviderTitle",
+    groupId: "basics",
+  },
+  // 提示词增强紧跟「模型供应商」：它复用同一份模型选型，放在同一组便于理解改写走哪个模型。
+  {
+    id: "promptEnhance",
+    icon: Sparkles,
+    titleId: "settings.promptEnhance.title",
     groupId: "basics",
   },
   {

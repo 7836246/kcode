@@ -2,6 +2,7 @@ import type { RemoteAssetInstallMode } from "./remoteAssetInstallMode.js";
 import type { RemoteResourcePackageSelection } from "./remoteResourcePackages.js";
 import type { ProviderFamilyDomain } from "./model-provider-family.js";
 import type { ProviderFamilyConnectionSelectionSettings } from "./provider-family-connection-selection.js";
+import type { PromptEnhanceSettings } from "./prompt-enhance.js";
 import type { KCodeProvider } from "./kcode-task-types-core.js";
 import type { WorkspacePurpose } from "./workspacePurpose.js";
 import type { EmbeddedBrowserViewportPreference } from "./browser-use/command-metadata.js";
@@ -347,6 +348,11 @@ export interface AppSettings {
     | "other"
     | null;
   proactiveSuggestionsEnabled?: boolean;
+  /**
+   * 输入框草稿「增强（改写）」通道与力度。整对象带 schema 默认值；
+   * settings 写入是浅合并，因此更新时提交完整对象而不是单个字段。
+   */
+  promptEnhance?: PromptEnhanceSettings;
   /** 上次关闭时的完整 workspace 会话（含本地与远端 workspace） */
   lastWorkspaceSession?: PersistedWorkspaceSessionEntry[];
   /** 上次关闭时激活的 tab 索引 */

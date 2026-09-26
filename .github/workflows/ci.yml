@@ -47,10 +47,18 @@ jobs:
         run: |
           # 投影测试要加载 @kcode/contracts 的构建产物；根目录 typecheck 不会编译 CLI 包。
           pnpm --filter @kcode/contracts build
+          # core 的附件测试经 hydrator 间接加载 workflow 编译器的 dist 产物，同样要显式构建。
+          pnpm --filter @kcode/dynamic-workflow build
           pnpm exec tsx --test \
             packages/ui/test/modelConnectivityFailure.test.ts \
             packages/ui/test/loginApiKeyContinue.test.ts \
             packages/ui/test/turnMetrics.test.ts \
             apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-metrics-projection.test.ts \
-            packages/ui/test/reasoningLevelCatalog.test.ts
+            packages/ui/test/reasoningLevelCatalog.test.ts \
+            packages/ui/test/promptEnhance.test.ts \
+            apps/kcode-cli/packages/core/src/runtime/methods/workspace-generate-text-accumulate.test.ts \
+            apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment.test.ts \
+            apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment-parity.test.ts \
+            apps/kcode-cli/packages/core/src/runtime/helpers/attachments.test.ts \
+            apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-attachments-resolved-projection.test.ts
           node --test packages/desktop/scripts/release-signing-plan.test.mjs

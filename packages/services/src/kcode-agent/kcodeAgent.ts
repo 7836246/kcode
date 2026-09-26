@@ -62,6 +62,7 @@ import type {
   KCodeWorkspacePresentation,
   KCodeWorkspaceGenerateTextResult,
   KCodeWorkspaceGenerateTextParams,
+  KCodeWorkspaceCancelGenerateTextResult,
   KCodeWorkspaceHookTrustGrantResult,
   KCodeAutomationBotDeliveryTarget,
 } from "@kcode/shared";
@@ -311,6 +312,12 @@ export interface KCodeAgentGenerateWorkspaceTextParams extends KCodeAgentWorkspa
   tools?: KCodeWorkspaceGenerateTextParams["tools"];
   querySource: string;
   maxOutputTokens?: number;
+  /**
+   * 跨进程取消句柄。`signal` 只在同进程调用方可用：RPC 实参按 JSON 序列化，
+   * AbortSignal 没有可枚举字段，跨进程落地成 `{}`，服务侧读到的不是 AbortSignal。
+   * Renderer 等跨进程调用方改为自带稳定 operationId，再用 cancelWorkspaceGenerateText 取消。
+   */
+  operationId?: string;
   signal?: AbortSignal;
   /**
    * 协议层 RPC 超时。thinking 模型的长请求会超过协议 client 默认的
@@ -318,6 +325,11 @@ export interface KCodeAgentGenerateWorkspaceTextParams extends KCodeAgentWorkspa
    * 还会被 onRequestTimeout 误判 stale 杀进程。
    */
   requestTimeoutMs?: number;
+}
+
+export interface KCodeAgentCancelWorkspaceGenerateTextParams extends KCodeAgentWorkspaceTarget {
+  /** 与 generateWorkspaceText 同一次请求携带的 operationId。 */
+  operationId: string;
 }
 
 export interface KCodeAgentTestModelConnectivityParams extends KCodeAgentWorkspaceTarget {
@@ -687,6 +699,13 @@ export interface IKCodeAgentService {
   generateWorkspaceText(
     params: KCodeAgentGenerateWorkspaceTextParams,
   ): Promise<KCodeWorkspaceGenerateTextResult>;
+  /**
+   * 取消一次 workspace 模型文本生成。控制面 best-effort：目标 workspace 没有活跃 Agent
+   * 进程时直接返回 `cancelled: false`，不为了发一条取消把进程拉起来。
+   */
+  cancelWorkspaceGenerateText(
+    params: KCodeAgentCancelWorkspaceGenerateTextParams,
+  ): Promise<KCodeWorkspaceCancelGenerateTextResult>;
   testModelConnectivity(
     params: KCodeAgentTestModelConnectivityParams,
   ): Promise<KCodeProviderTestModelConnectivityResult>;

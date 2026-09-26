@@ -94,6 +94,33 @@ export async function resolveTurnAttachments(
   return resolved;
 }
 
+/**
+ * resolve 之后的附件展示元信息，供 `turn_attachments_resolved` 事件下发。
+ *
+ * TurnStarted 早于 resolve，那里只能给无 IO 推断值；只有读到内容才知道的截断事实只能在这之后补。
+ * 缺省表示「未知」，不得写成 `false`——展示层靠缺省区分「未截断」与「不知道」。
+ */
+export function summarizeResolvedTurnAttachmentsForEvent(
+  resolved: readonly ResolvedTurnAttachment[],
+): TurnAttachmentMeta[] | undefined {
+  if (resolved.length === 0) return undefined;
+  return resolved.map((attachment, index) => {
+    const source = attachment.source;
+    const sourceRef = source ? (source.type === "resource" ? source.uri : source.path) : undefined;
+    const ref = sourceRef ?? (isDataOrArtifactUrl(attachment.url) ? undefined : attachment.url);
+    const preview = attachment.metadata.preview;
+    const truncated = preview?.truncated === true;
+    return {
+      fileName: attachment.filename ?? (ref ? basename(ref) : `attachment-${index + 1}`),
+      mime: attachment.mime,
+      bytes: attachment.metadata.sizeBytes ?? 0,
+      ...(ref ? { ref } : {}),
+      ...(truncated ? { truncated: true } : {}),
+      ...(truncated && preview?.totalLines !== undefined ? { totalLines: preview.totalLines } : {}),
+    };
+  });
+}
+
 async function resolveTurnAttachment(
   attachment: TurnAttachment,
   index: number,
@@ -199,6 +226,22 @@ async function resolvedInlineAttachment(
   };
 }
 
+/**
+ * 附件正文是否只是文件的一部分。
+ *
+ * 读取层只把「被 token 上限硬截」标成 truncated；超限文件按行数限流（只取前
+ * READ_DEFAULT_MAX_LINES 行）属于 range view，读取层一律返回 truncated=false。
+ * 但对附件来说两种都意味着模型只看到文件开头，必须判成截断：否则会出现「只交付
+ * 前 2000 行、却告诉模型内容完整、界面也不给标记」的静默丢失。
+ */
+export function isPartialAttachmentTextRead(read: {
+  numLines: number;
+  totalLines: number;
+  truncated?: boolean;
+}): boolean {
+  return read.truncated === true || read.numLines < read.totalLines;
+}
+
 async function resolveLocalFileAttachment(
   attachment: TurnAttachment,
   options: {
@@ -268,6 +311,7 @@ async function resolveLocalFileAttachment(
         : {}),
       trace: options.traceContext,
     });
+    const truncated = isPartialAttachmentTextRead(read);
     return {
       contentBlock: { type: "text", text: read.content },
       filename,
@@ -275,7 +319,7 @@ async function resolveLocalFileAttachment(
         originalUrl: attachment.path,
         preview: {
           text: read.content,
-          truncated: read.truncated ?? false,
+          truncated,
           ...(read.sizeBytes !== undefined ? { originalBytes: read.sizeBytes } : {}),
           startLine: read.startLine,
           totalLines: read.totalLines,
@@ -286,7 +330,7 @@ async function resolveLocalFileAttachment(
             ? { partialViewNotice: read.partialViewNotice }
             : {}),
         },
-        recoverability: read.truncated ? "preview_only" : "provider_ready",
+        recoverability: truncated ? "preview_only" : "provider_ready",
         ...(read.sizeBytes !== undefined ? { sizeBytes: read.sizeBytes } : {}),
         storageKind: "inline",
       },

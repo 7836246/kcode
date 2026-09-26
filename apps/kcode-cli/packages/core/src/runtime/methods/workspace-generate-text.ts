@@ -19,6 +19,7 @@ import { createRefreshRuntimeHeadersBeforeModelAttempt } from "./model-runtime-h
 import { recordModelUsageFact } from "./usage-observability.js";
 import { createRuntimeModel } from "./runtime-model.js";
 import { normalizeStreamError } from "../helpers/index.js";
+import { accumulateWorkspaceGenerateTextStream } from "./workspace-generate-text-accumulate.js";
 import { auxiliaryModelOptions } from "../../model/auxiliary-model-options.js";
 
 const WORKSPACE_GENERATE_TEXT_TIMEOUT_MS = 60_000;
@@ -216,7 +217,11 @@ async function generateWorkspaceTextImpl(
         traceContext: modelTraceContext,
       }),
     },
-    () => model.generateText(modelRequest),
+    () =>
+      // 走流式累积而不是非流式 doGenerate：部分 openai-compatible 网关的非流式响应
+      // 包在自定义信封里，AI SDK schema 校验失败后统一报 Invalid JSON response；
+      // 流式 SSE 是标准格式，主回合与连通性探测都走这条传输路径。结果形状与非流式一致。
+      accumulateWorkspaceGenerateTextStream(model.streamText(modelRequest)),
   ).catch(async (error: unknown) => {
     await recordModelUsageFact(this, {
       error,

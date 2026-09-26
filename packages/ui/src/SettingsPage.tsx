@@ -1,5 +1,6 @@
 /* oxlint-disable eslint(max-lines) */
 import { ModelFallbackSetting } from "@/settings/ModelFallbackSetting.js";
+import { PromptEnhanceSection } from "@/settings/PromptEnhanceSection.js";
 import { ArrowLeft, Rocket, type LucideIcon } from "lucide-react";
 import {
   useCallback,
@@ -1463,6 +1464,13 @@ export function SettingsPage({
                               }
                             />
                           </ServiceProvider>
+                        ) : activeSection === "promptEnhance" ? (
+                          <PromptEnhanceSection
+                            remoteSessionId={activeWorkspaceTab?.remoteSessionId}
+                            remoteTarget={activeWorkspaceTab?.remoteTarget}
+                            workspaceIdentity={activeWorkspaceIdentity}
+                            workspacePath={activeWorkspacePath}
+                          />
                         ) : activeSection === "memory" ? (
                           <ServiceProvider services={localHostServices}>
                             {/* Memory catalog 始终使用本地 Host，避免远程 workspace 误读本机数据。 */}

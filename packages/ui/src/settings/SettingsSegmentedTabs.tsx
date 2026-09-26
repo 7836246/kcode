@@ -10,10 +10,13 @@ export function SettingsSegmentedTabs<TValue extends string>({
   items,
   value,
   onValueChange,
+  disabled = false,
 }: {
   items: readonly SettingsSegmentedTabItem<TValue>[];
   value: TValue;
   onValueChange: (value: TValue) => void;
+  /** 保存进行中应禁用：连续切两项时，后一次会基于尚未回刷的旧值组装写回对象。 */
+  disabled?: boolean;
 }) {
   return (
     <Tabs
@@ -26,6 +29,7 @@ export function SettingsSegmentedTabs<TValue extends string>({
           <TabsTrigger
             key={item.value}
             value={item.value}
+            disabled={disabled}
             className="h-7 flex-none rounded-full border-transparent bg-transparent px-2.5 text-ui-base font-medium text-foreground-subtle data-active:border-transparent data-active:bg-background data-active:text-foreground data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-background"
           >
             {item.label}

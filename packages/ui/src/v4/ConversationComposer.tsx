@@ -154,6 +154,7 @@ import { ConversationBackgroundWorkTrigger } from "@/v4/composer/ConversationBac
 import { TurnMetricsBar } from "@/v4/composer/TurnMetricsBar.js";
 import { resolveTurnMetricsView } from "@/chat-input-toolbar/turnMetrics.js";
 import { V4ComposerCuaEntry } from "@/v4/composer/V4ComposerCuaEntry.js";
+import { PromptEnhanceActions } from "@/v4/composer/PromptEnhanceActions.js";
 import {
   V4ComposerModeSwitch,
   V4ComposerModelControls,
@@ -616,6 +617,32 @@ function ConversationComposerImpl({
       onTextChange?.(next);
     },
     [onTextChange, workspaceIdentity, workspacePath],
+  );
+  // 提示词增强的草稿读回与回填。回填顺序与发送失败回滚 restoreSubmittedDraft 完全一致
+  // （草稿 owner → 编辑器句柄 → 本地文本），不新增第二条写入路径。
+  const readPromptEnhanceDraft = useCallback(
+    () => inputApiRef.current?.getMarkdown() ?? textRef.current,
+    [],
+  );
+  // 发起闸门只关心「回填会不会丢内容」：编辑器里只有行内引用节点会被 replaceEditorText 清掉，
+  // 附件与引用面板不在草稿内容里（见 docs/prompt-enhance.md「行内引用闸」）。
+  const readPromptEnhanceHasInlineReferences = useCallback(
+    () => inputApiRef.current?.hasInlineReferences() ?? false,
+    [],
+  );
+  const writePromptEnhanceDraft = useCallback(
+    (next: string) => {
+      updateComposerContent({ text: next });
+      inputApiRef.current?.setText(next);
+      updateText(next);
+    },
+    [updateComposerContent, updateText],
+  );
+  // 会话背景在点击时经 ref 读取：流式 snapshot 每次更新都会换引用，
+  // 直接进 leadingActions 的 memo 依赖会让整簇按钮跟着每个 chunk 重建。
+  const readPromptEnhanceContextRows = useCallback(
+    () => snapshotRef.current?.rows.window ?? [],
+    [],
   );
 
   // ── 附件全链路（选择/粘贴/拖拽/画板/预传/门禁）──
@@ -2162,6 +2189,25 @@ function ConversationComposerImpl({
           onConfigPickerOpenChange={handleConfigPickerOpenChange}
           onSwitchMode={onSwitchMode}
         />
+        {/* 提示词增强与模式切换同簇：都属于「这条草稿怎么被处理」的入口。
+            草稿读写、结构化内容判定、模型 View 都由 composer 注入，入口自身不持状态。 */}
+        <PromptEnhanceActions
+          workspacePath={workspacePath}
+          workspaceIdentity={workspaceIdentity}
+          remoteSessionId={remoteSessionId}
+          disabled={disabled}
+          pending={pending}
+          routingMode={mode}
+          // 请求跨草稿 scope 返回时不得回填：scopeKey 变化即丢弃结果。
+          scopeKey={configPickerScopeKey}
+          // 发送成功会清空草稿，还原点跟着失效（否则会留下点了必然被拒的「还原」）。
+          hasDraftText={hasText}
+          modelSelectionView={modelSelectionView}
+          readContextRows={readPromptEnhanceContextRows}
+          readDraftText={readPromptEnhanceDraft}
+          readHasInlineReferences={readPromptEnhanceHasInlineReferences}
+          writeDraftText={writePromptEnhanceDraft}
+        />
         {/* 附件画廊重构曾整段覆盖 leadingActions，误删 CUA 常驻入口。
             入口自身继续负责平台、远程与设置可见性，不在 composer 重复判定。 */}
         <V4ComposerCuaEntry
@@ -2181,18 +2227,27 @@ function ConversationComposerImpl({
     [
       activeConfigPicker,
       canStop,
+      configPickerScopeKey,
       disabled,
       draftConfig,
       handleConfigPickerOpenChange,
       backgroundWorkOpenTarget,
+      hasText,
+      mode,
+      modelSelectionView,
       onOpenRunningBackgroundWorks,
       onSwitchMode,
+      pending,
       provider,
+      readPromptEnhanceContextRows,
+      readPromptEnhanceDraft,
+      readPromptEnhanceHasInlineReferences,
       remoteSessionId,
       runningSubagentCount,
       snapshot?.backgroundWorks,
       workspaceIdentity,
       workspacePath,
+      writePromptEnhanceDraft,
     ],
   );
   const isBlockedByInteraction = blockingRequestId !== null;

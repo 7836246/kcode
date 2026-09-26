@@ -111,6 +111,9 @@ export const SessionEventType = {
   UserMessage: "user_message",
   AssistantMessage: "assistant_message",
   AssistantFeedbackUpdated: "assistant_feedback_updated",
+  // 附件在 resolve 之后才有截断事实（TurnStarted 早于 resolve），展示层据此补 userInput 行的附件标记。
+  // 仅用于展示：不进模型上下文、不参与压缩与冷恢复合成（冷恢复由消息 parts 派生同一份事实）。
+  TurnAttachmentsResolved: "turn_attachments_resolved",
   SystemMessage: "system_message",
   ModelRequest: "model_request",
   ModelSelected: "model_selected",
@@ -229,6 +232,18 @@ export interface TurnAttachmentMeta {
   bytes: number;
   /** 内容引用（本地路径 / artifact URI）；data URL 等无稳定引用时缺省。 */
   ref?: string;
+  /** 该附件在上下文里是否被截断；缺省表示未知（TurnStarted 阶段还不知道）。 */
+  truncated?: boolean;
+  /** 附件原始总行数；仅在被截断且能读到总行数时给出。 */
+  totalLines?: number;
+}
+
+/**
+ * 附件 resolve 之后的展示事实（仅展示用途）。
+ * 载荷与 TurnStartedPayload.attachments 同形状，便于投影直接把截断字段补到同一行。
+ */
+export interface TurnAttachmentsResolvedPayload {
+  attachments: TurnAttachmentMeta[];
 }
 
 /**
@@ -547,6 +562,12 @@ export interface TurnSteerDrainedPayload {
     delivery?: TurnSteerDeliveryMode;
     intent?: TurnInputIntentMetadata;
     toolDisallowlist?: readonly string[];
+    /**
+     * drain 时 resolve 出的附件展示元信息（含截断事实）。guide 内联进当前轮、
+     * 没有自己的 TurnAttachmentsResolved 补发，截断标记只能由本事件自带；
+     * 普通 queue 提升后走主路径补发，该字段缺省。additive，缺省表示未知。
+     */
+    attachments?: TurnAttachmentMeta[];
   }>;
 }
 
@@ -1195,6 +1216,7 @@ export type SessionEventPayload =
   | TurnErrorPayload
   | UserMessagePayload
   | AssistantMessagePayload
+  | TurnAttachmentsResolvedPayload
   | SystemMessagePayload
   | ModelRequestPayload
   | ModelSelectedPayload

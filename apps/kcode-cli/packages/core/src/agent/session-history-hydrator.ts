@@ -367,7 +367,8 @@ function contentFromUserBlocks(
   return blocks.map((block) => ({ ...block })) as ModelMessageContentBlock[];
 }
 
-function promptAttachmentReminderInputForFilePart(
+/** hydrate 输入构造。与 live 的 promptAttachmentInputForResolvedAttachment 必须同口径，见同名单测。 */
+export function promptAttachmentReminderInputForFilePart(
   part: FilePart,
   block: Extract<ModelMessageContentBlock, { type: "text" }>,
 ): (PromptAttachmentReminderInput & { content: string; kind: "file" | "inline_text" }) | undefined {
