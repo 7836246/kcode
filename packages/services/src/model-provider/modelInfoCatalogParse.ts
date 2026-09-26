@@ -69,17 +69,12 @@ function matchScore(candidates: readonly string[], remote: string): number {
     : normalized;
   let best = 0;
   for (const candidate of candidates) {
+    // 只认全名或去掉 provider 前缀后的裸 ID。前缀相似会把 gpt-4-turbo 配到
+    // gpt-4-turbo-preview，把错的上下文窗口写进新导入模型。
     if (candidate === normalized) best = Math.max(best, 300);
     else if (candidate === bare) best = Math.max(best, 250);
     else if (normalized.endsWith(`/${candidate}`)) best = Math.max(best, 220);
     else if (candidate.endsWith(`/${bare}`)) best = Math.max(best, 200);
-    else if (
-      candidate.length >= 8 &&
-      bare.length >= 8 &&
-      (bare.startsWith(candidate) || candidate.startsWith(bare))
-    ) {
-      best = Math.max(best, 120);
-    }
   }
   return best;
 }

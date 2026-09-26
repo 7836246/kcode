@@ -56,9 +56,14 @@ jobs:
             apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-metrics-projection.test.ts \
             packages/ui/test/reasoningLevelCatalog.test.ts \
             packages/ui/test/promptEnhance.test.ts \
+            packages/ui/test/askUserQuestionDisplay.test.ts \
+            packages/services/test/modelInfoCatalog.test.ts \
+            packages/services/test/modelInfoCatalogFetch.test.ts \
             apps/kcode-cli/packages/core/src/runtime/methods/workspace-generate-text-accumulate.test.ts \
             apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment.test.ts \
             apps/kcode-cli/packages/core/src/system-reminder/prompt-attachment-parity.test.ts \
             apps/kcode-cli/packages/core/src/runtime/helpers/attachments.test.ts \
-            apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-attachments-resolved-projection.test.ts
+            apps/kcode-cli/packages/core/src/tool/executor/ask-user-question-display.test.ts \
+            apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-attachments-resolved-projection.test.ts \
+            apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/ask-user-question-projection.test.ts
           node --test packages/desktop/scripts/release-signing-plan.test.mjs

@@ -27,6 +27,7 @@ import {
   cachedProviderModelInfo,
   lookupPublicModelInfo,
   rememberProviderModelInfo,
+  warmupPublicModelCatalogs,
 } from "./modelInfoCatalogFetch.js";
 import { createServiceDescriptor } from "../descriptors.js";
 import type { ModelConnectivityResult } from "@kcode/shared";
@@ -219,6 +220,8 @@ export function createProviderSettingsService(
         headers: api.headers,
       });
       rememberProviderModelInfo(providerId, listed.info);
+      // 预热公开目录，导入与之后的智能配置解析走缓存；失败由 warmup 自己吞掉。
+      void warmupPublicModelCatalogs();
       return { modelIds: listed.modelIds };
     },
     importRemoteProviderModels: async (providerId, modelIds) => {

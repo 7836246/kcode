@@ -35,6 +35,17 @@ export function cachedProviderModelInfo(
   return providerInfoCache.get(cacheKey(providerId, modelId));
 }
 
+/** 预热公开目录缓存。获取远端模型列表时后台调用，不挡住勾选弹窗。 */
+export async function warmupPublicModelCatalogs(
+  fetchImpl: typeof fetch = globalThis.fetch,
+): Promise<void> {
+  await Promise.all([
+    loadCatalog("models-dev", MODELS_DEV_URL, fetchImpl),
+    loadCatalog("openrouter", OPENROUTER_URL, fetchImpl),
+    loadCatalog("litellm", LITELLM_URL, fetchImpl),
+  ]);
+}
+
 /** 公开目录失败时返回空，不挡住供应商自己已经给出的模型信息。 */
 export async function lookupPublicModelInfo(
   modelId: string,
@@ -82,19 +93,27 @@ async function loadCatalog(
   if (catalogMisses.has(kind)) return undefined;
   const pending = catalogInflight.get(kind);
   if (pending) return pending;
-  const request = fetchCatalog(url, fetchImpl);
+  const request = fetchCatalog(url, fetchImpl).then((result) => {
+    if (result.kind === "hit") {
+      catalogCache.set(kind, result.payload);
+      return result.payload;
+    }
+    // HTTP 明确失败才记 miss；超时或网络错误下次仍可重试，避免一次 abort 把整个进程的目录关掉。
+    if (result.sticky) catalogMisses.add(kind);
+    return undefined;
+  });
   catalogInflight.set(kind, request);
   try {
-    const payload = await request;
-    if (payload === undefined) catalogMisses.add(kind);
-    else catalogCache.set(kind, payload);
-    return payload;
+    return await request;
   } finally {
     catalogInflight.delete(kind);
   }
 }
 
-async function fetchCatalog(url: string, fetchImpl: typeof fetch): Promise<unknown> {
+async function fetchCatalog(
+  url: string,
+  fetchImpl: typeof fetch,
+): Promise<{ kind: "hit"; payload: unknown } | { kind: "miss"; sticky: boolean }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CATALOG_TIMEOUT_MS);
   try {
@@ -103,10 +122,10 @@ async function fetchCatalog(url: string, fetchImpl: typeof fetch): Promise<unkno
       headers: { Accept: "application/json" },
       signal: controller.signal,
     });
-    if (!response.ok) return undefined;
-    return await response.json();
+    if (!response.ok) return { kind: "miss", sticky: true };
+    return { kind: "hit", payload: await response.json() };
   } catch {
-    return undefined;
+    return { kind: "miss", sticky: false };
   } finally {
     clearTimeout(timer);
   }
@@ -114,4 +133,12 @@ async function fetchCatalog(url: string, fetchImpl: typeof fetch): Promise<unkno
 
 function cacheKey(providerId: string, modelId: string): string {
   return `${providerId}\u0000${modelId}`;
+}
+
+/** 单测重置进程内目录缓存；生产路径不得调用。 */
+export function resetPublicModelCatalogStateForTests(): void {
+  catalogCache.clear();
+  catalogMisses.clear();
+  catalogInflight.clear();
+  providerInfoCache.clear();
 }

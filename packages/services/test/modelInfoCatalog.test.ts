@@ -75,3 +75,35 @@ test("models.dev 按模型 ID 匹配上下文，并跳过已有具体规则的�
   assert.equal(json?.optionSpecs?.maxOutputTokens, undefined);
   assert.ok(patch instanceof ModelConfig);
 });
+
+test("公开目录不按前缀把短 ID 匹配到更长的变体", () => {
+  const info = findModelsDevInfo(
+    {
+      openai: {
+        models: {
+          "gpt-4-turbo-preview": {
+            id: "gpt-4-turbo-preview",
+            limit: { context: 128000, output: 4096 },
+          },
+        },
+      },
+    },
+    "gpt-4-turbo",
+  );
+  assert.equal(info, undefined);
+});
+
+test("公开目录在全名或裸 ID 精确对应时仍然命中", () => {
+  const catalog = {
+    openai: {
+      models: {
+        "gpt-4-turbo": {
+          id: "gpt-4-turbo",
+          limit: { context: 128000, output: 4096 },
+        },
+      },
+    },
+  };
+  assert.equal(findModelsDevInfo(catalog, "gpt-4-turbo")?.contextWindow, 128000);
+  assert.equal(findModelsDevInfo(catalog, "openai/gpt-4-turbo")?.contextWindow, 128000);
+});
