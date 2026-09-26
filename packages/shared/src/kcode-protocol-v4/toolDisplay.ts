@@ -16,6 +16,25 @@ import {
   toolCallResumeWorkflowRunDisplaySchema,
 } from "./workflow-observation-display.js";
 
+// 构造侧按 4 KiB 字节截断单条答案（core 的 createAskUserQuestionDisplay）；这里是其宽松超集，
+// 两侧任何一侧更严都会让 display 校验失败、答案整块消失。
+const ASK_USER_QUESTION_DISPLAY_ANSWER_MAX_CHARS = 4_096;
+
+/**
+ * AskUserQuestion 的结构化结果展示载荷：v4 卡片回显用户答案的唯一通道（desktop v4 没有别的
+ * 结构化 answers 通道，模型可见文本是 formatModelContent 拍的 `"Q"="A"`，前端不解析它）。
+ * 与 CLI contracts 的 askUserQuestionToolResultDisplayPayloadSchema 是同一份契约的两侧镜像——
+ * 都是 strict union 成员，少加一处会让 toolOutput.display 被静默剥掉（本 bug 的原始形态）。
+ * answers 以问题原文为 key；空对象表示用户未作答而 runtime 自动继续，与「没有 display」不同。
+ */
+export const askUserQuestionDisplaySchema = z
+  .object({
+    kind: z.literal("ask_user_question"),
+    answers: z.record(z.string(), z.string().max(ASK_USER_QUESTION_DISPLAY_ANSWER_MAX_CHARS)),
+  })
+  .strict();
+export type AskUserQuestionDisplay = z.infer<typeof askUserQuestionDisplaySchema>;
+
 // toolCall 终态 output 的结构化展示模型（port 自 feat；CUA 工具靠 kind:"cua" 分支把
 // errorCode/suggestedAction/media(screenshot) 等结构化内容带到 renderer）。consume-main 之前
 // 缺这个 union + toolOutputSchema.display 字段——协议层 zod 校验会把 agent 下发的 display 整个
@@ -147,6 +166,7 @@ const toolResultDisplaySchema = z.discriminatedUnion("kind", [
   toolCallSavedWorkflowListDisplaySchema,
   toolCallListModelsDisplaySchema,
   toolCallResumeWorkflowRunDisplaySchema,
+  askUserQuestionDisplaySchema,
 ]);
 export type ToolResultDisplay = z.infer<typeof toolResultDisplaySchema>;
 
