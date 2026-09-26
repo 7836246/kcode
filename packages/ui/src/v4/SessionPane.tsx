@@ -87,6 +87,7 @@ import { formatModelChangeLabel } from "@/v4/composer/modelTriggerDisplay.js";
 import { resolveAppFollowupMode } from "@/v4/composer/followupModeSettings.js";
 import {
   createComposerSubmissionConfig,
+  shouldAlignSessionModelBeforeSend,
   type ComposerSubmissionConfig,
 } from "@/v4/composer/composerSubmissionConfig.js";
 import { useDraftSessionPrewarm } from "@/v4/composer/useDraftSessionPrewarm.js";
@@ -2603,8 +2604,8 @@ export function SessionPane({
       const sessionTargetBeforeSend = sessionId ?? prewarmBindingRef.current?.sessionId ?? null;
       if (sessionTargetBeforeSend) {
         // 屏障只保证已经入队的命令完成；若点击配置时预热 session/snapshot 尚未
-        // 就绪，命令可能当时没有目标。发送前把 runtime Selection 收敛到本次
-        // Submission，避免同窗口多供应商切模后仍打旧模型。
+        // 就绪，命令可能当时没有目标。空闲会话发送前 best-effort 对齐 runtime；
+        // 进行中的回合跳过 switchModelConfig，避免改掉已冻结 admitted Selection。
         await ensureDraftPrewarmConfigBeforeSendRef.current(sessionTargetBeforeSend, submission);
       }
       // slash 命令优先：已有 session 直接消费；draft 首发 /goal 先建空会话再发命令。
@@ -3315,10 +3316,8 @@ export function SessionPane({
   const ensureSessionModelBeforeSend = useCallback(
     async (targetSessionId: string, submission: ComposerSubmissionConfig) => {
       // followupMode 仍是 Session 行为设置；模式随 sendText 原子提交。
-      // 模型虽也在 Submission 里，但预热/已有会话的 runtime Selection 可能仍停在
-      // 创建或上次回合的旧值。手机端复用 draft session 前会显式 setModel；桌面若只靠
-      // sendText 携带 Selection，在多供应商同窗切模时会出现 UI 已换、请求仍打旧模型。
-      // 发送前用 switchModelConfig 把 runtime/投影收敛到本次 Submission，与 admission 对齐。
+      // 空闲时发送前对齐 runtime，避免下一回合的 sidecar（标题/compact）仍读旧选型。
+      // running/prewarming 时本回合已冻结 admitted Selection，不能改共享 Session。
       const desiredConfig = buildDraftCreateConfigPayload(
         {
           ...draftConfigRef.current,
@@ -3332,20 +3331,26 @@ export function SessionPane({
       const projectedConfig =
         snapshotRef.current?.sessionId === targetSessionId ? snapshotRef.current.config : null;
 
-      const requireAcceptedConfigAck = (type: CommandType, ack: CommandAck | null) => {
+      const logConfigAck = (type: CommandType, ack: CommandAck | null) => {
         if (
           ack &&
           (ack.status === "accepted" || ack.status === "noop" || ack.status === "duplicate")
         ) {
           return;
         }
-        throw new Error(
-          `${type} 未在首发前收敛: ${ack?.status ?? "missing-ack"} ${ack?.reasonCode ?? ""}`,
+        // sendText 已携带冻结 Submission；CAS 失败不能阻断发送，否则会出现
+        // 「Session 已切、正文被还回输入框」或把能发出的消息挡掉。
+        logger.warn(
+          `[v4-pane] ${type} 发送前未收敛，继续 sendText: ${ack?.status ?? "missing-ack"} ${ack?.reasonCode ?? ""}`,
         );
       };
 
       const desiredSelection = desiredConfig.modelSelection;
+      const snapshot =
+        snapshotRef.current?.sessionId === targetSessionId ? snapshotRef.current : null;
+      const sessionBusy = !shouldAlignSessionModelBeforeSend(snapshot?.control.phase);
       if (
+        !sessionBusy &&
         desiredSelection &&
         (desiredSelection.providerId !== projectedConfig?.modelSelection?.providerId ||
           desiredSelection.modelId !== projectedConfig?.modelSelection?.modelId ||
@@ -3361,7 +3366,7 @@ export function SessionPane({
           },
           { targetSessionId },
         );
-        requireAcceptedConfigAck("switchModelConfig", ack);
+        logConfigAck("switchModelConfig", ack);
       }
 
       if (
@@ -3373,7 +3378,7 @@ export function SessionPane({
           { mode: desiredConfig.followupMode },
           { targetSessionId },
         );
-        requireAcceptedConfigAck("setFollowupMode", ack);
+        logConfigAck("setFollowupMode", ack);
       }
     },
     [appFollowupMode, dispatchConfigCas, draftConfigRef],

@@ -178,11 +178,10 @@ export function useDraftConfigControl(params: {
   stateRef.current = currentState;
   // 原因：按 revision 清草稿会把短暂不可用永久写成空选择。这里只派生当前结果，
   // 正文/模式自动保存继续保存 draft 中的原意图；读取未就绪时保留展示，提交由 View 门禁阻断。
-  // 切模后 getView(新意图) 仍在飞时，不能让上一份 ready View 的旧 effectiveSelection
-  // 写回 draftConfig/submission，否则同窗口多供应商切换会继续打旧模型。
+  // hook 在 inputKey 变化时不会交出上一份 ready View，因此这里的 View 已是当前草稿的解析结果。
   const effectiveSelection = resolveComposerModelSelection(
     draft.modelSelection,
-    modelSelectionView?.effectiveSelection,
+    modelSelectionView,
   );
   const draftConfig = useMemo<Partial<SessionConfigState>>(
     () => ({

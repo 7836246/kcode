@@ -11,24 +11,29 @@ export interface ComposerSubmissionConfig {
 
 /**
  * Composer 展示/提交用的选型。
- * View 的 effectiveSelection 负责账号重映射等解析；但异步 getView 尚未跟上用户
- * 刚点的草稿意图时，不能让旧 View 结果盖住本次切模——否则工具条已显示新模型，
- * 发送却仍带上旧 Selection，runtime 继续打旧供应商。
+ *
+ * 切模后 inputKey 变化时 hook 不会交出上一份 ready View，因此这里拿到的 View
+ * 已经是当前草稿的 getView({ selection })。账号套餐重映射可以改 providerId、
+ * 保留 modelId——不能再要求两边身份字面相等，否则会把映射结果当成过期 View 丢掉。
  */
 export function resolveComposerModelSelection(
   draftSelection: ModelSelection | null | undefined,
-  viewSelection: ModelSelection | null | undefined,
+  view:
+    | Pick<ModelSelectionView, "effectiveSelection" | "selectionIssue">
+    | null
+    | undefined,
 ): ModelSelection | undefined {
-  if (!draftSelection) return viewSelection ?? undefined;
-  if (!viewSelection) return draftSelection;
-  if (
-    viewSelection.providerId === draftSelection.providerId &&
-    viewSelection.modelId === draftSelection.modelId
-  ) {
-    // 同身份时优先 View（账号 plan 重映射后的 providerId、补全后的档位）。
-    return viewSelection;
-  }
-  return draftSelection;
+  if (!view) return draftSelection ?? undefined;
+  if (view.effectiveSelection) return view.effectiveSelection;
+  // View 已按当前草稿解析但给不出执行选型（账号连接不可用 / provider 找不到等）。
+  // 回落未映射草稿会把不可用的套餐 ID 送进 sendText。
+  if (view.selectionIssue) return undefined;
+  return draftSelection ?? undefined;
+}
+
+/** 进行中的回合已冻结 admitted Selection；此时改共享 Session 选型会污染 sidecar。 */
+export function shouldAlignSessionModelBeforeSend(phase: string | undefined): boolean {
+  return phase !== "running" && phase !== "prewarming";
 }
 
 /** 在点击提交的瞬间，把 Composer 意图冻结成本次 Submission 的执行配置。 */

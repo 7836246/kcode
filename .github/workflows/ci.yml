@@ -55,6 +55,7 @@ jobs:
             packages/ui/test/turnMetrics.test.ts \
             apps/kcode-cli/packages/bootstrap/src/kcode-protocol-v4/turn-metrics-projection.test.ts \
             packages/ui/test/reasoningLevelCatalog.test.ts \
+            packages/ui/test/composerSubmissionConfig.test.ts \
             packages/ui/test/promptEnhance.test.ts \
             packages/ui/test/askUserQuestionDisplay.test.ts \
             packages/services/test/modelInfoCatalog.test.ts \
