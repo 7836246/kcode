@@ -185,6 +185,33 @@ export const AskUserQuestionOutputSchema = z
 
 export type AskUserQuestionOutput = z.infer<typeof AskUserQuestionOutputSchema>;
 
+/**
+ * AskUserQuestion 的结构化结果展示载荷：v4 工具卡回显用户答案的唯一通道。
+ *
+ * Bug 修复：模型可见文本由 formatAskUserQuestionModelContent 决定，形态是
+ * `User has answered your questions: "Q"="A"`；展示侧被设计为不解析该文本，因此答案为
+ * `Record<问题原文, string>` 的结构化副本必须随工具结果一并下发。载荷随
+ * completedToolPartMetadata 落进 tool part 的 metadata.display，实时链路与冷恢复同源。
+ *
+ * 单值在构造侧按 4 KiB 字节截断（见 core 的 createAskUserQuestionDisplay），这里的字符上限
+ * 是 4 KiB 字节的宽松超集。本 schema 与 packages/shared 的镜像同为 strict union 成员：
+ * 两侧不同步 = 整块 display 被静默剥掉，卡片退回「未提供回答」（本 bug 的原始形态）。
+ */
+export const ASK_USER_QUESTION_DISPLAY_ANSWER_MAX_CHARS = 4_096;
+
+export const askUserQuestionToolResultDisplayPayloadSchema = z
+  .object({
+    kind: z.literal("ask_user_question"),
+    // key = 问题原文，与 output.answers / formatModelContent 同一映射；
+    // 空对象表示用户未作答而 runtime 自动继续，与「没有 display」语义不同。
+    answers: z.record(z.string().max(ASK_USER_QUESTION_DISPLAY_ANSWER_MAX_CHARS)),
+  })
+  .strict();
+
+export type AskUserQuestionToolResultDisplayPayload = z.infer<
+  typeof askUserQuestionToolResultDisplayPayloadSchema
+>;
+
 export const AskUserQuestionInputJsonSchema = withRequiredDefaultedMultiSelect(
   toToolJsonSchema(AskUserQuestionInputSchema),
 );

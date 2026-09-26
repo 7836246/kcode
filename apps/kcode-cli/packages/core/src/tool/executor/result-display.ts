@@ -1,4 +1,5 @@
 import {
+  ASK_USER_QUESTION_TOOL_NAME,
   RESPOND_TO_COORDINATOR_TOOL_NAME,
   RespondToCoordinatorOutputSchema,
   MCP_TOOL_DISPLAY_MAX_DESCRIPTION_CHARS,
@@ -22,6 +23,7 @@ import {
 import { createBashResultDisplay } from "./bash-result-display.js";
 import { countPatchLines } from "../diff.js";
 import { boundDisplayText } from "./display-text.js";
+import { createAskUserQuestionDisplay } from "./ask-user-question-display.js";
 import { createCreateWorkflowDisplay } from "./create-workflow-display.js";
 import { createWorkflowObservationDisplay } from "./workflow-observation-display.js";
 
@@ -113,6 +115,11 @@ export function createToolResultDisplay(
 
   const nodeReplDisplay = createNodeReplDisplay(toolName, output);
   if (nodeReplDisplay) return nodeReplDisplay;
+
+  if (toolName === ASK_USER_QUESTION_TOOL_NAME) {
+    // 用户答案是结构化结果，不是可解析的模型文本；卡片回显只能靠这条 display 通道。
+    return createAskUserQuestionDisplay(output);
+  }
 
   const createWorkflow = createCreateWorkflowDisplay(toolName, output);
   if (createWorkflow) return createWorkflow;

@@ -6,6 +6,7 @@ import {
   CreateWorkflowCausalityGraphSchema,
   createWorkflowToolResultDisplayDiagnosticSchema,
 } from "./create-workflow.js";
+import { askUserQuestionToolResultDisplayPayloadSchema } from "./ask-user-question.js";
 import {
   evalWorkflowSnippetToolResultDisplayPayloadSchema,
   getWorkflowRunToolResultDisplayPayloadSchema,
@@ -248,6 +249,7 @@ export const toolResultDisplayPayloadSchema = z.discriminatedUnion("kind", [
   savedWorkflowListToolResultDisplayPayloadSchema,
   listModelsToolResultDisplayPayloadSchema,
   resumeWorkflowRunToolResultDisplayPayloadSchema,
+  askUserQuestionToolResultDisplayPayloadSchema,
 ]);
 
 export type FileDiffToolResultDisplayPayload = z.infer<
