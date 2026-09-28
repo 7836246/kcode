@@ -3961,6 +3961,8 @@ const zhCN: Record<string, string> = {
   "settings.modelFallback.saveError": "备用模型没有保存",
   "settings.modelFallback.workspaceMissing": "先打开一个工作区，再设置备用模型。",
   "settings.promptEnhance.title": "提示词增强",
+  "settings.promptEnhance.enabled.label": "启用提示词增强",
+  "settings.promptEnhance.enabled.description": "关闭后输入框不再显示增强入口",
   "settings.promptEnhance.mode.label": "改写模式",
   "settings.promptEnhance.mode.basic": "基础",
   "settings.promptEnhance.mode.coding": "编程任务",

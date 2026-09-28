@@ -4231,6 +4231,9 @@ const enUS: Record<string, string> = {
   "settings.modelFallback.saveError": "Could not save backup models",
   "settings.modelFallback.workspaceMissing": "Open a workspace before choosing backup models.",
   "settings.promptEnhance.title": "Prompt enhancement",
+  "settings.promptEnhance.enabled.label": "Enable prompt enhancement",
+  "settings.promptEnhance.enabled.description":
+    "When off, the composer no longer shows the enhance entry",
   "settings.promptEnhance.mode.label": "Rewrite mode",
   "settings.promptEnhance.mode.basic": "Basic",
   "settings.promptEnhance.mode.coding": "Coding tasks",

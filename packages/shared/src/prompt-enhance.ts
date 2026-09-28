@@ -31,6 +31,8 @@ const promptEnhanceCustomSelectionSchema = z.object({
 });
 
 const promptEnhanceSettingsObjectSchema = z.object({
+  /** 关掉后 composer 不渲染增强入口；其它字段保留，重开沿用。 */
+  enabled: z.boolean().default(true),
   mode: promptEnhanceModeSchema.default("basic"),
   contextEnabled: z.boolean().default(true),
   contextRounds: z
@@ -55,6 +57,7 @@ export type PromptEnhanceSettings = z.infer<typeof promptEnhanceSettingsObjectSc
 
 /** 显式写出默认值：zod v4 的 `.default()` 不再解析缺省值，传对象字面量会丢掉内层默认。 */
 export const PROMPT_ENHANCE_SETTINGS_DEFAULTS: PromptEnhanceSettings = {
+  enabled: true,
   mode: "basic",
   contextEnabled: true,
   contextRounds: PROMPT_ENHANCE_DEFAULT_CONTEXT_ROUNDS,

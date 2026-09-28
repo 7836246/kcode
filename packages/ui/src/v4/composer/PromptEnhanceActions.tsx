@@ -14,9 +14,11 @@ import { Spinner } from "@/components/ui/spinner.js";
 import { useNowTicker } from "@/components/workflow-graph/use-now-ticker.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { useOptionalServices } from "@/hooks/useServices.js";
+import { useSettings } from "@/hooks/useSettingService.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { setPendingSettingsSectionIntent } from "@/lib/settingsNavigation.js";
 import { useOptionalTabStore } from "@/store/TabStoreProvider.js";
+import { resolvePromptEnhanceSettings } from "./promptEnhance/settings.js";
 import { usePromptEnhance, type UsePromptEnhanceParams } from "./usePromptEnhance.js";
 
 export type PromptEnhanceActionsProps = UsePromptEnhanceParams;
@@ -24,6 +26,12 @@ export type PromptEnhanceActionsProps = UsePromptEnhanceParams;
 export function PromptEnhanceActions(props: PromptEnhanceActionsProps) {
   const services = useOptionalServices();
   if (!services) return null;
+  return <PromptEnhanceActionsGated {...props} />;
+}
+
+function PromptEnhanceActionsGated(props: PromptEnhanceActionsProps) {
+  const { settings } = useSettings();
+  if (!resolvePromptEnhanceSettings(settings?.promptEnhance).enabled) return null;
   return <PromptEnhanceActionsMounted {...props} />;
 }
 

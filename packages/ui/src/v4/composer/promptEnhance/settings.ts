@@ -12,6 +12,7 @@ import type { PromptEnhanceSettings } from "@kcode/shared";
 
 /** 与 shared 常量逐字一致的本地副本；两份不同步会被测试当场抓红。 */
 const PROMPT_ENHANCE_SETTINGS_LOCAL_DEFAULTS: PromptEnhanceSettings = {
+  enabled: true,
   mode: "basic",
   contextEnabled: true,
   contextRounds: 3,
@@ -28,6 +29,7 @@ export function resolvePromptEnhanceSettings(
   if (!stored) return { ...defaults };
   const customSelection = stored.customSelection;
   return {
+    enabled: stored.enabled ?? defaults.enabled,
     mode: stored.mode ?? defaults.mode,
     contextEnabled: stored.contextEnabled ?? defaults.contextEnabled,
     contextRounds: stored.contextRounds ?? defaults.contextRounds,

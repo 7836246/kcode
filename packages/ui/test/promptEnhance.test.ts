@@ -259,6 +259,7 @@ test("回填只在草稿仍等于发起时快照时放行", () => {
 
 test("缺失或半截的持久化配置补齐成完整设置", () => {
   assert.deepEqual(resolvePromptEnhanceSettings(undefined), {
+    enabled: true,
     mode: "basic",
     contextEnabled: true,
     contextRounds: 3,
@@ -267,7 +268,17 @@ test("缺失或半截的持久化配置补齐成完整设置", () => {
     reasoningLevel: "default",
   });
   assert.deepEqual(resolvePromptEnhanceSettings({ mode: "creative" }), {
+    enabled: true,
     mode: "creative",
+    contextEnabled: true,
+    contextRounds: 3,
+    allowInlineReferenceRewrite: false,
+    channel: "auto",
+    reasoningLevel: "default",
+  });
+  assert.deepEqual(resolvePromptEnhanceSettings({ enabled: false }), {
+    enabled: false,
+    mode: "basic",
     contextEnabled: true,
     contextRounds: 3,
     allowInlineReferenceRewrite: false,
@@ -300,6 +311,10 @@ test("写回 patch 是完整对象，浅合并不会把其它字段重置回默�
   assert.deepEqual(mergePromptEnhanceSettingsPatch(current, { channel: "auto" }), {
     ...current,
     channel: "auto",
+  });
+  assert.deepEqual(mergePromptEnhanceSettingsPatch(current, { enabled: false }), {
+    ...current,
+    enabled: false,
   });
 });
 

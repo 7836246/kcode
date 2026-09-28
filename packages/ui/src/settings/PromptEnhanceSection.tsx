@@ -5,7 +5,7 @@
  * 写回一律提交完整 promptEnhance 对象——`ISettingService.update` 是浅合并，
  * 只交单个字段会被 schema 默认值重置掉其它字段。
  *
- * 只有两处保留说明文字：放开结构化覆盖的后果、推理强度仅独立通道生效。
+ * 说明文字只留三处：总开关关掉后入口消失、放开行内引用的后果、推理强度仅独立通道生效。
  */
 import { useMemo, useState } from "react";
 import { RotateCcw } from "lucide-react";
@@ -13,6 +13,7 @@ import {
   PROMPT_ENHANCE_CONTEXT_ROUNDS_MAX,
   PROMPT_ENHANCE_CONTEXT_ROUNDS_MIN,
   PROMPT_ENHANCE_SETTINGS_DEFAULTS,
+  TID_SETTINGS_PROMPT_ENHANCE_ENABLED_SWITCH,
   promptEnhanceChannels,
   promptEnhanceModes,
   promptEnhanceReasoningLevels,
@@ -116,6 +117,21 @@ export function PromptEnhanceSection({
   return (
     <section className="flex flex-col gap-4">
       <SettingsGroupCard>
+        <SettingsRow
+          label={intl.formatMessage({ id: "settings.promptEnhance.enabled.label" })}
+          description={intl.formatMessage({
+            id: "settings.promptEnhance.enabled.description",
+          })}
+          control={
+            <Switch
+              checked={current.enabled}
+              disabled={disabled}
+              data-testid={TID_SETTINGS_PROMPT_ENHANCE_ENABLED_SWITCH}
+              aria-label={intl.formatMessage({ id: "settings.promptEnhance.enabled.label" })}
+              onCheckedChange={(checked) => void write({ enabled: checked })}
+            />
+          }
+        />
         <SettingsRow
           controlLayout="wide"
           label={intl.formatMessage({ id: "settings.promptEnhance.mode.label" })}
