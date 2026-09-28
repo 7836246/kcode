@@ -10,8 +10,8 @@ import { createWecomBotProvider } from "../src/bots/providers/wecomProvider.js";
 import type { BotConfig } from "@kcode/shared";
 
 const ENCODING_AES_KEY = "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc";
-const TOKEN = "QDG6eK";
-const CORP_ID = "wx5823bf96d3bd56c7";
+const TOKEN = "kcode-test-token";
+const CORP_ID = "kcode-test-corpid";
 
 test("企业微信加解密往返并校验 Corp ID", () => {
   const xml = "<xml><Content><![CDATA[hello]]></Content></xml>";
