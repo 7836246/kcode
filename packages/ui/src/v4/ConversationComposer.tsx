@@ -2203,6 +2203,8 @@ function ConversationComposerImpl({
           // 发送成功会清空草稿，还原点跟着失效（否则会留下点了必然被拒的「还原」）。
           hasDraftText={hasText}
           modelSelectionView={modelSelectionView}
+          // 自动通道的基准：当前草稿的生效选型（模型 + 推理档位），与工具栏展示、提交门禁同源。
+          currentModelSelection={draftConfig?.modelSelection ?? null}
           readContextRows={readPromptEnhanceContextRows}
           readDraftText={readPromptEnhanceDraft}
           readHasInlineReferences={readPromptEnhanceHasInlineReferences}

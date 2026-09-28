@@ -1,8 +1,12 @@
 /**
  * 提示词增强的模型选型解析。
  *
- * 自动通道跟随 kcode 当前生效模型（preferredSelection），用户改模型配置后无需重新配置；
+ * 自动通道跟随 composer 当前草稿的生效选型（当前选的模型 + 推理强度），与工具栏展示同源；
  * 独立通道只从设置里已选的 provider/model 取，不接受自由填写，凭据仍走 provider 体系。
+ *
+ * 自动通道**刻意不读** Selection View 的 `preferredSelection`：那是 Registry 的初始推荐，
+ * 配置里没有可用默认模型时会回落到第一个可见 provider 的第一个模型，用户之后改选模型它并不跟着变，
+ * 于是增强会跑去用一个用户没选的模型。当前选型只能由 composer 注入（见 `currentSelection`）。
  *
  * 两个字段必须在**这里**定死，因为 CLI 侧按模型的完整配置校验请求：
  * - `maxOutputTokens`：`workspace/generateText` 的请求预算缺了会被判越界（校验要求它必须有值），
@@ -90,11 +94,12 @@ export function resolvePromptEnhanceReasoningLevel(params: {
 /** 解析本次增强要用的选型与输出预算；返回 null 表示当前没有可构造请求的模型。 */
 export function resolvePromptEnhanceTarget(params: {
   settings: PromptEnhanceSettings;
-  preferredSelection: ModelSelection | null | undefined;
+  /** auto 通道的基准选型：composer 当前草稿的生效选型（模型 + 推理档位），由调用方注入。 */
+  currentSelection: ModelSelection | null | undefined;
   modelSelectionView: PromptEnhanceSelectionView | null | undefined;
 }): PromptEnhanceTarget | null {
   const custom = params.settings.customSelection;
-  const base = params.settings.channel === "auto" ? params.preferredSelection : custom;
+  const base = params.settings.channel === "auto" ? params.currentSelection : custom;
   if (!base) return null;
 
   const facts = resolvePromptEnhanceModelFacts({
@@ -103,10 +108,10 @@ export function resolvePromptEnhanceTarget(params: {
   });
   if (!facts) return null;
 
-  // 自动通道沿用当前生效档位；独立通道用设置里的档位，"default" = 交给模型默认档。
+  // 自动通道沿用当前选型的档位；独立通道用设置里的档位，"default" = 交给模型默认档。
   const requested =
     params.settings.channel === "auto"
-      ? params.preferredSelection?.options?.reasoningLevel
+      ? params.currentSelection?.options?.reasoningLevel
       : params.settings.reasoningLevel === "default"
         ? undefined
         : params.settings.reasoningLevel;

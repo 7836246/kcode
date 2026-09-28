@@ -4261,6 +4261,8 @@ const enUS: Record<string, string> = {
   "settings.promptEnhance.reasoning.medium": "Medium",
   "settings.promptEnhance.reasoning.high": "High",
   "settings.promptEnhance.effective.label": "Effective channel",
+  "settings.promptEnhance.effective.followSelection":
+    "Follows the selected model and reasoning level",
   "settings.promptEnhance.effective.unresolved": "Not ready",
   "settings.promptEnhance.prompt.label": "Prompt body for the current mode",
   "settings.promptEnhance.prompt.show": "View",
