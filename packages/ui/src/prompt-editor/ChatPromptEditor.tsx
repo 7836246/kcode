@@ -421,7 +421,7 @@ export function ChatPromptEditor({
             </div>
           </div>
           {toolbarStatus ? (
-            <div data-composer-toolbar-status className="flex shrink-0 items-center">
+            <div data-composer-toolbar-status className="flex h-7 shrink-0 items-center">
               {toolbarStatus}
             </div>
           ) : null}

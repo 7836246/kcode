@@ -12,6 +12,7 @@ Composer 工具栏中段常驻一枚生成指标状态栏，展示当前 product
 - 状态栏读 `snapshot.composerTurnMetrics`。该字段为空时整枚隐藏，不回退展示上一轮的数字。
 - 生成中 `streaming === true`，绿点有脉冲动画；该轮收口后动画停止、数字保留，直到下一轮或 queue 切段把字段清成 null。`prefers-reduced-motion` 下不播放动画。
 - composer 处于窄容器时不展示（由容器查询决定）。胶囊宽度计入 `useComposerToolbarFit` 的溢出，避免把模型名和发送按钮挤出一行。
+- 胶囊高度与工具条其他入口一致（`h-7`），内部 `items-center`；工具条是 `items-end`，高度对齐后底部与「完全访问权限 / 增强提示词 / 模型」同一条线。
 - 冷恢复的历史轮次没有指标，状态栏为空——只有当轮之后新产生的轮次会带上指标。
 
 ## 所有者

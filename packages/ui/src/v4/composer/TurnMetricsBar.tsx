@@ -30,7 +30,7 @@ export const TurnMetricsBar = memo(function TurnMetricsBarImpl({
     <span
       data-testid={TID_V4_COMPOSER_TURN_METRICS}
       data-turn-metrics-streaming={streaming ? "true" : undefined}
-      className="hidden h-5 shrink-0 items-center gap-1.5 self-center overflow-hidden rounded-full bg-foreground/6 px-2.5 text-ui-xs text-foreground-subtle tabular-nums whitespace-nowrap @sm/composer:inline-flex"
+      className="hidden h-7 shrink-0 items-center gap-1.5 overflow-hidden rounded-full bg-foreground/6 px-2.5 leading-none text-ui-xs text-foreground-subtle tabular-nums whitespace-nowrap @sm/composer:inline-flex"
     >
       <span
         aria-hidden
