@@ -40,7 +40,7 @@ export type FeishuBotProvider = Extract<BotProvider, "feishu" | "lark">;
  */
 export const kcodeAutomationBotDeliveryTargetSchema = z
   .object({
-    provider: z.enum(["feishu", "lark", "weixin"]),
+    provider: z.enum(["feishu", "lark", "weixin", "wecom"]),
     botId: z.string().trim().min(1),
     providerUserId: z.string().trim().min(1),
     chatType: z.enum(["private", "group"]),
@@ -111,6 +111,9 @@ export interface BotConfig {
   webhookUrl?: string;
   webhookAuthHeaderName?: string;
   feishuAppId?: string;
+  wecomCorpId?: string;
+  wecomAgentId?: string;
+  wecomCallbackToken?: string;
   providerUserId?: string;
   displayName?: string;
   allowedWorkspaces: string[];
@@ -464,6 +467,9 @@ export const botConfigSchema = z
     webhookUrl: z.string().url().optional(),
     webhookAuthHeaderName: z.string().min(1).optional(),
     feishuAppId: z.string().min(1).optional(),
+    wecomCorpId: z.string().min(1).optional(),
+    wecomAgentId: z.string().min(1).optional(),
+    wecomCallbackToken: z.string().min(1).optional(),
     providerUserId: z.string().min(1).optional(),
     displayName: z.string().optional(),
     allowedWorkspaces: z.array(z.string().min(1)),

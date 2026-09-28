@@ -372,7 +372,7 @@ export function createHttpServer(
     if (!botProviders.includes(provider)) {
       return c.json({ error: `Unsupported provider: ${provider}` }, 400);
     }
-    if (provider !== "webhook") {
+    if (provider !== "webhook" && provider !== "wecom") {
       return c.json({ error: `Provider ${provider} does not support HTTP callbacks.` }, 400);
     }
     const botsService = services.getOptional(IBotsService);
@@ -393,9 +393,23 @@ export function createHttpServer(
     const result = await botsService.handleProviderCallbackResponse(provider, {
       ...(typeof rawBody === "object" && rawBody !== null ? rawBody : { payload: rawBody }),
       rawBody: rawBodyText,
+      method: c.req.method,
+      msg_signature: c.req.query("msg_signature"),
+      timestamp: c.req.query("timestamp"),
+      nonce: c.req.query("nonce"),
+      echostr: c.req.query("echostr"),
       ...(botId ? { botId } : {}),
       ...(webhookSecret ? { webhookSecret } : {}),
     });
+    const status = result.status ?? (result.ok ? 200 : 400);
+    if (typeof result.responseBody === "string") {
+      return c.body(result.responseBody, status as 200, {
+        "Content-Type": "text/plain; charset=utf-8",
+      });
+    }
+    if (provider === "wecom" && result.ok) {
+      return c.body("success", 200, { "Content-Type": "text/plain; charset=utf-8" });
+    }
     const responseBody = result.responseBody ?? { ok: result.ok, replies: result.replies };
     if (result.status === 400) {
       return c.json(responseBody, 400);
@@ -411,6 +425,7 @@ export function createHttpServer(
     return c.json(responseBody, 200);
   };
 
+  app.get("/api/bots/wecom/:botId", handleBotCallback);
   app.post("/api/bots/:provider", handleBotCallback);
   app.post("/api/bots/:provider/:botId", handleBotCallback);
 

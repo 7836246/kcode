@@ -344,10 +344,14 @@ export function BotsDialog({
   }, [entryProvider, open]);
 
   const saveBot = useCallback(
-    async (bot: BotConfig, secrets?: { credentialValue?: string }) => {
+    async (
+      bot: BotConfig,
+      secrets?: { credentialValue?: string; webhookSecretValue?: string },
+    ) => {
       const saved = await botsService.saveBot({
         bot,
         credentialValue: secrets?.credentialValue,
+        webhookSecretValue: secrets?.webhookSecretValue,
       });
       setConfig((previous) => ({
         ...previous,
@@ -817,6 +821,37 @@ export function BotsDialog({
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error("[BotsDialog] 保存 Bot secret 失败", message);
+      toast(intl.formatMessage({ id: "bots.saveFailed" }, { error: message }));
+    } finally {
+      setSecretSaving(false);
+    }
+  };
+
+  const handleSaveWecom = async (input: {
+    wecomCorpId: string;
+    wecomAgentId: string;
+    wecomCallbackToken: string;
+    credentialValue: string;
+    webhookSecretValue: string;
+  }) => {
+    if (!selectedBot || secretSaving) return;
+    setSecretSaving(true);
+    try {
+      await saveBot(
+        {
+          ...selectedBot,
+          wecomCorpId: input.wecomCorpId,
+          wecomAgentId: input.wecomAgentId,
+          wecomCallbackToken: input.wecomCallbackToken,
+        },
+        {
+          credentialValue: input.credentialValue,
+          webhookSecretValue: input.webhookSecretValue,
+        },
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error("[BotsDialog] 保存企业微信凭据失败", message);
       toast(intl.formatMessage({ id: "bots.saveFailed" }, { error: message }));
     } finally {
       setSecretSaving(false);
@@ -1330,6 +1365,7 @@ export function BotsDialog({
                   onCreateBindCode={() => void handleCreateBindCode()}
                   onUnbind={() => void handleUnbind()}
                   onCopyBindCommand={() => void copyBindCommand()}
+                  onSaveWecom={(input) => void handleSaveWecom(input)}
                 />
 
                 <SettingsGroupCard>

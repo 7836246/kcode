@@ -103,6 +103,7 @@ import type {
 import { createTelegramBotProvider } from "./providers/telegramProvider.js";
 import { createWebhookBotProvider } from "./providers/webhookProvider.js";
 import { createWeixinBotProvider } from "./providers/weixinProvider.js";
+import { createWecomBotProvider } from "./providers/wecomProvider.js";
 import {
   beginWeixinRegistration as beginWeixinQrRegistration,
   pollWeixinRegistration as pollWeixinQrRegistration,
@@ -476,7 +477,12 @@ function createOutbound(
 function resolveAutomationBotDeliveryTarget(
   actor: BotActor,
 ): KCodeAutomationBotDeliveryTarget | undefined {
-  if (actor.provider !== "feishu" && actor.provider !== "lark" && actor.provider !== "weixin") {
+  if (
+    actor.provider !== "feishu" &&
+    actor.provider !== "lark" &&
+    actor.provider !== "weixin" &&
+    actor.provider !== "wecom"
+  ) {
     return undefined;
   }
   const providerUserId = actor.chatId?.trim() || actor.providerUserId.trim();
@@ -744,7 +750,9 @@ export function createBotsService(
       loadCredential: (key) => deps.credentialService.load(key),
     }),
     discord: null,
-    wecom: null,
+    wecom: createWecomBotProvider({
+      loadCredential: (key) => deps.credentialService.load(key),
+    }),
   };
   let service: IBotsService & {
     disposeAll(): void;

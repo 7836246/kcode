@@ -21,6 +21,7 @@ import { cn } from "@/components/lib/utils.js";
 import { logger } from "@/logger.js";
 import type { BindCodeState, FeishuRegistrationState, WeixinRegistrationState } from "./shared.js";
 import { TELEGRAM_BOTFATHER_URL, formatBindCountdown } from "./shared.js";
+import { WeComSettingsFields } from "./WeComSettingsFields.js";
 
 function DetailPanel({ children }: { children: ReactNode }) {
   return <div className="rounded-lg bg-background p-3">{children}</div>;
@@ -132,6 +133,7 @@ export function ProviderSettingsCard({
   onCreateBindCode,
   onUnbind,
   onCopyBindCommand,
+  onSaveWecom,
 }: {
   bot: BotConfig;
   runtime: BotServiceStatus["botRuntime"][number] | undefined;
@@ -155,6 +157,13 @@ export function ProviderSettingsCard({
   onCreateBindCode: () => void;
   onUnbind: () => void;
   onCopyBindCommand: () => void;
+  onSaveWecom: (input: {
+    wecomCorpId: string;
+    wecomAgentId: string;
+    wecomCallbackToken: string;
+    credentialValue: string;
+    webhookSecretValue: string;
+  }) => void;
 }) {
   const { intl } = useKCodeIntl();
   if (bot.provider === "webhook") {
@@ -208,6 +217,16 @@ export function ProviderSettingsCard({
         </DetailPanel>
       );
     }
+  } else if (bot.provider === "wecom" && !hasSecret) {
+    detail = (
+      <WeComSettingsFields
+        bot={bot}
+        credentialValue={credentialValue}
+        secretSaving={secretSaving}
+        onCredentialValueChange={onCredentialValueChange}
+        onSave={onSaveWecom}
+      />
+    );
   } else if (bot.provider === "telegram" && !hasSecret) {
     control = (
       <Button variant="outline" size="lg" onClick={onOpenTelegramBotFather}>

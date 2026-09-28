@@ -697,7 +697,7 @@ const enUS: Record<string, string> = {
   "bots.newBot.providerDescription.webhook":
     "Receive callbacks from your own system and optionally push replies back.",
   "bots.newBot.providerDescription.discord": "Discord bot integration is planned.",
-  "bots.newBot.providerDescription.wecom": "WeCom bot integration is planned.",
+  "bots.newBot.providerDescription.wecom": "Configure a self-built app, then bind by message.",
   "bots.empty": "No bots configured.",
   "bots.name": "Bot name",
   "bots.provider": "Channel",
@@ -715,7 +715,8 @@ const enUS: Record<string, string> = {
   "bots.providerSettings.webhook":
     "Webhook uses a callback secret for inbound requests and an optional outbound URL for replies.",
   "bots.providerSettings.discord": "Discord support is not available yet.",
-  "bots.providerSettings.wecom": "WeCom support is not available yet.",
+  "bots.providerSettings.wecom":
+    "Enter the self-built app credentials and set the callback URL in WeCom admin.",
   "bots.telegramBotToken": "Link bot",
   "bots.weixinRegistrationTitle": "Weixin QR login",
   "bots.weixinRegistrationDescription":
@@ -749,6 +750,15 @@ const enUS: Record<string, string> = {
   "bots.botTokenDescription.lark": "Scan to get app credentials.",
   "bots.botTokenDescription.weixin": "Credentials are saved after scan.",
   "bots.botTokenDescription.webhook": "Used to connect this webhook bot.",
+  "bots.botTokenDescription.wecom": "Enter the WeCom self-built app credentials.",
+  "bots.wecom.setupHint":
+    "Create a self-built app in WeCom admin, enable inbound messages, and set the callback URL below to a public HTTPS address.",
+  "bots.wecomCorpIdPlaceholder": "Corp ID",
+  "bots.wecomAgentIdPlaceholder": "Agent ID",
+  "bots.wecomSecretPlaceholder": "Secret",
+  "bots.wecomTokenPlaceholder": "Callback token",
+  "bots.wecomEncodingAesKeyPlaceholder": "EncodingAESKey",
+  "bots.wecomCallbackCopied": "Callback URL copied",
   "bots.telegramBotFatherQrAlt": "Telegram BotFather QR code",
   "bots.telegramBotFatherScanHint": "Scan to open BotFather, create a bot, and paste the token.",
   "bots.openBotFather": "Open BotFather",
@@ -1731,6 +1741,8 @@ const enUS: Record<string, string> = {
   "webRemoteControl.botChannel.lark.description": "Open this workspace from Lark.",
   "webRemoteControl.botChannel.telegram.title": "Telegram",
   "webRemoteControl.botChannel.telegram.description": "Open this workspace from Telegram.",
+  "webRemoteControl.botChannel.wecom.title": "WeCom",
+  "webRemoteControl.botChannel.wecom.description": "Open this workspace from WeCom.",
   "webRemoteControl.botChannel.configure": "Configure in bot channels",
   "webRemoteControl.botChannel.manageBots": "Manage bots",
   "remote.title": "Connect remote environment",

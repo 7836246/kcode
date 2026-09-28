@@ -18,7 +18,7 @@ export const BOT_PROVIDERS: BotProviderEntry[] = [
   { id: "telegram", label: "Telegram", implemented: true },
   { id: "dingding", label: "DingTalk", implemented: false },
   { id: "discord", label: "Discord", implemented: false },
-  { id: "wecom", label: "WeCom", implemented: false },
+  { id: "wecom", label: "WeCom", implemented: true },
   { id: "webhook", label: "Webhook", implemented: true },
 ];
 
