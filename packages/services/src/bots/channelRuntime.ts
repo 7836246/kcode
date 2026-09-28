@@ -264,6 +264,13 @@ export async function acquireDiscordGatewayLock(
   return acquireBotRuntimeLock("discord-gateway", token, botId);
 }
 
+export async function acquireDingdingStreamLock(
+  appKey: string,
+  botId: string,
+): Promise<BotRuntimeLock | null> {
+  return acquireBotRuntimeLock("dingding-stream", appKey, botId);
+}
+
 export function waitFor(ms: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) {
     return Promise.resolve();

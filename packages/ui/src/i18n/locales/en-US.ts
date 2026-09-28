@@ -693,7 +693,7 @@ const enUS: Record<string, string> = {
   "bots.newBot.providerDescription.weixin": "Scan to log in; first message activates.",
   "bots.newBot.providerDescription.feishu": "Scan to create an app, then bind by message.",
   "bots.newBot.providerDescription.lark": "Scan to create an app, then bind by message.",
-  "bots.newBot.providerDescription.dingding": "DingTalk bot integration is planned.",
+  "bots.newBot.providerDescription.dingding": "Configure an internal app and receive messages over Stream.",
   "bots.newBot.providerDescription.webhook":
     "Receive callbacks from your own system and optionally push replies back.",
   "bots.newBot.providerDescription.discord": "Save a bot token and receive messages over Gateway.",
@@ -715,6 +715,8 @@ const enUS: Record<string, string> = {
   "bots.providerSettings.webhook":
     "Webhook uses a callback secret for inbound requests and an optional outbound URL for replies.",
   "bots.providerSettings.discord": "Save a Discord bot token and enable the Message Content Intent.",
+  "bots.providerSettings.dingding":
+    "Enter the internal app AppKey and AppSecret, and enable robot Stream mode in the open platform.",
   "bots.providerSettings.wecom":
     "Enter the self-built app credentials and set the callback URL in WeCom admin.",
   "bots.telegramBotToken": "Link bot",
@@ -752,6 +754,19 @@ const enUS: Record<string, string> = {
   "bots.botTokenDescription.webhook": "Used to connect this webhook bot.",
   "bots.botTokenDescription.wecom": "Enter the WeCom self-built app credentials.",
   "bots.botTokenDescription.discord": "Save the Discord bot token.",
+  "bots.botTokenDescription.dingding": "Enter the DingTalk internal app credentials.",
+  "bots.dingding.setupHint":
+    "Create an internal app with a robot in the DingTalk open platform, enable Stream mode, then paste the AppKey and AppSecret here.",
+  "bots.dingdingAppKeyPlaceholder": "AppKey",
+  "bots.dingdingAppSecretPlaceholder": "AppSecret",
+  "bots.openDingdingPortal": "Open DingTalk open platform",
+  "bots.runtime.dingdingStreamRunning": "DingTalk stream is connected.",
+  "bots.runtime.dingdingStreamStarting": "DingTalk stream is starting.",
+  "bots.runtime.dingdingStreamStopped": "DingTalk stream is stopped.",
+  "bots.runtime.dingdingStreamHandledElsewhere":
+    "DingTalk stream is handled by another KCode window.",
+  "bots.runtime.dingdingTokenMissing": "DingTalk AppKey or AppSecret is missing.",
+  "bots.runtime.dingdingStreamFailedRetrying": "DingTalk stream failed; retrying.",
   "bots.discordTokenHint":
     "Create a bot in the Discord developer portal, enable Message Content Intent, then paste the token here.",
   "bots.discordTokenPlaceholder": "Bot token",
@@ -1757,6 +1772,8 @@ const enUS: Record<string, string> = {
   "webRemoteControl.botChannel.wecom.description": "Open this workspace from WeCom.",
   "webRemoteControl.botChannel.discord.title": "Discord",
   "webRemoteControl.botChannel.discord.description": "Open this workspace from Discord.",
+  "webRemoteControl.botChannel.dingding.title": "DingTalk",
+  "webRemoteControl.botChannel.dingding.description": "Open this workspace from DingTalk.",
   "webRemoteControl.botChannel.configure": "Configure in bot channels",
   "webRemoteControl.botChannel.manageBots": "Manage bots",
   "remote.title": "Connect remote environment",

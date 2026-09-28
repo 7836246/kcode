@@ -106,6 +106,8 @@ import { createWeixinBotProvider } from "./providers/weixinProvider.js";
 import { createWecomBotProvider } from "./providers/wecomProvider.js";
 import { createDiscordBotProvider } from "./providers/discordProvider.js";
 import { createDiscordChannelRuntime } from "./discordChannelRuntime.js";
+import { createDingdingBotProvider } from "./providers/dingdingProvider.js";
+import { createDingdingChannelRuntime } from "./dingdingChannelRuntime.js";
 import {
   beginWeixinRegistration as beginWeixinQrRegistration,
   pollWeixinRegistration as pollWeixinQrRegistration,
@@ -484,7 +486,8 @@ function resolveAutomationBotDeliveryTarget(
     actor.provider !== "lark" &&
     actor.provider !== "weixin" &&
     actor.provider !== "wecom" &&
-    actor.provider !== "discord"
+    actor.provider !== "discord" &&
+    actor.provider !== "dingding"
   ) {
     return undefined;
   }
@@ -758,6 +761,9 @@ export function createBotsService(
     wecom: createWecomBotProvider({
       loadCredential: (key) => deps.credentialService.load(key),
     }),
+    dingding: createDingdingBotProvider({
+      loadCredential: (key) => deps.credentialService.load(key),
+    }),
   };
   let service: IBotsService & {
     disposeAll(): void;
@@ -824,6 +830,15 @@ export function createBotsService(
     processProviderCallback,
   });
   const discordRuntime = createDiscordChannelRuntime({
+    runBackgroundTasks: runStartupBackgroundTasks,
+    credentialService: deps.credentialService,
+    logger: botsLogger,
+    statusSink,
+    ensureBotStorageMigrated,
+    readConfig: () => repo.readConfig(),
+    processProviderCallback,
+  });
+  const dingdingRuntime = createDingdingChannelRuntime({
     runBackgroundTasks: runStartupBackgroundTasks,
     credentialService: deps.credentialService,
     logger: botsLogger,
@@ -5238,6 +5253,7 @@ export function createBotsService(
       weixinRuntime.scheduleRefresh(savedConfig);
       feishuRuntime.scheduleRefresh(savedConfig);
       discordRuntime.scheduleRefresh(savedConfig);
+      dingdingRuntime.scheduleRefresh(savedConfig);
       return savedConfig;
     },
     async listBots() {
@@ -5302,6 +5318,7 @@ export function createBotsService(
       weixinRuntime.scheduleRefresh(savedConfig);
       feishuRuntime.scheduleRefresh(savedConfig);
       discordRuntime.scheduleRefresh(savedConfig);
+      dingdingRuntime.scheduleRefresh(savedConfig);
       return bot;
     },
     async removeBotSecret(botId: string) {
@@ -5322,6 +5339,9 @@ export function createBotsService(
       if (bot.provider === "discord") {
         await discordRuntime.stopGateway(bot.id);
       }
+      if (bot.provider === "dingding") {
+        await dingdingRuntime.stopStream(bot.id);
+      }
       // Bugfix: 只移除密钥时如果保留旧绑定身份，UI 会显示“已连通”，但运行时已经没有 token 可用。
       // 这里同步清理绑定状态，让 Bot token 行回到可重新添加的状态。
       const nextBot = normalizeBotConfig({
@@ -5331,6 +5351,7 @@ export function createBotsService(
         providerUserId: undefined,
         displayName: undefined,
         feishuAppId: isFeishuBotProvider(bot.provider) ? undefined : bot.feishuAppId,
+        dingdingAppKey: bot.provider === "dingding" ? undefined : bot.dingdingAppKey,
       });
       const savedConfig = await repo.writeConfig({
         ...config,
@@ -5344,6 +5365,7 @@ export function createBotsService(
       weixinRuntime.scheduleRefresh(savedConfig);
       feishuRuntime.scheduleRefresh(savedConfig);
       discordRuntime.scheduleRefresh(savedConfig);
+      dingdingRuntime.scheduleRefresh(savedConfig);
       if (bot.credentialRef) {
         await deps.credentialService.delete(bot.credentialRef);
       }
@@ -5367,6 +5389,9 @@ export function createBotsService(
       if (bot?.provider === "discord") {
         await discordRuntime.stopGateway(bot.id);
       }
+      if (bot?.provider === "dingding") {
+        await dingdingRuntime.stopStream(bot.id);
+      }
       await repo.writeConfig({
         ...config,
         bots: config.bots.filter((item) => item.id !== botId),
@@ -5375,6 +5400,7 @@ export function createBotsService(
       telegramRuntime.scheduleRefresh();
       weixinRuntime.scheduleRefresh();
       discordRuntime.scheduleRefresh();
+      dingdingRuntime.scheduleRefresh();
       const state = await repo.readState();
       delete state.bots[botId];
       await repo.writeState(state);
@@ -6376,6 +6402,7 @@ export function createBotsService(
         weixinRuntime.dispose(),
         feishuRuntime.dispose(),
         discordRuntime.dispose(),
+        dingdingRuntime.dispose(),
       ]).then(() => undefined);
       return shutdownPromise;
     },
@@ -6385,6 +6412,7 @@ export function createBotsService(
     void weixinRuntime.refresh();
     void feishuRuntime.refresh();
     void discordRuntime.refresh();
+    void dingdingRuntime.refresh();
     void ensureBotStorageMigrated().catch((error: unknown) => {
       // 首次读取失败必须可见，不能产生未处理 rejection；交互入口仍直接收到该错误。
       botsLogger.error(

@@ -827,6 +827,29 @@ export function BotsDialog({
     }
   };
 
+  const handleSaveDingding = async (input: {
+    dingdingAppKey: string;
+    credentialValue: string;
+  }) => {
+    if (!selectedBot || secretSaving) return;
+    setSecretSaving(true);
+    try {
+      await saveBot(
+        {
+          ...selectedBot,
+          dingdingAppKey: input.dingdingAppKey,
+        },
+        { credentialValue: input.credentialValue },
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error("[BotsDialog] 保存钉钉凭据失败", message);
+      toast(intl.formatMessage({ id: "bots.saveFailed" }, { error: message }));
+    } finally {
+      setSecretSaving(false);
+    }
+  };
+
   const handleSaveWecom = async (input: {
     wecomCorpId: string;
     wecomAgentId: string;
@@ -1366,6 +1389,7 @@ export function BotsDialog({
                   onUnbind={() => void handleUnbind()}
                   onCopyBindCommand={() => void copyBindCommand()}
                   onSaveWecom={(input) => void handleSaveWecom(input)}
+                  onSaveDingding={(input) => void handleSaveDingding(input)}
                 />
 
                 <SettingsGroupCard>

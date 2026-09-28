@@ -29,6 +29,7 @@ export const botProviders = [
   "weixin",
   "discord",
   "wecom",
+  "dingding",
 ] as const;
 
 export type BotProvider = (typeof botProviders)[number];
@@ -40,7 +41,7 @@ export type FeishuBotProvider = Extract<BotProvider, "feishu" | "lark">;
  */
 export const kcodeAutomationBotDeliveryTargetSchema = z
   .object({
-    provider: z.enum(["feishu", "lark", "weixin", "wecom", "discord"]),
+    provider: z.enum(["feishu", "lark", "weixin", "wecom", "discord", "dingding"]),
     botId: z.string().trim().min(1),
     providerUserId: z.string().trim().min(1),
     chatType: z.enum(["private", "group"]),
@@ -114,6 +115,7 @@ export interface BotConfig {
   wecomCorpId?: string;
   wecomAgentId?: string;
   wecomCallbackToken?: string;
+  dingdingAppKey?: string;
   providerUserId?: string;
   displayName?: string;
   allowedWorkspaces: string[];
@@ -470,6 +472,7 @@ export const botConfigSchema = z
     wecomCorpId: z.string().min(1).optional(),
     wecomAgentId: z.string().min(1).optional(),
     wecomCallbackToken: z.string().min(1).optional(),
+    dingdingAppKey: z.string().min(1).optional(),
     providerUserId: z.string().min(1).optional(),
     displayName: z.string().optional(),
     allowedWorkspaces: z.array(z.string().min(1)),

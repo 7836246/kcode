@@ -22,6 +22,7 @@ import { logger } from "@/logger.js";
 import type { BindCodeState, FeishuRegistrationState, WeixinRegistrationState } from "./shared.js";
 import { TELEGRAM_BOTFATHER_URL, formatBindCountdown } from "./shared.js";
 import { WeComSettingsFields } from "./WeComSettingsFields.js";
+import { DingdingSettingsFields } from "./DingdingSettingsFields.js";
 
 function DetailPanel({ children }: { children: ReactNode }) {
   return <div className="rounded-lg bg-background p-3">{children}</div>;
@@ -134,6 +135,7 @@ export function ProviderSettingsCard({
   onUnbind,
   onCopyBindCommand,
   onSaveWecom,
+  onSaveDingding,
 }: {
   bot: BotConfig;
   runtime: BotServiceStatus["botRuntime"][number] | undefined;
@@ -164,6 +166,7 @@ export function ProviderSettingsCard({
     credentialValue: string;
     webhookSecretValue: string;
   }) => void;
+  onSaveDingding: (input: { dingdingAppKey: string; credentialValue: string }) => void;
 }) {
   const { intl } = useKCodeIntl();
   if (bot.provider === "webhook") {
@@ -225,6 +228,16 @@ export function ProviderSettingsCard({
         secretSaving={secretSaving}
         onCredentialValueChange={onCredentialValueChange}
         onSave={onSaveWecom}
+      />
+    );
+  } else if (bot.provider === "dingding" && !hasSecret) {
+    detail = (
+      <DingdingSettingsFields
+        bot={bot}
+        credentialValue={credentialValue}
+        secretSaving={secretSaving}
+        onCredentialValueChange={onCredentialValueChange}
+        onSave={onSaveDingding}
       />
     );
   } else if (bot.provider === "discord" && !hasSecret) {

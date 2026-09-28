@@ -5,18 +5,18 @@ import type {
 } from "@kcode/shared";
 import { getSupportedBotReplyGranularities } from "@kcode/shared";
 
-export type BotProviderEntryId = BotProvider | "dingding";
+export type BotProviderEntryId = BotProvider;
 
 type BotProviderEntry =
   | { id: BotProvider; label: string; implemented: true }
-  | { id: BotProviderEntryId; label: string; implemented: false };
+  | { id: BotProvider; label: string; implemented: false };
 
 export const BOT_PROVIDERS: BotProviderEntry[] = [
   { id: "weixin", label: "Weixin", implemented: true },
   { id: "feishu", label: "Feishu", implemented: true },
   { id: "lark", label: "Lark", implemented: true },
   { id: "telegram", label: "Telegram", implemented: true },
-  { id: "dingding", label: "DingTalk", implemented: false },
+  { id: "dingding", label: "DingTalk", implemented: true },
   { id: "discord", label: "Discord", implemented: true },
   { id: "wecom", label: "WeCom", implemented: true },
   { id: "webhook", label: "Webhook", implemented: true },
