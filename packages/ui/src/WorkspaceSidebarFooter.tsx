@@ -117,7 +117,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
     <>
       <Avatar key={avatarKey} size="default">
         {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={profileBadge} /> : null}
-        <AvatarFallback className="bg-background text-foreground">
+        <AvatarFallback className="bg-background leading-none text-foreground">
           {user ? avatarFallbackText : <User className="size-4" />}
         </AvatarFallback>
       </Avatar>
@@ -178,7 +178,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   return (
     // footer 被 Settings 复用，页面专属边距由调用方传入，避免修改共享默认样式。
     <footer className={cn("flex shrink-0 flex-col gap-2.5 px-4 pt-2 pb-4", className)}>
-      <div className="flex min-w-0 gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <DropdownMenuTrigger asChild>
             {/* 头像和 Login 之前直接绑定到登录动作，导致用户无法从这里打开偏好设置。
@@ -187,7 +187,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
               type="button"
               variant="ghost"
               size={"lg"}
-              className="min-w-0 flex-1 justify-start gap-2 overflow-hidden rounded-tl-2xl rounded-bl-2xl border-0 pl-0"
+              className="min-w-0 flex-1 items-center justify-start gap-2 overflow-hidden rounded-tl-2xl rounded-bl-2xl border-0 pl-0"
               data-testid={TID_LOGIN_TRIGGER}
               aria-label={profileBadge}
             >
