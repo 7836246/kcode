@@ -425,7 +425,7 @@ export function createHttpServer(
     return c.json(responseBody, 200);
   };
 
-  app.get("/api/bots/wecom/:botId", handleBotCallback);
+  app.get("/api/bots/:provider/:botId", handleBotCallback);
   app.post("/api/bots/:provider", handleBotCallback);
   app.post("/api/bots/:provider/:botId", handleBotCallback);
 

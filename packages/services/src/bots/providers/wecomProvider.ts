@@ -196,9 +196,16 @@ export function createWecomBotProvider(deps: WecomProviderDeps): BotProviderAdap
       const timestamp = callback.timestamp?.trim() ?? "";
       const nonce = callback.nonce?.trim() ?? "";
       const echostr = callback.echostr?.trim() ?? "";
-      verifySignature(token, timestamp, nonce, echostr, signature);
-      const plain = decryptWecomCiphertext(encodingAesKey, corpId, echostr);
-      return { responseBody: plain, status: 200 };
+      try {
+        verifySignature(token, timestamp, nonce, echostr, signature);
+        const plain = decryptWecomCiphertext(encodingAesKey, corpId, echostr);
+        return { responseBody: plain, status: 200 };
+      } catch (error) {
+        return {
+          responseBody: error instanceof Error ? error.message : String(error),
+          status: 401,
+        };
+      }
     },
 
     parseCallback(payload: unknown): BotInboundMessage[] {

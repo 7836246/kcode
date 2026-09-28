@@ -33,16 +33,14 @@ test("错误签名会被拒绝", async () => {
     credentialRef: "cred",
     webhookSecretRef: "webhook",
   } as BotConfig;
-  await assert.rejects(
-    () =>
-      provider.handleCallbackResponse?.(bot, {
-        method: "GET",
-        msg_signature: "deadbeef",
-        timestamp: "1409659813",
-        nonce: "1372623149",
-        echostr: encryptWecomPlaintext(ENCODING_AES_KEY, CORP_ID, "ping"),
-      }),
-  );
+  const result = await provider.handleCallbackResponse?.(bot, {
+    method: "GET",
+    msg_signature: "deadbeef",
+    timestamp: "1409659813",
+    nonce: "1372623149",
+    echostr: encryptWecomPlaintext(ENCODING_AES_KEY, CORP_ID, "ping"),
+  });
+  assert.equal(result?.status, 401);
 });
 
 test("文本回调解析 FromUserName 和 Content", async () => {

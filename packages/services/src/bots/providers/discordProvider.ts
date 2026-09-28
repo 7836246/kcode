@@ -25,6 +25,7 @@ interface DiscordMessage {
   content?: string;
   author?: DiscordUser;
   channel_id?: string;
+  guild_id?: string;
   channel?: DiscordChannel;
 }
 
@@ -71,7 +72,7 @@ export function parseDiscordDispatch(
   if (author?.bot === true || (botUserId && authorId === botUserId)) {
     return [];
   }
-  const channelType = message.channel?.type;
+  const isPrivate = !message.guild_id;
   return [
     {
       botId,
@@ -81,7 +82,7 @@ export function parseDiscordDispatch(
         botId,
         providerUserId: authorId,
         displayName: author?.username,
-        chatType: channelType === 1 ? "private" : "group",
+        chatType: isPrivate ? "private" : "group",
         chatId: channelId,
         providerMessageId: message.id,
       },

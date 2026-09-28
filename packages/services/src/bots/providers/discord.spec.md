@@ -19,7 +19,7 @@ MESSAGE_CREATE
 - `IBotsService` 是唯一提交口。Gateway 运行时只负责连接和投递 payload。
 - 一个 Bot 绑定一个 Discord 用户（`providerUserId`）。
 - 远控弹窗增加 Discord 入口。
-- 钉钉仍为即将支持。
+- Gateway 无 `guild_id` 的 MESSAGE_CREATE 视为私聊，才能 /bind。
 
 ## 所有者
 

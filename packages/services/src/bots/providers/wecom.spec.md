@@ -30,4 +30,4 @@ URL 验证 GET /api/bots/wecom/:botId
 - 正确口令可加解密并验签；错误签名拒绝，本机配置不变
 - `test()` 在 gettoken 成功时通过
 - 文本回调解析出 FromUserName 作为 actor，并能发出 message/send
-- 未实现的钉钉、Discord 仍显示即将支持
+- Discord 与钉钉走各自独立通道，不走企业微信回调
