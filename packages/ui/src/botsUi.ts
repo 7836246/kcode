@@ -75,11 +75,12 @@ export function getBotReplyGranularityEntryForProvider(
 export function getBotProviderRegionTagLabelId(
   provider: BotProviderEntryId,
 ): string | null {
+  // 飞书/Lark 是同一产品线的国内与国际入口。标签只表示地区，不再沿用已下线的官方 OAuth key。
   switch (provider) {
     case "lark":
-      return "login.oauth.regionTag.zai";
+      return "bots.channel.region.international";
     case "feishu":
-      return "login.oauth.regionTag.bigmodel";
+      return "bots.channel.region.cn";
     default:
       return null;
   }

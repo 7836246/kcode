@@ -617,6 +617,8 @@ const zhCN: Record<string, string> = {
   "bots.channel.discord": "Discord",
   "bots.channel.wecom": "企业微信",
   "bots.channel.webhook": "Webhook",
+  "bots.channel.region.cn": "国内",
+  "bots.channel.region.international": "国际",
   "bots.newBot.title": "新建机器人",
   "bots.newBot.chooseChannel": "选择渠道",
   "bots.newBot.description":
@@ -1600,8 +1602,8 @@ const zhCN: Record<string, string> = {
   "webRemoteControl.trigger": "移动端远程控制",
   "webRemoteControl.title": "移动端远程控制",
   "webRemoteControl.description": "通过聊天机器人控制 KCode 工作区。",
-  "webRemoteControl.botChannel.title": "使用 Bot Channel",
-  "webRemoteControl.botChannel.description": "连接聊天 Bot，适合更长时间的移动端访问。",
+  "webRemoteControl.botChannel.title": "使用机器人通道",
+  "webRemoteControl.botChannel.description": "连接聊天机器人，适合更长时间的移动端访问。",
   "webRemoteControl.botChannel.weixin.title": "微信",
   "webRemoteControl.botChannel.weixin.description": "从微信会话打开这个工作区。",
   "webRemoteControl.botChannel.feishu.title": "飞书",
@@ -1610,7 +1612,7 @@ const zhCN: Record<string, string> = {
   "webRemoteControl.botChannel.lark.description": "从 Lark 打开这个工作区。",
   "webRemoteControl.botChannel.telegram.title": "Telegram",
   "webRemoteControl.botChannel.telegram.description": "从 Telegram 打开这个工作区。",
-  "webRemoteControl.botChannel.configure": "去 Bot Channels 配置",
+  "webRemoteControl.botChannel.configure": "去配置机器人通道",
   "webRemoteControl.botChannel.manageBots": "机器人管理",
   "remote.title": "连接远程环境",
   "remote.description":

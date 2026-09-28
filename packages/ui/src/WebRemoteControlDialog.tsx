@@ -83,7 +83,7 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
             onClick={() => onOpenChange(false)}
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{intl.formatMessage({ id: "common.close" })}</span>
           </Button>
           <div className="max-h-[calc(100vh-6rem)] min-h-0 overflow-y-auto p-5">
             <DialogHeader className="space-y-2 pr-8">
