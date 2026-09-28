@@ -17,4 +17,4 @@
 - 中文：飞书旁显示「国内」，Lark 旁显示「国际」，不出现 `login.oauth.regionTag.*`
 - 英文：Feishu 旁显示 `China`，Lark 旁显示 `International`
 - 中文入口是「使用机器人通道」「去配置机器人通道」
-- 已接通渠道包含微信、飞书、Lark、Telegram、企业微信；钉钉和 Discord 仍不进入远控入口
+- 已接通渠道包含微信、飞书、Lark、Telegram、企业微信、Discord；钉钉仍不进入远控入口

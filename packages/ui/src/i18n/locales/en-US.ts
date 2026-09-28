@@ -696,7 +696,7 @@ const enUS: Record<string, string> = {
   "bots.newBot.providerDescription.dingding": "DingTalk bot integration is planned.",
   "bots.newBot.providerDescription.webhook":
     "Receive callbacks from your own system and optionally push replies back.",
-  "bots.newBot.providerDescription.discord": "Discord bot integration is planned.",
+  "bots.newBot.providerDescription.discord": "Save a bot token and receive messages over Gateway.",
   "bots.newBot.providerDescription.wecom": "Configure a self-built app, then bind by message.",
   "bots.empty": "No bots configured.",
   "bots.name": "Bot name",
@@ -714,7 +714,7 @@ const enUS: Record<string, string> = {
   "bots.providerSettings.lark": "Scan to get app credentials.",
   "bots.providerSettings.webhook":
     "Webhook uses a callback secret for inbound requests and an optional outbound URL for replies.",
-  "bots.providerSettings.discord": "Discord support is not available yet.",
+  "bots.providerSettings.discord": "Save a Discord bot token and enable the Message Content Intent.",
   "bots.providerSettings.wecom":
     "Enter the self-built app credentials and set the callback URL in WeCom admin.",
   "bots.telegramBotToken": "Link bot",
@@ -751,6 +751,18 @@ const enUS: Record<string, string> = {
   "bots.botTokenDescription.weixin": "Credentials are saved after scan.",
   "bots.botTokenDescription.webhook": "Used to connect this webhook bot.",
   "bots.botTokenDescription.wecom": "Enter the WeCom self-built app credentials.",
+  "bots.botTokenDescription.discord": "Save the Discord bot token.",
+  "bots.discordTokenHint":
+    "Create a bot in the Discord developer portal, enable Message Content Intent, then paste the token here.",
+  "bots.discordTokenPlaceholder": "Bot token",
+  "bots.openDiscordPortal": "Open Discord developer portal",
+  "bots.runtime.discordGatewayRunning": "Discord gateway is connected.",
+  "bots.runtime.discordGatewayStarting": "Discord gateway is starting.",
+  "bots.runtime.discordGatewayStopped": "Discord gateway is stopped.",
+  "bots.runtime.discordGatewayHandledElsewhere":
+    "Discord gateway is handled by another KCode window.",
+  "bots.runtime.discordTokenMissing": "Discord bot token is missing.",
+  "bots.runtime.discordGatewayFailedRetrying": "Discord gateway failed; retrying.",
   "bots.wecom.setupHint":
     "Create a self-built app in WeCom admin, enable inbound messages, and set the callback URL below to a public HTTPS address.",
   "bots.wecomCorpIdPlaceholder": "Corp ID",
@@ -1743,6 +1755,8 @@ const enUS: Record<string, string> = {
   "webRemoteControl.botChannel.telegram.description": "Open this workspace from Telegram.",
   "webRemoteControl.botChannel.wecom.title": "WeCom",
   "webRemoteControl.botChannel.wecom.description": "Open this workspace from WeCom.",
+  "webRemoteControl.botChannel.discord.title": "Discord",
+  "webRemoteControl.botChannel.discord.description": "Open this workspace from Discord.",
   "webRemoteControl.botChannel.configure": "Configure in bot channels",
   "webRemoteControl.botChannel.manageBots": "Manage bots",
   "remote.title": "Connect remote environment",

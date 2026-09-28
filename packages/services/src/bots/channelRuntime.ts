@@ -257,6 +257,13 @@ export function acquireFeishuWebSocketLock(
   return acquireBotRuntimeLock(`${bot.provider}-websocket`, bot.feishuAppId?.trim() ?? "", bot.id);
 }
 
+export async function acquireDiscordGatewayLock(
+  token: string,
+  botId: string,
+): Promise<BotRuntimeLock | null> {
+  return acquireBotRuntimeLock("discord-gateway", token, botId);
+}
+
 export function waitFor(ms: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) {
     return Promise.resolve();

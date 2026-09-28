@@ -227,6 +227,50 @@ export function ProviderSettingsCard({
         onSave={onSaveWecom}
       />
     );
+  } else if (bot.provider === "discord" && !hasSecret) {
+    control = (
+      <Button
+        variant="outline"
+        size="lg"
+        onClick={() => {
+          void globalThis.open("https://discord.com/developers/applications", "_blank", "noopener,noreferrer");
+        }}
+      >
+        <ExternalLink className="size-4" />
+        {intl.formatMessage({ id: "bots.openDiscordPortal" })}
+      </Button>
+    );
+    detail = (
+      <DetailPanel>
+        <div className="space-y-3 text-ui-base text-foreground-subtle">
+          <div>{intl.formatMessage({ id: "bots.discordTokenHint" })}</div>
+          <div className="flex w-full min-w-0 items-center gap-2">
+            <Input
+              size="lg"
+              type="password"
+              value={credentialValue}
+              onChange={(event) => onCredentialValueChange(event.target.value)}
+              placeholder={intl.formatMessage({ id: "bots.discordTokenPlaceholder" })}
+              className="min-w-0 flex-1"
+              disabled={secretSaving}
+            />
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={onSaveSecret}
+              disabled={secretSaving || !credentialValue.trim()}
+            >
+              {secretSaving ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <KeyRound className="size-4" />
+              )}
+              {intl.formatMessage({ id: "bots.saveSecret" })}
+            </Button>
+          </div>
+        </div>
+      </DetailPanel>
+    );
   } else if (bot.provider === "telegram" && !hasSecret) {
     control = (
       <Button variant="outline" size="lg" onClick={onOpenTelegramBotFather}>

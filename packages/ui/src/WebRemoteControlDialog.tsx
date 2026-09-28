@@ -17,7 +17,7 @@ import { getBotProviderRegionTagLabelId } from "@/botsUi.js";
 
 type RemoteControlBotProvider = Extract<
   BotProvider,
-  "weixin" | "feishu" | "lark" | "telegram" | "wecom"
+  "weixin" | "feishu" | "lark" | "telegram" | "wecom" | "discord"
 >;
 
 const REMOTE_CONTROL_BOT_ENTRIES: Array<{
@@ -28,6 +28,7 @@ const REMOTE_CONTROL_BOT_ENTRIES: Array<{
   { provider: "lark" },
   { provider: "telegram" },
   { provider: "wecom" },
+  { provider: "discord" },
 ];
 
 export const WebRemoteControlDialog = memo(function WebRemoteControlDialogComponent({

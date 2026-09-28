@@ -40,7 +40,7 @@ export type FeishuBotProvider = Extract<BotProvider, "feishu" | "lark">;
  */
 export const kcodeAutomationBotDeliveryTargetSchema = z
   .object({
-    provider: z.enum(["feishu", "lark", "weixin", "wecom"]),
+    provider: z.enum(["feishu", "lark", "weixin", "wecom", "discord"]),
     botId: z.string().trim().min(1),
     providerUserId: z.string().trim().min(1),
     chatType: z.enum(["private", "group"]),
