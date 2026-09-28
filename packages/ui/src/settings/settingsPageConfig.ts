@@ -19,6 +19,7 @@ import {
   Keyboard,
   FileSearch,
   Sparkles,
+  Archive,
 } from "lucide-react";
 import { isSettingsSectionEnabled, type SettingsSectionId } from "@/lib/settingsNavigation.js";
 import type { Theme } from "@/useTheme.js";
@@ -157,6 +158,12 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     icon: FileSearch,
     titleId: "settings.workspaceFileSearch.title",
     groupId: "basics",
+  },
+  {
+    id: "configBackup",
+    icon: Archive,
+    titleId: "settings.configBackup.title",
+    groupId: "dataAndStats",
   },
   {
     id: "usage",

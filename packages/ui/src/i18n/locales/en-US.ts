@@ -2365,6 +2365,47 @@ const enUS: Record<string, string> = {
   "settings.migration.failedTitle": "Failures",
   "settings.migration.reason.session_not_found_or_workspace_mismatch":
     "The source session was not found, or it no longer matches the current workspace filter.",
+  "settings.configBackup.title": "Config backup",
+  "settings.configBackup.description":
+    "Pack portable settings and provider API keys into a passphrase-encrypted archive. Sessions, workspace files, and machine paths stay out.",
+  "settings.configBackup.passphrase": "Passphrase",
+  "settings.configBackup.passphraseDescription":
+    "The same passphrase encrypts and decrypts the archive. Use at least {min} characters.",
+  "settings.configBackup.passphrasePlaceholder": "Enter passphrase",
+  "settings.configBackup.passphraseTooShort": "Passphrase must be at least {min} characters",
+  "settings.configBackup.local": "Local file",
+  "settings.configBackup.localDescription":
+    "Export the encrypted archive to a file, or import one to overwrite portable settings on this machine.",
+  "settings.configBackup.export": "Export",
+  "settings.configBackup.import": "Import",
+  "settings.configBackup.exportDone": "Encrypted backup exported",
+  "settings.configBackup.exportFailed": "Export failed",
+  "settings.configBackup.importDone": "Settings and providers restored",
+  "settings.configBackup.importFailed": "Import failed",
+  "settings.configBackup.importConfirmTitle": "Import will overwrite local config",
+  "settings.configBackup.importConfirmDescription":
+    "Portable settings and API keys from the archive replace the matching fields on this machine. Sessions and workspace paths stay unchanged.",
+  "settings.configBackup.unavailable": "Config backup is not available on this host",
+  "settings.configBackup.webdavUrl": "WebDAV URL",
+  "settings.configBackup.webdavDescription":
+    "A private NAS or cloud WebDAV folder. The uploaded file is the same encrypted archive.",
+  "settings.configBackup.webdavUsername": "Username",
+  "settings.configBackup.webdavPassword": "Password",
+  "settings.configBackup.webdavPasswordDescription":
+    "The password stays in the local credential store. It is never written into the backup archive.",
+  "settings.configBackup.webdavRemotePath": "Remote file name",
+  "settings.configBackup.webdavActions": "WebDAV",
+  "settings.configBackup.webdavSave": "Save connection",
+  "settings.configBackup.webdavUpload": "Upload",
+  "settings.configBackup.webdavDownload": "Download and import",
+  "settings.configBackup.webdavSaved": "WebDAV connection saved",
+  "settings.configBackup.webdavSaveFailed": "Could not save the WebDAV connection",
+  "settings.configBackup.webdavUploadDone": "Encrypted backup uploaded",
+  "settings.configBackup.webdavUploadFailed": "WebDAV upload failed",
+  "settings.configBackup.webdavDownloadFailed": "WebDAV download failed",
+  "settings.configBackup.webdavOverwriteTitle": "Remote backup already exists",
+  "settings.configBackup.webdavOverwriteDescription": "Overwrite the file on the server?",
+  "settings.configBackup.webdavOverwrite": "Overwrite",
   "settings.usageTitle": "Usage stats",
   "settings.usageDescription":
     "Review rough activity and model usage aggregated from local sessions.",

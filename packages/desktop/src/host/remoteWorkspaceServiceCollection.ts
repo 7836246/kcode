@@ -31,6 +31,7 @@ import {
   IHooksService,
   IMemoryService,
   ISettingsSyncService,
+  IConfigBackupService,
   IPromptAttachmentTransferService,
   type IServiceAccessor,
 } from "@kcode/services";
@@ -44,6 +45,7 @@ import {
   createHostApiNetworkTransport,
   registerHostApiNetworkTransportForDispose,
   createSettingsSyncService,
+  createUnsupportedConfigBackupService,
   createBotsService,
   createUsageStatsService,
   createClientScenesService,
@@ -282,6 +284,7 @@ export function createRemoteWorkspaceServiceCollection(params: {
       ISettingsSyncService,
       createSettingsSyncService({ settingService: localSettingService }),
     )
+    .register(IConfigBackupService, createUnsupportedConfigBackupService())
     .register(IPromptAttachmentTransferService, params.promptAttachmentTransferService);
   registerHostApiNetworkTransportForDispose(services, hostApiNetworkTransport);
   registerRemoteProviderProvisioningExecutor(services, remoteProviderProvisioningService);

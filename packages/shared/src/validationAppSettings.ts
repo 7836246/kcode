@@ -33,6 +33,13 @@ const appSettingsOccupationSchema = z.enum([
 export const appSettingsOccupationEnum = appSettingsOccupationSchema;
 
 const nonEmptyStringSchema = z.string().trim().min(1);
+const configBackupWebdavSettingsSchema = z
+  .object({
+    url: nonEmptyStringSchema,
+    username: z.string().default(""),
+    remotePath: z.string().trim().min(1).default("kcode-config-backup.kcb"),
+  })
+  .strict();
 
 export const localeSchema = z.enum(["zh-CN", "en-US"]);
 const localePreferenceSchema = z.enum(["system", "zh-CN", "en-US"]);
@@ -478,6 +485,7 @@ const appSettingsObjectSchema = z.object({
   skippedElectronUpdateVersions: skippedElectronUpdateVersionsSchema,
   settingsSyncFirstRunPromptHandled: z.boolean().optional(),
   kcodeEndpointOrigin: kcodeEndpointOriginSchema.optional(),
+  configBackupWebdav: configBackupWebdavSettingsSchema.optional(),
 });
 
 export const appSettingsSchema = z.preprocess(
@@ -568,4 +576,5 @@ export const appSettingsPatchSchema = z.object({
     .optional(),
   settingsSyncFirstRunPromptHandled: z.boolean().optional(),
   kcodeEndpointOrigin: kcodeEndpointOriginSchema.optional(),
+  configBackupWebdav: configBackupWebdavSettingsSchema.optional(),
 });

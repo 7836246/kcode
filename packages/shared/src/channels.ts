@@ -134,6 +134,8 @@ export const ServiceChannels = {
   Memory: "memory",
   /** 首次启动设置同步服务 */
   SettingsSync: "settings-sync",
+  /** 本机配置与供应商 API Key 的加密备份 */
+  ConfigBackup: "config-backup",
   /** Bots 远程聊天控制服务 */
   Bots: "bots",
   /** Composer 附件在 host-local 与 remote runtime 之间的预传服务 */

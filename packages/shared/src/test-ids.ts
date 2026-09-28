@@ -1,3 +1,4 @@
+/* oxlint-disable eslint(max-lines) -- data-testid 单一来源，按产品面追加，不按文件行数拆散。 */
 /**
  * 统一管理所有 data-testid，UI 组件和 E2E 测试共用此单一来源。
  * 新增 testid 时请在此文件添加，不要在组件中硬编码字符串。
@@ -331,6 +332,16 @@ export const TID_SETTINGS_DATA_BASE_DIR_BROWSE = "settings-data-base-dir-browse"
 export const TID_SETTINGS_DATA_BASE_DIR_SAVE = "settings-data-base-dir-save";
 /** 常规设置中的数据存储路径复制/待重启/失败状态 */
 export const TID_SETTINGS_DATA_BASE_DIR_STATUS = "settings-data-base-dir-status";
+/** 配置备份分区：导出按钮 */
+export const TID_SETTINGS_CONFIG_BACKUP_EXPORT = "settings-config-backup-export";
+/** 配置备份分区：导入按钮 */
+export const TID_SETTINGS_CONFIG_BACKUP_IMPORT = "settings-config-backup-import";
+/** 配置备份分区：WebDAV 保存按钮 */
+export const TID_SETTINGS_CONFIG_BACKUP_WEBDAV_SAVE = "settings-config-backup-webdav-save";
+/** 配置备份分区：WebDAV 上传按钮 */
+export const TID_SETTINGS_CONFIG_BACKUP_WEBDAV_UPLOAD = "settings-config-backup-webdav-upload";
+/** 配置备份分区：WebDAV 下载按钮 */
+export const TID_SETTINGS_CONFIG_BACKUP_WEBDAV_DOWNLOAD = "settings-config-backup-webdav-download";
 /** 资源管理器顶部 tab（suffix=cpu|memory|storage） */
 export const TID_RESOURCE_MANAGER_TAB = "resource-manager-tab";
 /** 资源管理器「存储」tab：分区容器 */

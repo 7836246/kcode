@@ -279,6 +279,7 @@ export { ISubagentsService } from "./subagents/subagents.js";
 export { ICommandsService } from "./commands/commands.js";
 
 export { ISettingsSyncService } from "./settings-sync/settingsSync.js";
+export { IConfigBackupService } from "./config-backup/configBackup.js";
 
 export { IPromptAttachmentTransferService } from "./prompt-attachment-transfer/promptAttachmentTransfer.js";
 export type {
