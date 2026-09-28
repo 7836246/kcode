@@ -29,6 +29,7 @@ export const CONFIG_BACKUP_PORTABLE_SETTING_KEYS = [
   "desktopChromiumHardwareAccelerationEnabled",
   "messageStreamShowReasoning",
   "messageStreamShowTodos",
+  "composerTurnMetricsVisible",
   "toolGroupingExploreEnabled",
   "toolGroupingTerminalEnabled",
   "toolGroupingChangesEnabled",

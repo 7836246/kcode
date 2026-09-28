@@ -2300,6 +2300,10 @@ const enUS: Record<string, string> = {
     "Show full reasoning inside the message stream. When off, the first reasoning item in each turn remains visible.",
   "settings.messageStreamShowTodos": "Show todos",
   "settings.messageStreamShowTodosDescription": "Show Todo tool cards inside the message stream. ",
+  "settings.composerTurnMetricsVisible": "Show generation metrics",
+  "settings.composerTurnMetricsVisibleDescription":
+    "Show this turn's first-token latency, decode speed, and output tokens in the composer toolbar.",
+  "settings.composerTurnMetricsVisible.saveError": "Settings were not saved",
   "settings.toolGroupingExplore": "Group exploration tools",
   "settings.toolGroupingExploreDescription":
     "Group consecutive reads and searches into an Explore section.",

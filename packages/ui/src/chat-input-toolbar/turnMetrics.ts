@@ -95,3 +95,17 @@ export function buildTurnMetricsSegments(
   }
   return segments.filter((segment) => segment.value !== "");
 }
+
+/** 缺省或旧配置按开启兼容；只有显式 false 才隐藏胶囊。 */
+export function isComposerTurnMetricsVisible(
+  settings: { composerTurnMetricsVisible?: boolean } | null | undefined,
+): boolean {
+  return settings?.composerTurnMetricsVisible !== false;
+}
+
+/** tooltip / aria-label 用的一行摘要：有标签的段写成「标签 值」。 */
+export function formatTurnMetricsSummary(segments: readonly TurnMetricsSegment[]): string {
+  return segments
+    .map((segment) => (segment.label ? `${segment.label} ${segment.value}` : segment.value))
+    .join(" · ");
+}

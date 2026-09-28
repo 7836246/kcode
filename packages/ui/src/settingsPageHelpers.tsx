@@ -30,6 +30,7 @@ import { SettingsBadge, SettingsGroupCard, SettingsRow } from "@/settings/Settin
 import { DataBaseDirControl } from "@/settings/DataBaseDirControl.js";
 import { useKCodeIntl } from "@/i18n/IntlProvider.js";
 import { useOptionalServices } from "@/hooks/useServices.js";
+import { ComposerTurnMetricsSetting } from "@/settings/ComposerTurnMetricsSetting.js";
 import { ProactiveSuggestionsSetting } from "@/settings/ProactiveSuggestionsSetting.js";
 import { normalizeInterfaceMode, type InterfaceMode } from "@/lib/interfaceMode.js";
 import {
@@ -762,6 +763,7 @@ export function GeneralSectionContent({
             />
           }
         />
+        {hasServices ? <ComposerTurnMetricsSetting /> : null}
         <SettingsRow
           label={intl.formatMessage({ id: "settings.toolGroupingExplore" })}
           description={intl.formatMessage({

@@ -326,6 +326,8 @@ export const TID_SETTINGS_SECTION_NAV = "settings-section-nav";
 export const TID_SETTINGS_NATIVE_SEARCH_SWITCH = "settings-native-search-switch";
 /** 设置页「提示词增强」总开关 */
 export const TID_SETTINGS_PROMPT_ENHANCE_ENABLED_SWITCH = "settings-prompt-enhance-enabled-switch";
+/** 设置页「显示生成指标」开关 */
+export const TID_SETTINGS_COMPOSER_TURN_METRICS_SWITCH = "settings-composer-turn-metrics-switch";
 /** 常规设置中的数据存储路径只读输入框 */
 export const TID_SETTINGS_DATA_BASE_DIR_INPUT = "settings-data-base-dir-input";
 /** 常规设置中的数据存储路径目录选择按钮 */

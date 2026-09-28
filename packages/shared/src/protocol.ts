@@ -300,6 +300,11 @@ export interface AppSettings {
   messageStreamShowReasoningMigrationInitialized?: boolean;
   /** 是否在消息流中展示 todo 工具渲染；不影响摘要面板的 todo */
   messageStreamShowTodos?: boolean;
+  /**
+   * 是否在输入框工具条展示本轮生成指标（首 token / tok/s / 输出 token）。
+   * 缺省按开启兼容旧配置；关掉只影响展示，不停止 CLI 下发。
+   */
+  composerTurnMetricsVisible?: boolean;
   /** 是否把连续的只读工具调用聚合成 Explore。 */
   toolGroupingExploreEnabled?: boolean;
   /** 是否把连续的非只读 Shell 工具调用聚合成 Terminal。 */

@@ -3,7 +3,9 @@ import test from "node:test";
 import {
   buildTurnMetricsSegments,
   formatTurnFirstTokenMs,
+  formatTurnMetricsSummary,
   formatTurnTokensPerSecond,
+  isComposerTurnMetricsVisible,
   resolveTurnMetricsView,
   type TurnMetricsMessageFormat,
 } from "../src/chat-input-toolbar/turnMetrics.js";
@@ -92,4 +94,18 @@ test("输出 token 走语言相关的紧凑格式", () => {
   assert.equal(output(12000, "zh-CN"), "1.2万");
   assert.equal(output(1200, "zh-CN"), "1200");
   assert.equal(output(1200, "en-US"), "1.2K");
+});
+
+test("展示开关缺省或旧配置按开启，只有显式 false 才隐藏", () => {
+  assert.equal(isComposerTurnMetricsVisible(undefined), true);
+  assert.equal(isComposerTurnMetricsVisible(null), true);
+  assert.equal(isComposerTurnMetricsVisible({}), true);
+  assert.equal(isComposerTurnMetricsVisible({ composerTurnMetricsVisible: true }), true);
+  assert.equal(isComposerTurnMetricsVisible({ composerTurnMetricsVisible: false }), false);
+});
+
+test("摘要把有标签的段写成「标签 值」，供 tooltip 与 aria-label 使用", () => {
+  const segments = buildTurnMetricsSegments(metrics, formatMessage, "zh-CN");
+  assert.equal(formatTurnMetricsSummary(segments), "首 token 820ms · 42.7 tok/s · 输出 1200");
+  assert.equal(formatTurnMetricsSummary([]), "");
 });

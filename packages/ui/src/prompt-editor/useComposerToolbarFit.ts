@@ -11,31 +11,45 @@ function fitComposerToolbar(root: HTMLElement) {
     (a, b) =>
       Number(a.dataset.composerCollapsePriority) - Number(b.dataset.composerCollapsePriority),
   );
-  if (!controls.length) return;
   // 每次从完整布局测量，避免各按钮独立 observer 互相抢空间，也覆盖语言与异步入口变化。
   delete root.dataset.composerModelIcon;
   root.style.removeProperty("--composer-model-max-width");
   delete root.dataset.composerProviderCompact;
   for (const control of controls) delete control.dataset.composerCompact;
+  const status = root.querySelector<HTMLElement>("[data-composer-toolbar-status]");
+  if (status) delete status.dataset.composerCompact;
   const prefixLine = root.querySelector<HTMLElement>(".composer-provider-prefix")?.parentElement;
   if (prefixLine && prefixLine.scrollWidth > prefixLine.clientWidth) {
     root.dataset.composerProviderCompact = "true";
   }
-  const fits = () =>
+  const trailing = root.querySelector<HTMLElement>("[data-composer-trailing-actions]");
+  const gap = Number.parseFloat(getComputedStyle(root).columnGap) || 12;
+  const leadingFits = () =>
     content.getBoundingClientRect().width <= available.getBoundingClientRect().width;
+  const rowFits = () => {
+    const contentWidth = content.getBoundingClientRect().width;
+    const statusWidth = status?.getBoundingClientRect().width ?? 0;
+    const trailingWidth = trailing?.getBoundingClientRect().width ?? 0;
+    const used =
+      contentWidth +
+      statusWidth +
+      trailingWidth +
+      (statusWidth > 0 ? gap : 0) +
+      (trailingWidth > 0 ? gap : 0);
+    return leadingFits() && used <= root.getBoundingClientRect().width + 0.5;
+  };
+  // 胶囊是最宽的非操作项：整行溢出时先收成 icon，尽量保住左侧文案和模型名。
+  if (status && !rowFits()) status.dataset.composerCompact = "true";
   for (const control of controls) {
-    if (fits()) return;
+    if (rowFits()) return;
     control.dataset.composerCompact = "true";
-    if (control.dataset.composerCollapsePriority === "0" && !fits()) {
+    if (control.dataset.composerCollapsePriority === "0" && !leadingFits()) {
       root.dataset.composerProviderCompact = "true";
     }
   }
-  if (!fits()) {
+  if (!rowFits()) {
     const model = root.querySelector<HTMLElement>(".composer-model-trigger");
     if (!model) return;
-    const trailing = root.querySelector<HTMLElement>("[data-composer-trailing-actions]");
-    const status = root.querySelector<HTMLElement>("[data-composer-toolbar-status]");
-    const gap = Number.parseFloat(getComputedStyle(root).columnGap) || 12;
     const contentWidth = content.getBoundingClientRect().width;
     const statusWidth = status?.getBoundingClientRect().width ?? 0;
     const trailingWidth = trailing?.getBoundingClientRect().width ?? 0;
@@ -90,6 +104,13 @@ export function useComposerToolbarFit() {
           if (measured[index]?.dataset.composerCompact) control.dataset.composerCompact = "true";
           else delete control.dataset.composerCompact;
         });
+        const liveStatus = root.querySelector<HTMLElement>("[data-composer-toolbar-status]");
+        const measuredStatus = probe.querySelector<HTMLElement>("[data-composer-toolbar-status]");
+        if (measuredStatus?.dataset.composerCompact) {
+          if (liveStatus) liveStatus.dataset.composerCompact = "true";
+        } else if (liveStatus) {
+          delete liveStatus.dataset.composerCompact;
+        }
       } finally {
         probe.remove();
       }

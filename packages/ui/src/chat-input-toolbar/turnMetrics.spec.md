@@ -11,7 +11,8 @@ Composer 工具栏中段常驻一枚生成指标状态栏，展示当前 product
 - 三者都未知时整枚不展示，不给空胶囊。任一项缺失时只省略该项，其余照常展示。
 - 状态栏读 `snapshot.composerTurnMetrics`。该字段为空时整枚隐藏，不回退展示上一轮的数字。
 - 生成中 `streaming === true`，绿点有脉冲动画；该轮收口后动画停止、数字保留，直到下一轮或 queue 切段把字段清成 null。`prefers-reduced-motion` 下不播放动画。
-- composer 处于窄容器时不展示（由容器查询决定）。胶囊宽度计入 `useComposerToolbarFit` 的溢出，避免把模型名和发送按钮挤出一行。
+- 设置「通用」有「显示生成指标」开关（`composerTurnMetricsVisible`，默认开）。关掉后工具条不渲染胶囊；CLI 仍写入 `snapshot.composerTurnMetrics`，只是展示层不读。缺省或旧配置按开启兼容。
+- 胶囊宽度计入 `useComposerToolbarFit`。整行溢出时先把胶囊收成 `h-7` icon（保留绿点语义：生成中脉冲；tooltip / `aria-label` 仍是完整「首 token · tok/s · 输出」），再收左侧文案，最后才截断或图标化模型名。不再用容器查询把整枚藏掉。
 - 胶囊高度与工具条其他入口一致（`h-7`），内部 `items-center`；工具条是 `items-end`，高度对齐后底部与「完全访问权限 / 增强提示词 / 模型」同一条线。
 - 冷恢复的历史轮次没有指标，状态栏为空——只有当轮之后新产生的轮次会带上指标。
 
@@ -20,8 +21,8 @@ Composer 工具栏中段常驻一枚生成指标状态栏，展示当前 product
 - `ProductProjection` 拥有累加器，也拥有下发。`turnHeader.metrics` 是该行收口时的副本。`snapshot.composerTurnMetrics` 是状态栏的当前轮事实，经 `state.updated` 下发。
 - 桌面实时链路和手机回放链路读同一份 snapshot 字段。`rows.window` 只有尾部 60 行，窗口外的 `row.upserted` 是空操作，所以状态栏不从行窗口取数。
 - `tokensPerSecond` 复用 `@kcode/shared` 的 `calculateOutputTps`。分子只用计时完整的主回合请求，与 Developer Tools 单请求 TPS 同一函数、同一计时窗。
-- `resolveTurnMetricsView` 只做空值收口，`buildTurnMetricsSegments` 拥有段落生成与格式化。`TurnMetricsBar` 只做渲染。
-- `ConversationComposer` 把 `snapshot.composerTurnMetrics` 交给 `resolveTurnMetricsView`，并作为 `toolbarStatus` 插槽传给 `ChatPromptEditor`。`ChatPromptEditor` 只负责摆位。
+- `resolveTurnMetricsView` 只做空值收口，`buildTurnMetricsSegments` 拥有段落生成与格式化，`isComposerTurnMetricsVisible` 只读展示开关。`TurnMetricsBar` 只做渲染与开关门。
+- `ConversationComposer` 把 `snapshot.composerTurnMetrics` 交给 `resolveTurnMetricsView`，并作为 `toolbarStatus` 插槽传给 `ChatPromptEditor`。`ChatPromptEditor` 只负责摆位；窄宽折叠由 `useComposerToolbarFit` 写 `data-composer-compact`。
 
 ## 事件顺序
 
@@ -51,4 +52,5 @@ TurnStarted 或 queue drain 切段
 - 请求报错、未产出内容时状态栏不出现；中止的轮次保留已累加到的数字。
 - 切换会话后，状态栏跟随新会话的 `composerTurnMetrics`，不残留上一个会话的数字。
 - 尾窗裁掉 turnHeader 后状态栏仍在，后续 `state.updated` 继续更新。
-- 窄窗口下状态栏隐藏；刚能放下胶囊时，模型选择器与发送按钮仍留在同一行。
+- 关掉「显示生成指标」后工具条没有胶囊；再跑一轮也不出现；重开后有数就显示。
+- 窗口变窄到放不下完整胶囊时，胶囊先变成 icon，发送按钮与模型仍在同一行；hover / 焦点能读出三个数。再窄才轮到模型收成 icon。

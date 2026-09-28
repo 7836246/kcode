@@ -421,7 +421,10 @@ export function ChatPromptEditor({
             </div>
           </div>
           {toolbarStatus ? (
-            <div data-composer-toolbar-status className="flex h-7 shrink-0 items-center">
+            <div
+              data-composer-toolbar-status
+              className="group/metrics flex h-7 shrink-0 items-center empty:hidden data-[composer-compact=true]:size-7"
+            >
               {toolbarStatus}
             </div>
           ) : null}
