@@ -90,10 +90,12 @@ promptEnhance: {
 - **CLI 执行链走流式累积**：`workspace/generateText`（CLI core 的 `generateWorkspaceTextImpl`）此前用 `model.generateText`（AI SDK 非流式 `doGenerate`）。实测部分 openai-compatible 网关的非流式响应包在自定义信封里（如 `{"success":…,"data":…}`），AI SDK 按标准 OpenAI 形状做 schema 校验失败后统一报 `Invalid JSON response`，经失败归类器到 UI 只剩 "Model request failed."；同一网关的流式 SSE 是标准格式（主回合与连通性探测都走流式）。因此该入口改为 `model.streamText` 流式累积出等价结果（text / finishReason / usage / toolCalls，见 `workspace-generate-text-accumulate.ts`），结果形状与非流式返回值一致；Git 提交消息同一入口一并受益。取消不受影响：仍是 operationId → AbortController，流式下中断更及时。
 - **取消通道**：CLI 侧早在 `workspace/generateText` 的 `operationId` 上登记 AbortController（`bootstrap/src/kcode-protocol/server.ts` 的 `withWorkspaceGenerateTextSignal`），`workspace/cancelGenerateText` 按 id 触发。本次只把这条既有能力接到服务面：`KCodeAgentGenerateWorkspaceTextParams` 增加可选 `operationId`（Host 优先用它，缺省时才按 `signal` 自造 uuid），并新增 `cancelWorkspaceGenerateText(params)` 服务方法（控制面 best-effort，超时 5s；目标 workspace 无活跃 Agent 进程时直接返回 `cancelled: false`，不为此启动进程）。UI 因此不新增任何本地进程内状态。
 - **请求必须自带输出预算**：CLI 的模型校验把「请求没给 `maxOutputTokens`」与「超出模型上限」判成同一个错误（`maxOutputTokens is outside the model option range`，见 `adapters/src/model/model.ts` 的 `validateOptions`），而唯一权威上限在 CLI 进程的 `optionSpecs` 里。因此 UI 从 Selection View 的完整 Model Config 读模型声明的上限（`config.optionSpecs.maxOutputTokens.max`）直接作为请求预算——与 `workspace/generateText` 非 git 分支的既有口径一致（普通 Turn 会再按剩余上下文窗口收窄，辅助改写请求没有这个必要）。模型视图还没就绪时增强入口直接禁用（此时构造不出合法请求）；视图就绪但模型已不在已发布列表时不发请求，提示用户重选。
-- **选型必须满足模型的档位契约**：Registry 校验拒绝「options 里没有 reasoningLevel」与「档位不在模型 `optionSpecs.reasoningLevel.values` 内」（`reasoning-level-missing` / `reasoning-level-not-supported`）。所以自动通道沿用当前生效档位、独立通道用设置档位，两者都要落到模型声明的档位集合上：设置里的 `"default"` 表示「交给模型默认档」（Model Config 末位即默认档），显式档位不被支持时同样回落到模型默认档并留一条 `warn`（不静默：轨迹里能看到被替换掉的档位）。
-- **自动通道**：基准选型取 `modelSelectionView.preferredSelection`。模型配置变化自动跟随；OAuth 类 provider 由 CLI runtime 自身处理鉴权，无需回落逻辑。
+- **选型必须满足模型的档位契约**：Registry 校验拒绝「options 里没有 reasoningLevel」与「档位不在模型 `optionSpecs.reasoningLevel.values` 内」（`reasoning-level-missing` / `reasoning-level-not-supported`）。所以自动通道沿用 composer 当前选型的档位、独立通道用设置档位，两者都要落到模型声明的档位集合上：设置里的 `"default"` 表示「交给模型默认档」（Model Config 末位即默认档），显式档位不被支持时同样回落到模型默认档并留一条 `warn`（不静默：轨迹里能看到被替换掉的档位）。
+- **自动通道**：基准选型取 **composer 当前草稿的生效选型**（`draftConfig.modelSelection`，即 `resolveComposerModelSelection(draft.modelSelection, modelSelectionView)` 的结果，与工具栏展示、提交门禁同源），模型与推理档位都随之跟随。
+  - **不能取 `modelSelectionView.preferredSelection`**：它是 Registry 的*初始推荐*（`resolveInitialModelSelection`），只在配置里的默认模型仍然合法时才用默认模型，否则回落到**第一个可见 provider 的第一个模型**（`registry-fallback`）。用户之后点了别的模型它并不会变，于是增强会跑去用一个用户没选的模型——现象就是「自动模式用的是提供商的第一个模型」。自动通道要与「用户当前选了什么」同源，而不是与「Registry 推荐什么」同源。
+  - 用户在输入框旁切模型 / 切推理档位即刻跟随，无需重新配置；OAuth 类 provider 由 CLI runtime 自身处理鉴权，无需回落逻辑。
 - **独立通道**：基准选型取设置中的 `customSelection`（必须是 Registry 已发布模型；设置 UI 从 provider/model 视图读取候选，天然满足）。只下发 provider/model/档位，不携带设置里的其它字段。
-- 调用结果须带回实际使用的模型名，用于成功提示与设置页「当前生效通道」展示。
+- 调用结果须带回实际使用的模型名，用于成功提示；设置页只在独立通道把它显示出来（自动通道的身份由每个输入框自己的选型决定，全局设置页不显示）。
 
 ### 增强流程
 
@@ -363,7 +365,7 @@ REQUIREMENTS:
 4. 允许改写草稿里的行内引用：Switch（默认关）——**保留一条说明**：行内引用会变成纯文本
 5. 模型通道：自动 / 独立分段控件；独立时展开 provider 与 model 两个下拉（候选来自 provider/model 视图）
 6. 推理强度：默认/低/中/高，仅独立通道显示——**保留一条说明**：仅对独立通道生效
-7. 当前生效通道与模型名：只读一行（自动 → preferredSelection 模型名；独立 → 所选 provider/model）
+7. 当前生效通道：只读一行（自动 →「跟随选择的模型和推理强度」；独立 → 所选 provider/model）。自动模式下**不显示具体模型名**：自动通道跟随的是每个输入框各自的草稿选型，而设置页是全局的，展示不出唯一解；显示 Registry 的初始推荐只会误导（见「模型调用」）。这一行**不做截断**，放不下就换行（宁可占两行）：`--ui-font-size` 由外观设置控制、可以调大，而 `SettingsRow` 的列宽是固定 px 不跟着放大，用 `truncate` 会在字号放大后直接吃掉「推理强度」这类关键信息。
 8. 当前模式提示词正文：只读折叠查看
 9. 恢复默认按钮
 
@@ -399,10 +401,10 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - **判定模块单测**：行内引用闸的放行/拒绝矩阵（空草稿优先于引用判定；**有行内引用节点**时拒绝、放开后放行；**无节点但有附件/引用/手打 token 的入参**一律放行——入参里已经没有这几项，测试用「不存在该入参」锁住口径）；还原闸的「一致才允许还原」；回填闸的「与发起时快照一致才允许回填」（不一致即丢弃结果，绝不覆盖用户在途写入的新内容；CRLF 与首尾空白差异不算改动）。
 - **run 跟踪模块单测**：取消后仍能发起新 run（不能被上一次的 run 挡住）；取消后迟到的旧结果不得被判成当前 run，旧 run 结束也不能让出新 run 的活动位；只有当前 run 能结束自己。`operationId.ts` 断言前缀与两次调用不重复。
 - **请求参数护栏单测**（`request.ts`）：断言参数对象**不含** `signal`（一旦有人把它加回去，这条测试就红）；`operationId` / `maxOutputTokens` / `requestTimeoutMs` / `querySource` / `messages` 经 `JSON.parse(JSON.stringify(...))` 后原样存活；工作区身份字段仅在赋值时出现。取消句柄的固化逻辑（target 随发起时锁定）在 hook 内，不进单测，靠手动验证覆盖。
-- **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象。选型解析（`selection.ts`）用 Selection View 替身断言：输出预算取模型声明的上限；档位落在模型档位集合内（设置 `default` → 模型默认档；不支持的档位 → 回落默认档并回传被替换的档位）；自动通道跟随当前生效档位；缺 preferredSelection / 缺 customSelection / 模型不在视图 / 模型配置缺上限或缺档位一律返回 null（不发请求）。
+- **设置与选型模块单测**：缺失/半截配置补齐成完整设置；写回 patch 是完整对象。选型解析（`selection.ts`）用 Selection View 替身断言：输出预算取模型声明的上限；档位落在模型档位集合内（设置 `default` → 模型默认档；不支持的档位 → 回落默认档并回传被替换的档位）；自动通道采用传入的当前选型（模型与档位都跟着它走，不再回落 Registry 初始推荐）；缺 currentSelection / 缺 customSelection / 模型不在视图 / 模型配置缺上限或缺档位一律返回 null（不发请求）。
 - 新测试文件必须登记进 `.github/workflows/ci.yml` 的 Focused tests（该工作流按文件显式列测试，不跑全量发现）。若新测试经 import 链间接加载某个 workspace 包的构建产物（该包 `exports` 的子路径指向 `dist/`），必须在同一 step 补一条 `pnpm --filter <包名> build`：CI 是全新检出，根目录 `typecheck` 只做 `--noEmit`、不产出 `dist`，漏构建会让整个文件以 `ERR_MODULE_NOT_FOUND` 失败（core 的附件测试经 hydrator 依赖 `@kcode/dynamic-workflow/projections` 即是此例）。
 - **CLI 流式累积模块单测**（colocated，`node:test`，位置 `apps/kcode-cli/packages/core/src/runtime/methods/workspace-generate-text-accumulate.test.ts`，先例 `model-fallback.test.ts`）：text_delta 顺序拼接；tool_call 按 id 去重；finish 提供 finishReason 与 usage；error 事件按流式错误语义抛出（非 Error 形态不丢信息）；流在 finish 前结束判失败；无 toolCalls 时结果不携带该字段。
-- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、设置持久化（重启后保留）、总开关关掉后工具条入口消失且进行中请求被取消、重开后模式/通道仍在、自动通道跟随模型切换；**在途改草稿**——点增强后立刻在输入框里补一段，结果回来时草稿必须保持用户改后的内容、只给「已在增强期间被修改」提示，不得被结果覆盖；**卸载取消**——增强进行中关掉标签页或切走 workspace，再回来不得看到属于上一个会话的成功提示；闸门口径三条——**加了附件仍可增强**（chip 保留、增强结果正常回填）、草稿里插入行内引用（@文件 或 `/命令`）默认被拒、开着「允许改写草稿里的行内引用」时放行且引用变成纯文本；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误；以及在非标准 openai-compatible 网关（非流式响应带自定义信封，如 CPA）下增强仍成功。
+- **手动验证**（`pnpm dev:desktop`）：三档各跑一次增强、进行中取消、还原成功、手改后还原被拒、设置持久化（重启后保留）、总开关关掉后工具条入口消失且进行中请求被取消、重开后模式/通道仍在、自动通道跟随 composer 当前选型——切模型后点增强确认走新模型、切推理档位后确认走新档位；**在途改草稿**——点增强后立刻在输入框里补一段，结果回来时草稿必须保持用户改后的内容、只给「已在增强期间被修改」提示，不得被结果覆盖；**卸载取消**——增强进行中关掉标签页或切走 workspace，再回来不得看到属于上一个会话的成功提示；闸门口径三条——**加了附件仍可增强**（chip 保留、增强结果正常回填）、草稿里插入行内引用（@文件 或 `/命令`）默认被拒、开着「允许改写草稿里的行内引用」时放行且引用变成纯文本；另需覆盖两条模型契约——独立通道把推理档位设成「默认」仍能成功发起（选择必须带模型支持的档位），模型被删除后点击给出「没有可用的增强模型」而不是模型校验错误；以及在非标准 openai-compatible 网关（非流式响应带自定义信封，如 CPA）下增强仍成功。
 - 提交前执行 `pnpm typecheck`、`pnpm lint`、`pnpm architecture:check --changed`，报告真实结果。
 
 ## 不做的事
@@ -425,3 +427,4 @@ Composer 工具条上的「设置」入口通过现有设置导航意图机制�
 - 本功能的文案只存在于两个命名空间：工具条用 `chat.toolbar.promptEnhance.*`，设置分区用 `settings.promptEnhance.*`；不要再引入第三套命名（更早的直连通道方案留下的 `chat.promptEnhance.*` 已删除）。
 - 闸门收窄到「只看行内引用节点」的依据是取证结论：附件在 `composerAttachmentUploadStore`、四类引用在各自 hook 的组件 state，草稿记录 `V4ComposerDraft` 里没有这些字段，回填三连碰不到它们；只有 mention 是编辑器节点。这意味着「加了附件不能增强」属于误拦，已按上表摘掉。设置字段随之改名 `allowStructuredOverwrite` → `allowInlineReferenceRewrite`；功能尚未发布，直接改名不做兼容读旧值。
 - 已评估但未采纳的方案：占位符往返（回填前把行内引用节点序列化成不透明占位符交给模型，回填时还原成节点，还原失败沿用 `fillFailed` 分支拒绝回填）。它能保住引用节点、从而删掉这个开关，但要同时改 compose、回填与还原点三处口径，并额外防模型改坏占位符；本次先做闸门收窄，若后续收到「为了增强而不得不丢引用」的反馈再启动。编辑器已有「markdown → 重建节点」的先例可复用（`replaceEditorTextWithPluginMentions`）。
+- 自动通道改用 composer 当前选型后，有一条旧行为消失：草稿没有任何可解析选型时（新任务尚未补全、或所选模型已被删除），原先还能靠 `preferredSelection` 凑出一个模型，现在解析不出 target，按 `noModel` 提示处理。这与当时输入框本身也发不出消息一致，属于预期而非回归；入口的禁用条件仍只看模型视图是否就绪，不为它新增第二种门禁。

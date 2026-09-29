@@ -10,7 +10,7 @@
  *   Renderer 传不了 AbortSignal，跨 RPC 会被 JSON 序列化吃掉（详见 operationId.ts）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PromptEnhanceSettings } from "@kcode/shared";
+import type { ModelSelection, PromptEnhanceSettings } from "@kcode/shared";
 import type { ConversationRow } from "@kcode/shared/kcode-protocol-v4";
 import type { ModelSelectionView } from "@kcode/services";
 import { toast } from "@/components/ui/toast.js";
@@ -106,6 +106,12 @@ export interface UsePromptEnhanceParams {
   /** 当前草稿是否有正文；发送成功或手动清空后为 false，还原点随之失效。 */
   hasDraftText: boolean;
   modelSelectionView: ModelSelectionView | null;
+  /**
+   * composer 当前草稿的生效选型：自动通道的基准（模型与推理档位都由它决定）。
+   * 由 composer 注入，不在这里从 `modelSelectionView.preferredSelection` 推导——那是 Registry
+   * 的初始推荐，用户改选模型后不会跟着变。
+   */
+  currentModelSelection: ModelSelection | null;
   /** 点击时读取草稿里是否有行内引用节点（回填唯一会破坏的内容）。 */
   readHasInlineReferences: () => boolean;
   /** 点击时读取当前投影 rows，避免把流式 snapshot 灌进调用方的 memo 依赖。 */
@@ -127,6 +133,7 @@ export interface PromptEnhanceController {
 
 export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceController {
   const {
+    currentModelSelection,
     disabled,
     hasDraftText,
     modelSelectionView,
@@ -308,14 +315,16 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
 
     const target = resolvePromptEnhanceTarget({
       settings: enhanceSettings,
-      preferredSelection: modelSelectionView?.preferredSelection ?? null,
+      currentSelection: currentModelSelection,
       modelSelectionView,
     });
     if (!target) {
-      // 没有模型、或选中模型已不在已发布列表里（Selection View 读不到 Model Config）：
-      // 后者无法构造合法请求（预算与档位都取自模型配置），只能先请用户重选。
+      // 三种原因：草稿还没有可解析的选型（自动通道）、选中的模型已不在已发布列表里
+      // （Selection View 读不到 Model Config）、独立通道没配 customSelection。三者都构造不出
+      // 合法请求（预算与档位都取自模型配置），只能先请用户选模型。
       logger.warn("[prompt-enhance] 没有可用的增强模型选型", {
         channel: enhanceSettings.channel,
+        hasCurrentModelSelection: currentModelSelection !== null,
         hasModelSelectionView: modelSelectionView !== null,
       });
       showToast("chat.toolbar.promptEnhance.noModel");
@@ -436,6 +445,7 @@ export function usePromptEnhance(params: UsePromptEnhanceParams): PromptEnhanceC
   }, [
     cancelRun,
     createRunCancel,
+    currentModelSelection,
     enhanceSettings,
     finishRun,
     kcodeAgentService,

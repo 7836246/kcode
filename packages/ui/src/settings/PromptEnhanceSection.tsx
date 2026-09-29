@@ -76,15 +76,14 @@ export function PromptEnhanceSection({
     (provider) => provider.providerId === current.customSelection?.providerId,
   );
 
-  // 当前生效通道只做展示：自动通道跟随 preferredSelection，独立通道取设置里的选型。
-  const effectiveSelection =
-    current.channel === "auto" ? selectionView?.preferredSelection : current.customSelection;
-  const effectiveProvider = providers.find(
-    (provider) => provider.providerId === effectiveSelection?.providerId,
-  );
-  const effectiveLabel = effectiveSelection
-    ? `${effectiveProvider?.providerName ?? effectiveSelection.providerId} / ${effectiveSelection.modelId}`
-    : intl.formatMessage({ id: "settings.promptEnhance.effective.unresolved" });
+  // 当前生效通道只做展示。自动通道跟随的是每个输入框各自的草稿选型（可能互不相同），全局设置页
+  // 给不出唯一模型，因此只说明它跟随什么；独立通道是全局唯一的设置，照常显示 provider / 模型。
+  const effectiveLabel =
+    current.channel === "auto"
+      ? intl.formatMessage({ id: "settings.promptEnhance.effective.followSelection" })
+      : current.customSelection
+        ? `${customProvider?.providerName ?? current.customSelection.providerId} / ${current.customSelection.modelId}`
+        : intl.formatMessage({ id: "settings.promptEnhance.effective.unresolved" });
 
   const write = async (patch: Partial<PromptEnhanceSettings>) => {
     if (!settings) return;
@@ -314,9 +313,13 @@ export function PromptEnhanceSection({
           </>
         ) : null}
         <SettingsRow
+          controlLayout="wide"
           label={intl.formatMessage({ id: "settings.promptEnhance.effective.label" })}
           control={
-            <span className="min-w-0 truncate text-ui-base text-foreground-subtle">
+            // 不截断：这一行要答的是「现在到底用哪个模型」，而文案会随语言与字号变化
+            // （`--ui-font-size` 由外观设置控制，列宽是固定 px、不跟着放大），
+            // 截断会把「推理强度」这种关键信息吃掉。放不下时换行，宁可占两行。
+            <span className="min-w-0 break-words text-right text-ui-base text-foreground-subtle">
               {effectiveLabel}
             </span>
           }

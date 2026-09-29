@@ -372,17 +372,17 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
       reasoningLevels: ["low", "high"],
     },
   ]);
-  const preferred = {
+  const current = {
     providerId: "provider-a",
     modelId: "model-a",
     options: { reasoningLevel: "low" },
   };
 
-  // 自动通道：沿用当前生效档位，预算取模型声明的上限（与普通 Turn 同口径）。
+  // 自动通道：沿用当前选型的档位，预算取模型声明的上限（与普通 Turn 同口径）。
   assert.deepEqual(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: view,
     }),
     {
@@ -395,12 +395,34 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
     },
   );
 
+  // 自动通道只认传入的当前选型：换一个选型，模型、预算与档位都跟着换。
+  // 这条同时锁住「不再从 Selection View 的初始推荐里补一个模型」——View 替身里根本没有那样的字段。
+  assert.deepEqual(
+    resolvePromptEnhanceTarget({
+      settings,
+      currentSelection: {
+        providerId: "provider-b",
+        modelId: "model-b",
+        options: { reasoningLevel: "low" },
+      },
+      modelSelectionView: view,
+    }),
+    {
+      selection: {
+        providerId: "provider-b",
+        modelId: "model-b",
+        options: { reasoningLevel: "low" },
+      },
+      maxOutputTokens: 8_192,
+    },
+  );
+
   // 自动通道里档位不被模型支持时回落到模型声明的默认档（末位），而不是原样透传被 CLI 拒；
   // 被替换掉的档位要回传出来，调用方才有据可查。
   assert.deepEqual(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: { ...preferred, options: { reasoningLevel: "medium" } },
+      currentSelection: { ...current, options: { reasoningLevel: "medium" } },
       modelSelectionView: view,
     }),
     {
@@ -421,7 +443,7 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
         channel: "custom",
         customSelection: { providerId: "provider-b", modelId: "model-b" },
       }),
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: view,
     }),
     {
@@ -442,7 +464,7 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
         customSelection: { providerId: "provider-b", modelId: "model-b" },
         reasoningLevel: "low",
       }),
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: view,
     }),
     {
@@ -458,7 +480,7 @@ test("选型解析从模型配置取输出预算，并保证档位在模型的�
 
 test("模型不在已发布列表、或缺少输出上限/档位时不给请求参数", () => {
   const settings = resolvePromptEnhanceSettings({ channel: "auto" });
-  const preferred = { providerId: "provider-a", modelId: "model-a" };
+  const current = { providerId: "provider-a", modelId: "model-a" };
   const view = modelSelectionViewFixture([
     {
       providerId: "provider-a",
@@ -471,7 +493,7 @@ test("模型不在已发布列表、或缺少输出上限/档位时不给请求�
   assert.equal(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: { providerId: "provider-gone", modelId: "model-a" },
+      currentSelection: { providerId: "provider-gone", modelId: "model-a" },
       modelSelectionView: view,
     }),
     null,
@@ -479,7 +501,7 @@ test("模型不在已发布列表、或缺少输出上限/档位时不给请求�
   assert.equal(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: { providerId: "provider-a", modelId: "model-gone" },
+      currentSelection: { providerId: "provider-a", modelId: "model-gone" },
       modelSelectionView: view,
     }),
     null,
@@ -487,19 +509,19 @@ test("模型不在已发布列表、或缺少输出上限/档位时不给请求�
   assert.equal(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: null,
     }),
     null,
   );
   assert.equal(
-    resolvePromptEnhanceTarget({ settings, preferredSelection: null, modelSelectionView: view }),
+    resolvePromptEnhanceTarget({ settings, currentSelection: null, modelSelectionView: view }),
     null,
   );
   assert.equal(
     resolvePromptEnhanceTarget({
       settings: resolvePromptEnhanceSettings({ channel: "custom" }),
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: view,
     }),
     null,
@@ -509,7 +531,7 @@ test("模型不在已发布列表、或缺少输出上限/档位时不给请求�
   assert.equal(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: modelSelectionViewFixture([
         { providerId: "provider-a", modelId: "model-a", reasoningLevels: ["low"] },
       ]),
@@ -519,7 +541,7 @@ test("模型不在已发布列表、或缺少输出上限/档位时不给请求�
   assert.equal(
     resolvePromptEnhanceTarget({
       settings,
-      preferredSelection: preferred,
+      currentSelection: current,
       modelSelectionView: modelSelectionViewFixture([
         { providerId: "provider-a", modelId: "model-a", maxOutputTokens: 4_096 },
       ]),

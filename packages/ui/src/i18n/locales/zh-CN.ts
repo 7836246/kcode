@@ -3989,6 +3989,7 @@ const zhCN: Record<string, string> = {
   "settings.promptEnhance.reasoning.medium": "中",
   "settings.promptEnhance.reasoning.high": "高",
   "settings.promptEnhance.effective.label": "当前生效通道",
+  "settings.promptEnhance.effective.followSelection": "跟随选择的模型和推理强度",
   "settings.promptEnhance.effective.unresolved": "未就绪",
   "settings.promptEnhance.prompt.label": "当前模式提示词正文",
   "settings.promptEnhance.prompt.show": "查看",
