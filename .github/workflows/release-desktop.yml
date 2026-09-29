@@ -192,7 +192,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.check-version.outputs.tag }}
-          generate_release_notes: true
+          # 更新说明在打 tag 时用手写 body 创建；这里只挂安装包，避免覆盖正文。
+          generate_release_notes: false
           prerelease: ${{ contains(needs.check-version.outputs.tag, '-') }}
           files: release-assets/*
           fail_on_unmatched_files: true

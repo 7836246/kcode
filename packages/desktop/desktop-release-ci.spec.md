@@ -4,6 +4,8 @@
 
 打 `v*` 标签或手动触发 GitHub Actions `release-desktop` 后，CI 先校验 tag 与产品版本一致，再在对应系统上跑现有 `pnpm bundle:desktop`，把未签名正式包和 electron-updater manifest 上传到同一 GitHub Release。
 
+GitHub Release 正文是该版本的产品更新说明：按 `## 新功能` / `## 问题修复` 等分组写清用户能感知的变化，官网 `/changelog` 从该正文投影。打 tag 后先用这份正文创建或更新 Release；publish job 只挂安装包，不得用自动生成的 compare 链接覆盖已有正文。
+
 产品版本只写在仓库根 `package.json` 与 `packages/desktop/package.json`。tag 去掉前缀 `v` 必须等于这两个 version。运行时版本仍来自编译期注入，不读 git。
 
 | 平台 | 安装包 | 更新资产 |
@@ -30,6 +32,7 @@
 - tag `v0.0.1` 而 package.json 仍是 `0.0.2` 时，CI 在打包前失败
 - 根目录与 `@kcode/desktop` 的 version 不一致时，CI 在打包前失败
 - 推送匹配的 `v*` tag 或在 Actions 里选该 tag 重跑，Release 上出现上表安装包、zip/blockmap 与对应 `latest*.yml`
+- 已写好的 Release 正文在 publish 挂包后仍在，不会被自动生成的 changelog 替换
 - Linux ARM64 job 必须接受 `latest-linux-arm64.yml`；只认 `latest-linux.yml` 视为编排缺陷，安装包即使打完也不能当成功
 - 资产名符合 `KCode-<version>-<mac|win|linux>-<arch>.<ext>`
 - 失败的平台不阻塞其他平台上传；缺包时 Release 保持已成功资产
